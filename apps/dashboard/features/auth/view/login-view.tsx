@@ -7,7 +7,8 @@ import { Label } from "@workspace/ui/components/label"
 import { cn } from "@workspace/ui/lib/utils"
 import { Eye, EyeOff, Loader2, LockKeyhole, UserRound } from "lucide-react"
 import Image from "next/image"
-import * as React from "react"
+
+import type { LoginController } from "../controller/use-login-controller"
 
 const features = [
   {
@@ -32,23 +33,16 @@ const features = [
   },
 ] as const
 
-export function LoginScreen() {
-  const [showPassword, setShowPassword] = React.useState(false)
-  const [isLoggingIn, setIsLoggingIn] = React.useState(false)
+export type LoginViewProps = LoginController
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    if (isLoggingIn) return
-    setIsLoggingIn(true)
-    void (async () => {
-      try {
-        await new Promise((r) => setTimeout(r, 1500))
-      } finally {
-        setIsLoggingIn(false)
-      }
-    })()
-  }
-
+export function LoginView({
+  showPassword,
+  toggleShowPassword,
+  fieldErrors,
+  clearFieldError,
+  onSubmit,
+  isLoggingIn,
+}: LoginViewProps) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F3F3FF] p-4 lg:p-6 xl:p-8">
       <div className="flex w-full max-w-[960px] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] ring-1 ring-black/5 md:flex-row md:rounded-3xl">
@@ -113,7 +107,7 @@ export function LoginScreen() {
           <div className="mx-auto w-full max-w-md space-y-6 sm:space-y-8 md:space-y-8 lg:space-y-12">
             <div className="space-y-1 text-center sm:space-y-1.5">
               <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-[1.35rem] lg:text-2xl">
-                Welcome back 👋🏻
+                Welcome back
               </h1>
               <p className="text-sm text-muted-foreground lg:text-base">
                 Log in using your credentials
@@ -123,48 +117,84 @@ export function LoginScreen() {
             <form
               className="space-y-4 sm:space-y-5 md:space-y-5 lg:space-y-6"
               noValidate
-              onSubmit={handleSubmit}
+              onSubmit={onSubmit}
             >
               <div className="space-y-3 sm:space-y-3.5 md:space-y-3.5 lg:space-y-4">
-                <div className="relative">
-                  <UserRound
-                    className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground lg:left-3 lg:size-5"
-                    aria-hidden
-                  />
-                  <Input
-                    type="text"
-                    name="username"
-                    autoComplete="username"
-                    placeholder="Username"
-                    className="h-12 border-0 bg-[#F6F5F8] pl-10 text-sm shadow-none placeholder:text-muted-foreground focus-visible:bg-[#F6F5F8] focus-visible:ring-2 focus-visible:ring-[#6366f1] lg:h-16 lg:pl-12 lg:text-base"
-                  />
+                <div className="space-y-1.5">
+                  <div className="relative">
+                    <UserRound
+                      className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground lg:left-3 lg:size-5"
+                      aria-hidden
+                    />
+                    <Input
+                      type="text"
+                      name="username"
+                      autoComplete="username"
+                      placeholder="Username"
+                      aria-invalid={fieldErrors.username ? true : undefined}
+                      aria-describedby={
+                        fieldErrors.username
+                          ? "login-username-error"
+                          : undefined
+                      }
+                      onChange={() => clearFieldError("username")}
+                      className="h-12 border-0 bg-[#F6F5F8] pl-10 text-sm shadow-none placeholder:text-muted-foreground focus-visible:bg-[#F6F5F8] focus-visible:ring-2 focus-visible:ring-[#6366f1] lg:h-16 lg:pl-12 lg:text-base"
+                    />
+                  </div>
+                  {fieldErrors.username ? (
+                    <p
+                      id="login-username-error"
+                      className="text-sm text-destructive"
+                      role="alert"
+                    >
+                      {fieldErrors.username}
+                    </p>
+                  ) : null}
                 </div>
-                <div className="relative">
-                  <LockKeyhole
-                    className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground lg:left-3 lg:size-5"
-                    aria-hidden
-                  />
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    autoComplete="current-password"
-                    placeholder="Password"
-                    className="h-12 border-0 bg-[#F6F5F8] pr-10 pl-10 text-sm shadow-none placeholder:text-muted-foreground focus-visible:bg-[#F6F5F8] focus-visible:ring-2 focus-visible:ring-[#6366f1] lg:h-16 lg:pr-11 lg:pl-12 lg:text-base"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute top-1/2 right-2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-slate-200/80 hover:text-foreground lg:right-2.5 lg:size-8"
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                  >
-                    {showPassword ? (
-                      <EyeOff className="size-4 lg:size-5" />
-                    ) : (
-                      <Eye className="size-4 lg:size-5" />
-                    )}
-                  </button>
+                <div className="space-y-1.5">
+                  <div className="relative">
+                    <LockKeyhole
+                      className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground lg:left-3 lg:size-5"
+                      aria-hidden
+                    />
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      autoComplete="current-password"
+                      placeholder="Password"
+                      aria-invalid={fieldErrors.password ? true : undefined}
+                      aria-describedby={
+                        fieldErrors.password
+                          ? "login-password-error"
+                          : undefined
+                      }
+                      onChange={() => clearFieldError("password")}
+                      className="h-12 border-0 bg-[#F6F5F8] pr-10 pl-10 text-sm shadow-none placeholder:text-muted-foreground focus-visible:bg-[#F6F5F8] focus-visible:ring-2 focus-visible:ring-[#6366f1] lg:h-16 lg:pr-11 lg:pl-12 lg:text-base"
+                    />
+                    <button
+                      type="button"
+                      onClick={toggleShowPassword}
+                      className="absolute top-1/2 right-2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-slate-200/80 hover:text-foreground lg:right-2.5 lg:size-8"
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                    >
+                      {showPassword ? (
+                        <EyeOff className="size-4 lg:size-5" />
+                      ) : (
+                        <Eye className="size-4 lg:size-5" />
+                      )}
+                    </button>
+                  </div>
+                  {fieldErrors.password ? (
+                    <p
+                      id="login-password-error"
+                      className="text-sm text-destructive"
+                      role="alert"
+                    >
+                      {fieldErrors.password}
+                    </p>
+                  ) : null}
                 </div>
               </div>
 
@@ -179,7 +209,7 @@ export function LoginScreen() {
                   </Label>
                 </div>
                 <a
-                  href="#"
+                  href="/forgot-password"
                   className="text-xs font-medium text-[#6366f1] hover:underline lg:text-sm"
                 >
                   Forgot password?
