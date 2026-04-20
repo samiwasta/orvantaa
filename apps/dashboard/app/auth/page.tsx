@@ -1,10 +1,12 @@
-import { Button } from "@workspace/ui/components/button"
+import type { Metadata } from "next"
 
-export default function Page() {
-  return (
-    <div className="flex h-screen flex-col items-center justify-center gap-4">
-      <h1 className="text-4xl font-bold">Auth</h1>
-      <Button>Click me</Button>
-    </div>
-  )
+import { LoginScreen } from "./login-screen"
+
+export const metadata: Metadata = {
+  title: "Login - Orvantaa",
+  description: "Login to your Orvantaa account",
+}
+
+export default function AuthPage() {
+  return <LoginScreen />
 }

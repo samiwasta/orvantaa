@@ -1,9 +1,20 @@
 import "@workspace/ui/globals.css"
 
 import { cn } from "@workspace/ui/lib/utils"
-import { Inter } from "next/font/google"
+import { Inter, Poppins } from "next/font/google"
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+})
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-poppins",
+  display: "swap",
+})
 
 export default function RootLayout({
   children,
@@ -14,9 +25,9 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", "font-sans", inter.variable)}
+      className={cn(inter.variable, poppins.variable, "font-sans antialiased")}
     >
-      <body>{children}</body>
+      <body className="min-h-dvh font-sans">{children}</body>
     </html>
   )
 }
