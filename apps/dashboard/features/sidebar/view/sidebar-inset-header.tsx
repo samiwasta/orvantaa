@@ -1,0 +1,59 @@
+"use client"
+
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@workspace/ui/components/avatar"
+import { Button } from "@workspace/ui/components/button"
+import { SidebarTrigger } from "@workspace/ui/components/sidebar"
+import { cn } from "@workspace/ui/lib/utils"
+import { BellIcon } from "lucide-react"
+
+import { avatarSrcForUserGender, type UserGender } from "../model/user-gender"
+
+export function SidebarInsetHeader({
+  pageTitle,
+  userGender,
+}: {
+  pageTitle: string
+  userGender: UserGender
+}) {
+  const avatarSrc = avatarSrcForUserGender(userGender)
+  return (
+    <header className="flex h-14 shrink-0 items-center gap-3 px-4 pt-6">
+      <SidebarTrigger className="-ml-1 shrink-0" />
+      <div className="flex w-full items-center justify-between">
+        <div>
+          <h1
+            className={cn(
+              "m-0 flex h-8 min-w-0 shrink items-center",
+              "font-heading text-lg leading-none font-semibold tracking-tight text-foreground"
+            )}
+          >
+            {pageTitle}
+          </h1>
+        </div>
+        <div className="flex items-center justify-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="cursor-pointer rounded-full bg-white p-3 shadow-sm"
+          >
+            <BellIcon className="size-4 text-[#6C5CE7]" strokeWidth={2.5} />
+          </Button>
+          <div className="flex items-center justify-center gap-2">
+            <Avatar>
+              <AvatarImage src={avatarSrc} />
+              <AvatarFallback>O</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col items-start justify-center">
+              <p className="text-sm font-medium">Ananya Sharma</p>
+              <p className="text-xs text-muted-foreground">Class 10</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+  )
+}
