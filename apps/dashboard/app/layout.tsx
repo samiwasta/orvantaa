@@ -27,7 +27,9 @@ export default function RootLayout({
       suppressHydrationWarning
       className={cn(inter.variable, poppins.variable, "font-sans antialiased")}
     >
-      <body className="min-h-dvh font-sans">{children}</body>
+      <body className="min-h-dvh font-sans">
+        <div className="min-h-dvh overflow-x-hidden">{children}</div>
+      </body>
     </html>
   )
 }
