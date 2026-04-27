@@ -111,7 +111,7 @@ export function DashboardShellView({
         {/* ── Main content area ────────────────────────────────────────── */}
         <SidebarInset>
           <SidebarInsetHeader pageTitle={pageTitle} userGender={userGender} />
-          <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-6 md:p-6">
             {children}
           </div>
         </SidebarInset>
