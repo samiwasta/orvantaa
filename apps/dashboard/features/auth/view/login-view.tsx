@@ -47,11 +47,17 @@ export function LoginView({
     <div className="flex min-h-screen items-center justify-center bg-[#F3F3FF] p-4 lg:p-6 xl:p-8">
       <div className="flex w-full max-w-[960px] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] ring-1 ring-black/5 md:flex-row md:rounded-3xl">
         <section className="relative flex min-h-0 w-full flex-col justify-between gap-4 bg-[#6366f1] p-6 text-white md:min-h-[560px] md:w-1/2 lg:min-h-[600px] lg:p-10">
-          <div className="flex items-center justify-center gap-3">
-            <div className="size-9 shrink-0 rounded-lg bg-white/20 ring-1 ring-white/30" />
-            <span className="text-sm font-semibold tracking-[0.2em]">
-              ORVANTAA
-            </span>
+          <div className="flex items-center justify-center">
+            <div className="rounded-lg bg-white px-3 py-1.5 shadow-sm ring-1 shadow-black/15 ring-black/5">
+              <Image
+                src="/orvantaa-logo.png"
+                alt="Orvantaa"
+                width={120}
+                height={32}
+                className="h-6 w-auto max-w-[120px] object-contain sm:h-7 sm:max-w-[132px]"
+                priority
+              />
+            </div>
           </div>
 
           <div className="relative mx-auto hidden min-h-[260px] w-full max-w-lg flex-1 flex-col items-center justify-center py-4 md:flex md:min-h-[280px] md:py-4 lg:min-h-[320px] lg:py-6">
