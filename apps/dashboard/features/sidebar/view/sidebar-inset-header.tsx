@@ -7,6 +7,7 @@ import {
 } from "@workspace/ui/components/avatar"
 import { Button } from "@workspace/ui/components/button"
 import { SidebarTrigger } from "@workspace/ui/components/sidebar"
+import { useIsMobile } from "@workspace/ui/hooks/use-mobile"
 import { cn } from "@workspace/ui/lib/utils"
 import { BellIcon } from "lucide-react"
 
@@ -20,9 +21,11 @@ export function SidebarInsetHeader({
   userGender: UserGender
 }) {
   const avatarSrc = avatarSrcForUserGender(userGender)
+  const isMobile = useIsMobile()
+
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 px-4 pt-6">
-      <SidebarTrigger className="-ml-1 shrink-0" />
+      {!isMobile ? <SidebarTrigger className="-ml-1 shrink-0" /> : null}
       <div className="flex w-full items-center justify-between">
         <div>
           <h1

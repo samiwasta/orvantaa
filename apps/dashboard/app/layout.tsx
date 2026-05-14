@@ -1,7 +1,14 @@
 import "@workspace/ui/globals.css"
 
 import { cn } from "@workspace/ui/lib/utils"
+import type { Metadata } from "next"
 import { Inter, Poppins } from "next/font/google"
+
+export const metadata: Metadata = {
+  icons: {
+    icon: "/favicon.png",
+  },
+}
 
 const inter = Inter({
   subsets: ["latin"],
