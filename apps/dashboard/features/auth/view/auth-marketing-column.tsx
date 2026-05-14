@@ -10,14 +10,16 @@ export function AuthMarketingColumn({
   return (
     <section className="relative flex min-h-0 w-full flex-col justify-between gap-4 bg-[#6366f1] p-6 text-white md:min-h-[560px] md:w-1/2 lg:min-h-[600px] lg:p-10">
       <div className="flex items-center justify-center">
-        <Image
-          src="/orvantaa-logo.png"
-          alt="Orvantaa"
-          width={180}
-          height={48}
-          className="h-8 w-auto object-contain sm:h-9"
-          priority
-        />
+        <div className="rounded-lg bg-white px-3 py-1.5 shadow-sm ring-1 shadow-black/15 ring-black/5">
+          <Image
+            src="/orvantaa-logo.png"
+            alt="Orvantaa"
+            width={120}
+            height={32}
+            className="h-6 w-auto max-w-[120px] object-contain sm:h-7 sm:max-w-[132px]"
+            priority
+          />
+        </div>
       </div>
 
       <div className="relative mx-auto hidden min-h-[260px] w-full max-w-lg flex-1 flex-col items-center justify-center py-4 md:flex md:min-h-[280px] md:py-4 lg:min-h-[320px] lg:py-6">
