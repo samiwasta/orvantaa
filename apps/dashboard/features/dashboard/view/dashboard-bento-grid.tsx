@@ -59,7 +59,7 @@ export function DashboardBentoGrid({ userGender }: { userGender: UserGender }) {
 
 function HeroCard({ illustrationSrc }: { illustrationSrc: string }) {
   return (
-    <Card className="relative overflow-hidden rounded-3xl border border-[#6c5ce7]/15 bg-linear-to-br from-white via-[#faf9ff] to-[#f1eeff] p-4 shadow-[0_14px_34px_-22px_rgba(108,92,231,0.65)] sm:p-5 lg:p-8">
+    <Card className="relative overflow-hidden rounded-3xl bg-linear-to-br from-white via-[#faf9ff] to-[#f1eeff] p-4 shadow-[0_14px_34px_-22px_rgba(108,92,231,0.65)] ring-0 sm:p-5 lg:p-8">
       <div className="pointer-events-none absolute top-8 -left-16 size-44 rounded-full bg-[#6c5ce7]/10 blur-3xl" />
       <div className="pointer-events-none absolute -right-12 bottom-0 size-48 rounded-full bg-[#8b7cf6]/20 blur-3xl" />
 
@@ -110,7 +110,7 @@ function CtaCard({
 }: (typeof ctaCards)[number]) {
   return (
     <Card
-      className={`relative overflow-hidden rounded-3xl border border-white/20 bg-linear-to-br ${gradient} p-0 text-white ${shadow}`}
+      className={`relative overflow-hidden rounded-3xl bg-linear-to-br ${gradient} p-0 text-white ring-0 ${shadow}`}
     >
       <div
         className={`${glowStyle} top-1/2 -left-10 size-40 -translate-y-1/2`}
@@ -142,7 +142,7 @@ function CtaCard({
 
 function AiTutorCard() {
   return (
-    <Card className="relative overflow-hidden rounded-3xl border border-[#39337b] bg-linear-to-br from-[#232061] via-[#1f1b57] to-[#171446] p-0 text-white shadow-[0_24px_46px_-26px_rgba(31,27,87,0.98)] @[580px]/grid:col-span-2 @[1200px]/grid:col-span-1">
+    <Card className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[#232061] via-[#1f1b57] to-[#171446] p-0 text-white shadow-[0_24px_46px_-26px_rgba(31,27,87,0.98)] ring-0 @[580px]/grid:col-span-2 @[1200px]/grid:col-span-1">
       <div className="pointer-events-none absolute top-8 -left-10 size-36 rounded-full bg-[#7f54ee]/20 blur-3xl" />
       <div className="pointer-events-none absolute -right-10 bottom-0 size-40 rounded-full bg-[#0ea5b7]/20 blur-3xl" />
       <CardHeader className="relative gap-4 p-5 sm:p-6">
