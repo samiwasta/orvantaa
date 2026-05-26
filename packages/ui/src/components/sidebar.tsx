@@ -16,6 +16,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
+import {
+  MOBILE_MEDIA_QUERY,
+  useBodyScrollLock,
+} from "@workspace/ui/hooks/use-body-scroll-lock"
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile"
 import { cn } from "@workspace/ui/lib/utils"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -161,6 +165,8 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+
+  useBodyScrollLock(openMobile, { mediaQuery: MOBILE_MEDIA_QUERY })
 
   if (collapsible === "none") {
     return (
