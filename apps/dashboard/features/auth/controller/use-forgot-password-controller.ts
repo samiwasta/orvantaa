@@ -40,11 +40,27 @@ export function useForgotPasswordController() {
 
       setEmailError(undefined)
       setIsSendingResetLink(true)
+
       void (async () => {
         try {
-          await new Promise((r) => setTimeout(r, 1500))
+          const response = await fetch("/api/auth/forgot-password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: parsed.data.email }),
+          })
+
+          if (!response.ok && response.status !== 200) {
+            const data = (await response.json()) as { message?: string }
+            setEmailError(
+              data.message ?? "Something went wrong. Please try again."
+            )
+            return
+          }
+
           markForgotPasswordLinkSent()
           router.push("/forgot-password/sent")
+        } catch {
+          setEmailError("Unable to reach the server. Please try again.")
         } finally {
           setIsSendingResetLink(false)
         }

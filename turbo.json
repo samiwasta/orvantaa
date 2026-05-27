@@ -1,6 +1,17 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
+  "globalEnv": [
+    "NODE_ENV",
+    "DATABASE_URL",
+    "DATABASE_URL_UNPOOLED",
+    "JWT_SECRET",
+    "JWT_EXPIRES_IN_SECONDS",
+    "EMAIL_PROVIDER",
+    "EMAIL_FROM",
+    "RESEND_API_KEY",
+    "NEXT_PUBLIC_APP_URL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -19,6 +30,10 @@
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "build:email": {
+      "dependsOn": [],
+      "outputs": [".react-email/**"]
     }
   }
 }

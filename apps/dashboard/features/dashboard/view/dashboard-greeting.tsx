@@ -8,12 +8,12 @@ export function DashboardGreeting({
   serverHour: number
 }) {
   const salutation = getTimeBasedSalutation(serverHour)
-  const displayName = firstName.trim() || "there"
+  const name = firstName.trim() || "there"
 
   return (
     <div className="flex flex-col gap-2">
       <h2 className="font-heading text-xl font-semibold tracking-tight text-foreground md:text-2xl">
-        {salutation}, {displayName}! 👋🏻
+        {salutation}, {name}! 👋🏻
       </h2>
       <p className="text-base text-muted-foreground">
         Let&apos;s start your learning journey.

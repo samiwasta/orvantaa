@@ -39,6 +39,7 @@ export function LoginView({
   showPassword,
   toggleShowPassword,
   fieldErrors,
+  formError,
   clearFieldError,
   onSubmit,
   isLoggingIn,
@@ -136,7 +137,7 @@ export function LoginView({
                       type="text"
                       name="username"
                       autoComplete="username"
-                      placeholder="Username"
+                      placeholder="Username or email"
                       aria-invalid={fieldErrors.username ? true : undefined}
                       aria-describedby={
                         fieldErrors.username
@@ -204,9 +205,22 @@ export function LoginView({
                 </div>
               </div>
 
+              {formError ? (
+                <p
+                  role="alert"
+                  className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+                >
+                  {formError}
+                </p>
+              ) : null}
+
               <div className="flex justify-between gap-3">
                 <div className="flex items-center gap-2 lg:gap-2.5">
-                  <Checkbox id="remember" className="border-[#6366f1]" />
+                  <Checkbox
+                    id="remember"
+                    name="rememberMe"
+                    className="border-[#6366f1]"
+                  />
                   <Label
                     htmlFor="remember"
                     className="cursor-pointer text-xs font-normal text-muted-foreground lg:text-sm"

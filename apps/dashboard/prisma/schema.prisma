@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum UserRole {
+  ADMIN
+  STUDENT
+}
+
+enum BoardKind {
+  BOARD
+  UNIVERSITY
+}
+
+// ─── Board / University ───────────────────────────────────────────────────────
+
+model Board {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  kind      BoardKind
+  code      String?   @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  schools School[]
+
+  @@map("boards")
+}
+
+// ─── School ───────────────────────────────────────────────────────────────────
+
+model School {
+  id        String   @id @default(cuid())
+  name      String
+  code      String?  @unique
+  boardId   String
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  classes Class[]
+
+  @@index([boardId])
+  @@map("schools")
+}
+
+// ─── Class ────────────────────────────────────────────────────────────────────
+
+model Class {
+  id        String   @id @default(cuid())
+  name      String
+  section   String?
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  students User[]
+  subjects Subject[]
+
+  @@unique([schoolId, name, section])
+  @@index([schoolId])
+  @@map("classes")
+}
+
+// ─── Subject ──────────────────────────────────────────────────────────────────
+
+model Subject {
+  id         String   @id @default(cuid())
+  title      String
+  slug       String
+  imageUrl   String?
+  orderIndex Int      @default(0)
+  classId    String
+  class      Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  chapters Chapter[]
+
+  @@unique([classId, slug])
+  @@index([classId])
+  @@map("subjects")
+}
+
+// ─── Chapter ──────────────────────────────────────────────────────────────────
+
+model Chapter {
+  id         String   @id @default(cuid())
+  title      String
+  slug       String
+  number     Int
+  subjectId  String
+  subject    Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([subjectId, number])
+  @@unique([subjectId, slug])
+  @@index([subjectId])
+  @@map("chapters")
+}
+
+// ─── User ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String   @default("")
+  gender       Gender   @default(FEMALE)
+  role         UserRole @default(STUDENT)
+  classId      String?
+  class        Class?   @relation(fields: [classId], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  passwordResetTokens PasswordResetToken[]
+
+  @@index([classId])
+  @@index([role])
+  @@map("users")
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}

@@ -1,26 +1,22 @@
 "use client"
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar"
 import { Button } from "@workspace/ui/components/button"
 import { SidebarTrigger } from "@workspace/ui/components/sidebar"
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile"
 import { cn } from "@workspace/ui/lib/utils"
 import { BellIcon } from "lucide-react"
 
-import { avatarSrcForUserGender, type UserGender } from "../model/user-gender"
+import type { DashboardUserProfile } from "@/features/user/model/user"
+
+import { UserProfileMenu } from "./user-profile-menu"
 
 export function SidebarInsetHeader({
   pageTitle,
-  userGender,
+  userProfile,
 }: {
   pageTitle: string
-  userGender: UserGender
+  userProfile: DashboardUserProfile
 }) {
-  const avatarSrc = avatarSrcForUserGender(userGender)
   const isMobile = useIsMobile()
 
   return (
@@ -42,19 +38,11 @@ export function SidebarInsetHeader({
             variant="ghost"
             size="icon"
             className="cursor-pointer rounded-full bg-white p-3 shadow-sm"
+            aria-label="Notifications"
           >
             <BellIcon className="size-4 text-[#6C5CE7]" strokeWidth={2.5} />
           </Button>
-          <div className="flex items-center justify-center gap-2">
-            <Avatar>
-              <AvatarImage src={avatarSrc} />
-              <AvatarFallback>O</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col items-start justify-center">
-              <p className="text-sm font-medium">Ananya Sharma</p>
-              <p className="text-xs text-muted-foreground">Class 10</p>
-            </div>
-          </div>
+          <UserProfileMenu profile={userProfile} />
         </div>
       </div>
     </header>

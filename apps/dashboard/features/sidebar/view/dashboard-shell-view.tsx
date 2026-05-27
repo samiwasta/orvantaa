@@ -19,14 +19,15 @@ import { cn } from "@workspace/ui/lib/utils"
 import Image from "next/image"
 import Link from "next/link"
 
+import type { DashboardUserProfile } from "@/features/user/model/user"
+
 import type { DashboardShellController } from "../controller/use-dashboard-shell-controller"
-import type { UserGender } from "../model/user-gender"
 import { DashboardBottomNav } from "./dashboard-bottom-nav"
 import { SidebarInsetHeader } from "./sidebar-inset-header"
 
 export type DashboardShellViewProps = DashboardShellController & {
   defaultSidebarOpen?: boolean
-  userGender: UserGender
+  userProfile: DashboardUserProfile
   children: React.ReactNode
 }
 
@@ -59,7 +60,7 @@ export function DashboardShellView({
   navItems,
   pageTitle,
   defaultSidebarOpen = true,
-  userGender,
+  userProfile,
   children,
 }: DashboardShellViewProps) {
   const isMobile = useIsMobile()
@@ -135,7 +136,7 @@ export function DashboardShellView({
         ) : null}
 
         <SidebarInset>
-          <SidebarInsetHeader pageTitle={pageTitle} userGender={userGender} />
+          <SidebarInsetHeader pageTitle={pageTitle} userProfile={userProfile} />
           <div
             className={cn(
               "flex flex-1 flex-col gap-4 p-4 pt-6 md:p-6",

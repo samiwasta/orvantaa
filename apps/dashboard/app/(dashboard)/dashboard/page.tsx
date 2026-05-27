@@ -1,8 +1,7 @@
 import type { Metadata } from "next"
 
-import { loadDashboardUserFirstName } from "@/features/dashboard/server/load-dashboard-user-first-name"
 import { DashboardGreeting } from "@/features/dashboard/view/dashboard-greeting"
-import { loadDashboardUserGender } from "@/features/sidebar/server/load-dashboard-user-gender"
+import { loadDashboardUserProfile } from "@/features/user/server/load-dashboard-user-profile"
 
 import { DashboardBentoGrid } from "../../../features/dashboard/view/dashboard-bento-grid"
 
@@ -12,8 +11,7 @@ export const metadata: Metadata = {
 }
 
 export default async function DashboardPage() {
-  const firstName = await loadDashboardUserFirstName()
-  const userGender = await loadDashboardUserGender()
+  const { firstName, gender: userGender } = await loadDashboardUserProfile()
   const serverHour = new Date().getHours()
 
   return (
