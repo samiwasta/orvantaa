@@ -25,16 +25,16 @@ export function DashboardBottomNav({
           )}
           aria-label="Primary navigation"
         >
-          <ul className="grid grid-cols-4 gap-0.5 p-1.5">
+          <ul className="flex gap-0.5 overflow-x-auto p-1.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {navItems.map((item) => {
               const Icon = item.icon
               return (
-                <li key={item.href} className="min-w-0">
+                <li key={item.href} className="min-w-[4.25rem] flex-1">
                   <Link
                     href={item.href}
                     prefetch
                     className={cn(
-                      "flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 text-[11px] font-semibold tracking-tight transition-[color,transform,background-color,box-shadow] duration-200 ease-out",
+                      "flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 text-[10px] font-semibold tracking-tight transition-[color,transform,background-color,box-shadow] duration-200 ease-out",
                       "focus-visible:ring-2 focus-visible:ring-[#6C5CE7]/45 focus-visible:outline-none",
                       "active:scale-[0.96]",
                       item.isActive

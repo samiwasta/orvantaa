@@ -3,9 +3,11 @@ import { getTimeBasedSalutation } from "../model/time-based-greeting"
 export function DashboardGreeting({
   firstName,
   serverHour,
+  subtitle,
 }: {
   firstName: string
   serverHour: number
+  subtitle?: string
 }) {
   const salutation = getTimeBasedSalutation(serverHour)
   const name = firstName.trim() || "there"
@@ -16,7 +18,7 @@ export function DashboardGreeting({
         {salutation}, {name}! 👋🏻
       </h2>
       <p className="text-base text-muted-foreground">
-        Let&apos;s start your learning journey.
+        {subtitle ?? "Let's start your learning journey."}
       </p>
     </div>
   )
