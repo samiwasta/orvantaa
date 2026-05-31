@@ -1,17 +1,19 @@
 import type { Metadata } from "next"
 
-import { AdminSectionPlaceholder } from "@/features/admin/view/admin-section-placeholder"
+import { loadClasses } from "@/features/classes/server/load-classes"
+import { ClassesCardsView } from "@/features/classes/view/classes-cards-view"
 
 export const metadata: Metadata = {
   title: "Classes - Orvantaa Admin",
-  description: "Manage classes and sections",
+  description: "View and manage classes and sections",
 }
 
-export default function ClassesPage() {
+export default async function ClassesPage() {
+  const { classes } = await loadClasses()
+
   return (
-    <AdminSectionPlaceholder
-      title="Classes"
-      description="Define classes and sections per school, assign students, and attach subjects."
-    />
+    <div className="flex flex-1 flex-col gap-6">
+      <ClassesCardsView classes={classes} />
+    </div>
   )
 }
