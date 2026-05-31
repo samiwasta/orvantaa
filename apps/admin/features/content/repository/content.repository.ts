@@ -22,6 +22,15 @@ import {
   type TopicInput,
 } from "../model/content-models"
 import { type NoteBlock, parseNoteBlocks } from "../model/note-blocks"
+import {
+  mapPrismaQuizDifficulty,
+  mapQuizDifficultyToPrisma,
+  QUIZ_DIFFICULTY_LABELS,
+  type ContentQuizListItem,
+  type QuizCreateInput,
+  type QuizEditorData,
+  type QuizSaveInput,
+} from "../model/quiz-models"
 
 export class ContentRepository {
   async findSchools(): Promise<ContentSchoolItem[]> {
@@ -459,6 +468,133 @@ export class ContentRepository {
 
   async deleteNote(id: string): Promise<void> {
     await prisma.note.delete({ where: { id } })
+  }
+
+  async findQuizzesForChapter(chapterId: string): Promise<ContentQuizListItem[]> {
+    const rows = await prisma.quiz.findMany({
+      where: { chapterId },
+      orderBy: [{ orderIndex: "asc" }, { title: "asc" }],
+      select: {
+        id: true,
+        chapterId: true,
+        title: true,
+        difficulty: true,
+        orderIndex: true,
+        _count: { select: { questions: true } },
+      },
+    })
+
+    return rows.map((row) => {
+      const difficulty = mapPrismaQuizDifficulty(row.difficulty)
+      return {
+        id: row.id,
+        chapterId: row.chapterId,
+        title: row.title,
+        difficulty,
+        difficultyLabel: QUIZ_DIFFICULTY_LABELS[difficulty],
+        orderIndex: row.orderIndex,
+        questionCount: row._count.questions,
+      }
+    })
+  }
+
+  async findQuizForEditor(id: string): Promise<QuizEditorData | null> {
+    const row = await prisma.quiz.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        chapterId: true,
+        title: true,
+        difficulty: true,
+        questions: {
+          orderBy: [{ orderIndex: "asc" }],
+          select: {
+            prompt: true,
+            explanation: true,
+            options: {
+              orderBy: [{ orderIndex: "asc" }],
+              select: { label: true, isCorrect: true },
+            },
+          },
+        },
+      },
+    })
+    if (!row) return null
+
+    return {
+      id: row.id,
+      chapterId: row.chapterId,
+      title: row.title,
+      difficulty: mapPrismaQuizDifficulty(row.difficulty),
+      questions: row.questions.map((question) => ({
+        prompt: question.prompt,
+        explanation: question.explanation ?? "",
+        options: question.options.map((option) => ({
+          label: option.label,
+          isCorrect: option.isCorrect,
+        })),
+      })),
+    }
+  }
+
+  async createQuiz(chapterId: string, input: QuizCreateInput): Promise<string> {
+    const last = await prisma.quiz.findFirst({
+      where: { chapterId },
+      orderBy: { orderIndex: "desc" },
+      select: { orderIndex: true },
+    })
+    const row = await prisma.quiz.create({
+      data: {
+        chapterId,
+        title: input.title,
+        difficulty: mapQuizDifficultyToPrisma(input.difficulty),
+        orderIndex: (last?.orderIndex ?? -1) + 1,
+      },
+      select: { id: true },
+    })
+    return row.id
+  }
+
+  async saveQuizFull(id: string, input: QuizSaveInput): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      await tx.quiz.update({
+        where: { id },
+        data: {
+          title: input.title,
+          difficulty: mapQuizDifficultyToPrisma(input.difficulty),
+        },
+      })
+
+      await tx.question.deleteMany({ where: { quizId: id } })
+
+      for (let q = 0; q < input.questions.length; q++) {
+        const question = input.questions[q]!
+        const created = await tx.question.create({
+          data: {
+            quizId: id,
+            prompt: question.prompt,
+            explanation: question.explanation?.trim() || null,
+            orderIndex: q,
+          },
+        })
+
+        for (let o = 0; o < question.options.length; o++) {
+          const option = question.options[o]!
+          await tx.option.create({
+            data: {
+              questionId: created.id,
+              label: option.label,
+              isCorrect: option.isCorrect,
+              orderIndex: o,
+            },
+          })
+        }
+      }
+    })
+  }
+
+  async deleteQuiz(id: string): Promise<void> {
+    await prisma.quiz.delete({ where: { id } })
   }
 }
 

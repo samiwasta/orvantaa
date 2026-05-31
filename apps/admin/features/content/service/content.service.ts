@@ -16,6 +16,12 @@ import type {
   TopicInput,
 } from "../model/content-models"
 import type { NoteBlock } from "../model/note-blocks"
+import type {
+  ContentQuizListItem,
+  QuizCreateInput,
+  QuizEditorData,
+  QuizSaveInput,
+} from "../model/quiz-models"
 import {
   type ContentRepository,
   contentRepository,
@@ -142,6 +148,26 @@ export class ContentService {
 
   async deleteNote(id: string): Promise<void> {
     await this.repository.deleteNote(id)
+  }
+
+  async listQuizzesForChapter(chapterId: string): Promise<ContentQuizListItem[]> {
+    return this.repository.findQuizzesForChapter(chapterId)
+  }
+
+  async getQuizForEditor(id: string): Promise<QuizEditorData | null> {
+    return this.repository.findQuizForEditor(id)
+  }
+
+  async createQuiz(chapterId: string, input: QuizCreateInput): Promise<string> {
+    return this.repository.createQuiz(chapterId, input)
+  }
+
+  async saveQuiz(id: string, input: QuizSaveInput): Promise<void> {
+    await this.repository.saveQuizFull(id, input)
+  }
+
+  async deleteQuiz(id: string): Promise<void> {
+    await this.repository.deleteQuiz(id)
   }
 }
 

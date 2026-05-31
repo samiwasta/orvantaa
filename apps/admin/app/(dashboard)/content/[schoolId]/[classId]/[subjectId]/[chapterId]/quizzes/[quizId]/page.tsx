@@ -2,10 +2,9 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { contentHref } from "@/features/content/model/content-nav"
-import { loadContentTopics } from "@/features/content/server/load-content-topics"
+import { loadContentQuiz } from "@/features/content/server/load-content-quiz"
 import { ContentBreadcrumbs } from "@/features/content/view/content-breadcrumbs"
-import { ContentChapterQuizzesView } from "@/features/content/view/content-chapter-quizzes-view"
-import { ContentTopicsView } from "@/features/content/view/content-topics-view"
+import { QuizEditorView } from "@/features/content/view/quiz-editor-view"
 
 type PageProps = {
   params: Promise<{
@@ -13,27 +12,29 @@ type PageProps = {
     classId: string
     subjectId: string
     chapterId: string
+    quizId: string
   }>
 }
 
 export const metadata: Metadata = {
-  title: "Content - Orvantaa Admin",
+  title: "Edit quiz - Orvantaa Admin",
 }
 
-export default async function ContentChapterPage({ params }: PageProps) {
-  const { schoolId, classId, subjectId, chapterId } = await params
-  const data = await loadContentTopics(chapterId)
+export default async function ContentQuizEditorPage({ params }: PageProps) {
+  const { schoolId, classId, subjectId, chapterId, quizId } = await params
+  const data = await loadContentQuiz(quizId)
 
   if (
     !data ||
     data.chapterRef.schoolId !== schoolId ||
     data.chapterRef.classId !== classId ||
-    data.chapterRef.subjectId !== subjectId
+    data.chapterRef.subjectId !== subjectId ||
+    data.chapterRef.id !== chapterId
   ) {
     notFound()
   }
 
-  const { chapterRef, topics, quizzes } = data
+  const { quiz, chapterRef } = data
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -58,10 +59,19 @@ export default async function ContentChapterPage({ params }: PageProps) {
               chapterId
             ),
           },
+          {
+            label: quiz.title,
+            href: contentHref.quiz(
+              schoolId,
+              classId,
+              subjectId,
+              chapterId,
+              quizId
+            ),
+          },
         ]}
       />
-      <ContentTopicsView chapterRef={chapterRef} topics={topics} />
-      <ContentChapterQuizzesView chapterRef={chapterRef} quizzes={quizzes} />
+      <QuizEditorView chapterRef={chapterRef} initialQuiz={quiz} />
     </div>
   )
 }
