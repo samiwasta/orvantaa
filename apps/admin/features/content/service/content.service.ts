@@ -1,13 +1,16 @@
 import type {
   ChapterInput,
   ContentChapterItem,
+  ContentChapterRef,
   ContentClassItem,
   ContentClassRef,
   ContentSchoolItem,
   ContentSchoolRef,
   ContentSubjectItem,
   ContentSubjectRef,
+  ContentTopicItem,
   SubjectInput,
+  TopicInput,
 } from "../model/content-models"
 import {
   type ContentRepository,
@@ -83,6 +86,32 @@ export class ContentService {
       )
     }
     await this.repository.deleteChapter(id)
+  }
+
+  async getChapterRef(chapterId: string): Promise<ContentChapterRef | null> {
+    return this.repository.findChapterRef(chapterId)
+  }
+
+  async listTopicsForChapter(chapterId: string): Promise<ContentTopicItem[]> {
+    return this.repository.findTopicsForChapter(chapterId)
+  }
+
+  async createTopic(chapterId: string, input: TopicInput): Promise<void> {
+    await this.repository.createTopic(chapterId, input)
+  }
+
+  async updateTopic(id: string, input: TopicInput): Promise<void> {
+    await this.repository.updateTopic(id, input)
+  }
+
+  async deleteTopic(id: string): Promise<void> {
+    const noteCount = await this.repository.countTopicNotes(id)
+    if (noteCount > 0) {
+      throw new Error(
+        `Cannot delete a topic with ${noteCount} note${noteCount === 1 ? "" : "s"}. Remove them first.`
+      )
+    }
+    await this.repository.deleteTopic(id)
   }
 }
 
