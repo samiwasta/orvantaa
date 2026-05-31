@@ -1,17 +1,19 @@
 import type { Metadata } from "next"
 
-import { AdminSectionPlaceholder } from "@/features/admin/view/admin-section-placeholder"
+import { loadSchools } from "@/features/schools/server/load-schools"
+import { SchoolsTable } from "@/features/schools/view/schools-table"
 
 export const metadata: Metadata = {
   title: "Schools - Orvantaa Admin",
-  description: "Manage schools",
+  description: "View and manage schools",
 }
 
-export default function SchoolsPage() {
+export default async function SchoolsPage() {
+  const { schools } = await loadSchools()
+
   return (
-    <AdminSectionPlaceholder
-      title="Schools"
-      description="Add schools, link them to boards, and organize classes under each school."
-    />
+    <div className="flex flex-1 flex-col gap-6">
+      <SchoolsTable schools={schools} />
+    </div>
   )
 }
