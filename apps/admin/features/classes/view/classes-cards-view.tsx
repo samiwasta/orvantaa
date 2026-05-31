@@ -22,11 +22,13 @@ import {
   filterClasses,
   type ClassGradeSummary,
 } from "../model/classes-filters"
-import type { ClassListItem } from "../model/class-list-item"
+import type { ClassListItem, SchoolOption } from "../model/class-list-item"
 import { ClassDetailSheet } from "./class-detail-sheet"
+import { ClassFormDialog } from "./class-form-dialog"
 
 type ClassesCardsViewProps = {
   classes: ClassListItem[]
+  schoolOptions: SchoolOption[]
 }
 
 function ClassCard({
@@ -93,7 +95,10 @@ function ClassCard({
   )
 }
 
-export function ClassesCardsView({ classes }: ClassesCardsViewProps) {
+export function ClassesCardsView({
+  classes,
+  schoolOptions,
+}: ClassesCardsViewProps) {
   const [search, setSearch] = useState("")
   const [schoolFilter, setSchoolFilter] = useState(ALL_SCHOOLS)
   const [boardFilter, setBoardFilter] = useState(ALL_BOARDS)
@@ -101,8 +106,9 @@ export function ClassesCardsView({ classes }: ClassesCardsViewProps) {
     null
   )
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
 
-  const { schools: schoolOptions, boards: boardOptions } = useMemo(
+  const { schools: filterSchoolOptions, boards: boardOptions } = useMemo(
     () => buildFilterOptions(classes),
     [classes]
   )
@@ -161,7 +167,7 @@ export function ClassesCardsView({ classes }: ClassesCardsViewProps) {
               aria-label="Filter by school"
             >
               <option value={ALL_SCHOOLS}>All schools</option>
-              {schoolOptions.map((school) => (
+              {filterSchoolOptions.map((school) => (
                 <option key={school.id} value={school.id}>
                   {school.name}
                 </option>
@@ -193,6 +199,7 @@ export function ClassesCardsView({ classes }: ClassesCardsViewProps) {
             </p>
             <Button
               type="button"
+              onClick={() => setCreateOpen(true)}
               className="h-10 rounded-xl bg-[#6C5CE7] px-4 text-sm font-semibold text-white hover:bg-[#6C5CE7]/90"
             >
               <Plus className="size-4" aria-hidden />
@@ -228,6 +235,13 @@ export function ClassesCardsView({ classes }: ClassesCardsViewProps) {
         summary={selectedSummary}
         open={sheetOpen}
         onOpenChange={setSheetOpen}
+        schoolOptions={schoolOptions}
+      />
+
+      <ClassFormDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        schoolOptions={schoolOptions}
       />
     </>
   )

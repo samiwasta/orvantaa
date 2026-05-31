@@ -3,6 +3,9 @@ import { cache } from "react"
 import { classService } from "../service/class.service"
 
 export const loadClasses = cache(async () => {
-  const classes = await classService.listClasses()
-  return { classes, total: classes.length }
+  const [classes, schoolOptions] = await Promise.all([
+    classService.listClasses(),
+    classService.listSchoolOptions(),
+  ])
+  return { classes, schoolOptions, total: classes.length }
 })
