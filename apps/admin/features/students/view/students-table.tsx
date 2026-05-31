@@ -1,15 +1,27 @@
 "use client"
 
 import { Button } from "@workspace/ui/components/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu"
 import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
-import { Eye, MoreHorizontal, Pencil, Search, UserPlus } from "lucide-react"
+import { MoreHorizontal, Pencil, Search, Trash2, UserPlus } from "lucide-react"
 import { useMemo, useState } from "react"
 
-import type { StudentListItem } from "../model/student-list-item"
+import { useActionRunner } from "@/lib/actions/use-action-runner"
+import { ConfirmDialog } from "@/features/shared/view/confirm-dialog"
+
+import type { SectionOption, StudentListItem } from "../model/student-list-item"
+import { deleteStudentAction } from "../server/actions"
+import { StudentFormDialog } from "./student-form-dialog"
 
 type StudentsTableProps = {
   students: StudentListItem[]
+  sectionOptions: SectionOption[]
 }
 
 function CellPlaceholder() {
@@ -41,13 +53,34 @@ function filterStudents(students: StudentListItem[], query: string): StudentList
   })
 }
 
-export function StudentsTable({ students }: StudentsTableProps) {
+export function StudentsTable({ students, sectionOptions }: StudentsTableProps) {
   const [search, setSearch] = useState("")
+  const [formOpen, setFormOpen] = useState(false)
+  const [editing, setEditing] = useState<StudentListItem | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<StudentListItem | null>(null)
 
   const filtered = useMemo(
     () => filterStudents(students, search),
     [students, search]
   )
+
+  const { run: runDelete, pending: deletePending } = useActionRunner(
+    deleteStudentAction,
+    {
+      successMessage: "Student deleted",
+      onSuccess: () => setDeleteTarget(null),
+    }
+  )
+
+  function openCreate() {
+    setEditing(null)
+    setFormOpen(true)
+  }
+
+  function openEdit(student: StudentListItem) {
+    setEditing(student)
+    setFormOpen(true)
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -74,6 +107,7 @@ export function StudentsTable({ students }: StudentsTableProps) {
           </p>
           <Button
             type="button"
+            onClick={openCreate}
             className="h-10 rounded-xl bg-[#6C5CE7] px-4 text-sm font-semibold text-white hover:bg-[#6C5CE7]/90"
           >
             <UserPlus className="size-4" aria-hidden />
@@ -169,34 +203,31 @@ export function StudentsTable({ students }: StudentsTableProps) {
                       )}
                     >
                       <div className="inline-flex items-center justify-end gap-0.5">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="size-8 rounded-lg text-muted-foreground hover:bg-[#6C5CE7]/10 hover:text-[#6C5CE7]"
-                          aria-label={`View ${student.fullName}`}
-                          title="View student"
-                        >
-                          <Eye className="size-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="size-8 rounded-lg text-muted-foreground hover:bg-[#6C5CE7]/10 hover:text-[#6C5CE7]"
-                          aria-label={`Edit ${student.fullName}`}
-                          title="Edit student"
-                        >
-                          <Pencil className="size-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-8 rounded-lg text-muted-foreground hover:bg-muted"
-                          aria-label={`More actions for ${student.fullName}`}
-                        >
-                          <MoreHorizontal className="size-4" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 rounded-lg text-muted-foreground hover:bg-muted"
+                              aria-label={`Actions for ${student.fullName}`}
+                            >
+                              <MoreHorizontal className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openEdit(student)}>
+                              <Pencil className="size-4" aria-hidden />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onClick={() => setDeleteTarget(student)}
+                            >
+                              <Trash2 className="size-4" aria-hidden />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </td>
                   </tr>
@@ -206,6 +237,32 @@ export function StudentsTable({ students }: StudentsTableProps) {
           </table>
         </div>
       </div>
+
+      <StudentFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        student={editing}
+        sectionOptions={sectionOptions}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null)
+        }}
+        title="Delete student"
+        description={
+          deleteTarget
+            ? `This permanently deletes ${deleteTarget.fullName}'s account. This cannot be undone.`
+            : undefined
+        }
+        confirmLabel="Delete"
+        destructive
+        pending={deletePending}
+        onConfirm={() => {
+          if (deleteTarget) runDelete(deleteTarget.id)
+        }}
+      />
     </div>
   )
 }

@@ -9,11 +9,11 @@ export const metadata: Metadata = {
 }
 
 export default async function StudentsPage() {
-  const { students } = await loadStudents()
+  const { students, sectionOptions } = await loadStudents()
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <StudentsTable students={students} />
+      <StudentsTable students={students} sectionOptions={sectionOptions} />
     </div>
   )
 }
