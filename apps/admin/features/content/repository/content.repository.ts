@@ -3,15 +3,18 @@ import { prisma } from "@/lib/db"
 import {
   type ChapterInput,
   type ContentChapterItem,
+  type ContentChapterRef,
   type ContentClassItem,
   type ContentClassRef,
   type ContentSchoolItem,
   type ContentSchoolRef,
   type ContentSubjectItem,
   type ContentSubjectRef,
+  type ContentTopicItem,
   formatClassDisplay,
   formatSchoolCode,
   type SubjectInput,
+  type TopicInput,
 } from "../model/content-models"
 
 export class ContentRepository {
@@ -225,6 +228,96 @@ export class ContentRepository {
 
   async countChapterTopics(id: string): Promise<number> {
     return prisma.topic.count({ where: { chapterId: id } })
+  }
+
+  async findChapterRef(chapterId: string): Promise<ContentChapterRef | null> {
+    const row = await prisma.chapter.findUnique({
+      where: { id: chapterId },
+      select: {
+        id: true,
+        title: true,
+        number: true,
+        subject: {
+          select: {
+            id: true,
+            title: true,
+            class: {
+              select: {
+                id: true,
+                name: true,
+                school: { select: { id: true, name: true } },
+              },
+            },
+          },
+        },
+      },
+    })
+    if (!row) return null
+    return {
+      id: row.id,
+      title: row.title,
+      number: row.number,
+      subjectId: row.subject.id,
+      subjectTitle: row.subject.title,
+      classId: row.subject.class.id,
+      classDisplayName: formatClassDisplay(row.subject.class.name),
+      schoolId: row.subject.class.school.id,
+      schoolName: row.subject.class.school.name,
+    }
+  }
+
+  async findTopicsForChapter(chapterId: string): Promise<ContentTopicItem[]> {
+    const rows = await prisma.topic.findMany({
+      where: { chapterId },
+      orderBy: [{ orderIndex: "asc" }, { title: "asc" }],
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        orderIndex: true,
+        _count: { select: { notes: true } },
+      },
+    })
+
+    return rows.map((row) => ({
+      id: row.id,
+      chapterId,
+      title: row.title,
+      slug: row.slug,
+      orderIndex: row.orderIndex,
+      noteCount: row._count.notes,
+    }))
+  }
+
+  async createTopic(chapterId: string, input: TopicInput): Promise<void> {
+    const last = await prisma.topic.findFirst({
+      where: { chapterId },
+      orderBy: { orderIndex: "desc" },
+      select: { orderIndex: true },
+    })
+    await prisma.topic.create({
+      data: {
+        chapterId,
+        title: input.title,
+        slug: input.slug,
+        orderIndex: (last?.orderIndex ?? -1) + 1,
+      },
+    })
+  }
+
+  async updateTopic(id: string, input: TopicInput): Promise<void> {
+    await prisma.topic.update({
+      where: { id },
+      data: { title: input.title, slug: input.slug },
+    })
+  }
+
+  async deleteTopic(id: string): Promise<void> {
+    await prisma.topic.delete({ where: { id } })
+  }
+
+  async countTopicNotes(id: string): Promise<number> {
+    return prisma.note.count({ where: { topicId: id } })
   }
 }
 

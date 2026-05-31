@@ -45,6 +45,27 @@ export type ContentSubjectRef = {
   schoolName: string
 }
 
+export type ContentTopicItem = {
+  id: string
+  chapterId: string
+  title: string
+  slug: string
+  orderIndex: number
+  noteCount: number
+}
+
+export type ContentChapterRef = {
+  id: string
+  title: string
+  number: number
+  subjectId: string
+  subjectTitle: string
+  classId: string
+  classDisplayName: string
+  schoolId: string
+  schoolName: string
+}
+
 export type ContentSchoolRef = {
   id: string
   name: string
@@ -116,3 +137,22 @@ export const chapterInputSchema = z.object({
 })
 
 export type ChapterInput = z.infer<typeof chapterInputSchema>
+
+export const topicInputSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, "Title is required")
+    .max(160, "Title is too long"),
+  slug: z
+    .string()
+    .trim()
+    .min(1, "Slug is required")
+    .max(160, "Slug is too long")
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      "Use lowercase letters, numbers, and hyphens"
+    ),
+})
+
+export type TopicInput = z.infer<typeof topicInputSchema>
