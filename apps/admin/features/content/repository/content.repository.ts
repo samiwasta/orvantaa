@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client"
+
 import { prisma } from "@/lib/db"
 
 import {
@@ -10,12 +12,16 @@ import {
   type ContentSchoolRef,
   type ContentSubjectItem,
   type ContentSubjectRef,
+  type ContentNoteItem,
+  type ContentTopicDetailRef,
   type ContentTopicItem,
   formatClassDisplay,
   formatSchoolCode,
+  type NoteInput,
   type SubjectInput,
   type TopicInput,
 } from "../model/content-models"
+import { type NoteBlock, parseNoteBlocks } from "../model/note-blocks"
 
 export class ContentRepository {
   async findSchools(): Promise<ContentSchoolItem[]> {
@@ -318,6 +324,141 @@ export class ContentRepository {
 
   async countTopicNotes(id: string): Promise<number> {
     return prisma.note.count({ where: { topicId: id } })
+  }
+
+  async findTopicDetailRef(topicId: string): Promise<ContentTopicDetailRef | null> {
+    const row = await prisma.topic.findUnique({
+      where: { id: topicId },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        chapter: {
+          select: {
+            id: true,
+            title: true,
+            number: true,
+            subject: {
+              select: {
+                id: true,
+                title: true,
+                class: {
+                  select: {
+                    id: true,
+                    name: true,
+                    school: { select: { id: true, name: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+    if (!row) return null
+    return {
+      topicId: row.id,
+      topicTitle: row.title,
+      topicSlug: row.slug,
+      id: row.chapter.id,
+      title: row.chapter.title,
+      number: row.chapter.number,
+      subjectId: row.chapter.subject.id,
+      subjectTitle: row.chapter.subject.title,
+      classId: row.chapter.subject.class.id,
+      classDisplayName: formatClassDisplay(row.chapter.subject.class.name),
+      schoolId: row.chapter.subject.class.school.id,
+      schoolName: row.chapter.subject.class.school.name,
+    }
+  }
+
+  async findNotesForTopic(topicId: string): Promise<ContentNoteItem[]> {
+    const rows = await prisma.note.findMany({
+      where: { topicId },
+      orderBy: [{ orderIndex: "asc" }, { title: "asc" }],
+      select: {
+        id: true,
+        topicId: true,
+        title: true,
+        orderIndex: true,
+        blocks: true,
+      },
+    })
+
+    return rows.map((row) => ({
+      id: row.id,
+      topicId: row.topicId,
+      title: row.title,
+      orderIndex: row.orderIndex,
+      blockCount: Array.isArray(row.blocks) ? row.blocks.length : 0,
+    }))
+  }
+
+  async findNoteById(id: string): Promise<{
+    id: string
+    topicId: string
+    title: string
+    orderIndex: number
+    blocks: NoteBlock[]
+  } | null> {
+    const row = await prisma.note.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        topicId: true,
+        title: true,
+        orderIndex: true,
+        blocks: true,
+      },
+    })
+    if (!row) return null
+    return {
+      id: row.id,
+      topicId: row.topicId,
+      title: row.title,
+      orderIndex: row.orderIndex,
+      blocks: parseNoteBlocks(row.blocks),
+    }
+  }
+
+  async createNote(topicId: string, input: NoteInput): Promise<string> {
+    const last = await prisma.note.findFirst({
+      where: { topicId },
+      orderBy: { orderIndex: "desc" },
+      select: { orderIndex: true },
+    })
+    const row = await prisma.note.create({
+      data: {
+        topicId,
+        title: input.title,
+        orderIndex: (last?.orderIndex ?? -1) + 1,
+        blocks: [],
+      },
+      select: { id: true },
+    })
+    return row.id
+  }
+
+  async updateNote(
+    id: string,
+    title: string,
+    blocks: NoteBlock[]
+  ): Promise<void> {
+    await prisma.note.update({
+      where: { id },
+      data: { title, blocks: blocks as Prisma.InputJsonValue },
+    })
+  }
+
+  async updateNoteTitle(id: string, input: NoteInput): Promise<void> {
+    await prisma.note.update({
+      where: { id },
+      data: { title: input.title },
+    })
+  }
+
+  async deleteNote(id: string): Promise<void> {
+    await prisma.note.delete({ where: { id } })
   }
 }
 

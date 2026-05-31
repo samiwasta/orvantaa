@@ -8,10 +8,14 @@ import type {
   ContentSchoolRef,
   ContentSubjectItem,
   ContentSubjectRef,
+  ContentNoteItem,
+  ContentTopicDetailRef,
   ContentTopicItem,
+  NoteInput,
   SubjectInput,
   TopicInput,
 } from "../model/content-models"
+import type { NoteBlock } from "../model/note-blocks"
 import {
   type ContentRepository,
   contentRepository,
@@ -112,6 +116,32 @@ export class ContentService {
       )
     }
     await this.repository.deleteTopic(id)
+  }
+
+  async getTopicDetailRef(
+    topicId: string
+  ): Promise<ContentTopicDetailRef | null> {
+    return this.repository.findTopicDetailRef(topicId)
+  }
+
+  async listNotesForTopic(topicId: string): Promise<ContentNoteItem[]> {
+    return this.repository.findNotesForTopic(topicId)
+  }
+
+  async getNote(id: string) {
+    return this.repository.findNoteById(id)
+  }
+
+  async createNote(topicId: string, input: NoteInput): Promise<string> {
+    return this.repository.createNote(topicId, input)
+  }
+
+  async saveNote(id: string, title: string, blocks: NoteBlock[]): Promise<void> {
+    await this.repository.updateNote(id, title, blocks)
+  }
+
+  async deleteNote(id: string): Promise<void> {
+    await this.repository.deleteNote(id)
   }
 }
 
