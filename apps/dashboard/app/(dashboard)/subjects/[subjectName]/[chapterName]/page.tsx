@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation"
 
-import { getChapterBySlug } from "@/features/subjects/model/chapter-data"
-import { getSubjectBySlug } from "@/features/subjects/model/subject-cards"
+import { loadChapterDetail } from "@/features/curriculum/server/load-chapter-detail"
 import { ChapterDetailView } from "@/features/subjects/view/chapter-detail-view"
 
 type ChapterDetailPageProps = {
@@ -12,11 +11,16 @@ export default async function ChapterDetailPage({
   params,
 }: ChapterDetailPageProps) {
   const { subjectName, chapterName } = await params
-  const subject = getSubjectBySlug(subjectName)
-  if (!subject) notFound()
+  const detail = await loadChapterDetail(subjectName, chapterName)
+  if (!detail) notFound()
 
-  const chapter = getChapterBySlug(subjectName, chapterName)
-  if (!chapter) notFound()
-
-  return <ChapterDetailView subjectSlug={subjectName} chapter={chapter} />
+  return (
+    <ChapterDetailView
+      subjectSlug={subjectName}
+      chapter={detail.chapter}
+      topics={detail.topics}
+      quizzes={detail.quizzes}
+      objectives={detail.objectives}
+    />
+  )
 }

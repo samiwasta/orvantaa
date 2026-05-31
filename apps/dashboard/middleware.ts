@@ -7,6 +7,11 @@ import {
   PUBLIC_PATH_PREFIXES,
 } from "@/lib/auth/constants"
 import { verifyAccessToken } from "@/lib/auth/jwt"
+import {
+  clearAuthCookie,
+  forbiddenAuthResponse,
+  isStudentSession,
+} from "@/lib/auth/middleware-auth"
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATH_PREFIXES.some(
@@ -38,11 +43,14 @@ export async function middleware(request: NextRequest) {
 
   if (pathname === "/") {
     return NextResponse.redirect(
-      new URL(session ? "/dashboard" : "/auth", request.url)
+      new URL(isStudentSession(session) ? "/dashboard" : "/auth", request.url)
     )
   }
 
   if (session && isPublicPath(pathname)) {
+    if (!isStudentSession(session)) {
+      return forbiddenAuthResponse(request, { clearCookie: true, token })
+    }
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 
@@ -58,9 +66,13 @@ export async function middleware(request: NextRequest) {
 
     const response = NextResponse.redirect(new URL("/auth", request.url))
     if (token) {
-      response.cookies.delete(AUTH_COOKIE_NAME)
+      clearAuthCookie(response)
     }
     return response
+  }
+
+  if (session && isProtected && !isStudentSession(session)) {
+    return forbiddenAuthResponse(request, { clearCookie: true, token })
   }
 
   return NextResponse.next()

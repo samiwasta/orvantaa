@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation"
 
-import { resolveNotePage } from "@/features/subjects/model/note-data"
-import { getSubjectBySlug } from "@/features/subjects/model/subject-cards"
+import { loadNotePage } from "@/features/curriculum/server/load-note-page"
 import { NoteView } from "@/features/subjects/view/note-view"
 
 type NotePageProps = {
@@ -16,12 +15,15 @@ type NotePageProps = {
 export default async function NotePage({ params }: NotePageProps) {
   const { subjectName, chapterName, topicName, noteid } = await params
 
-  if (!getSubjectBySlug(subjectName)) notFound()
-
-  const resolved = resolveNotePage(subjectName, chapterName, topicName, noteid)
+  const resolved = await loadNotePage(
+    subjectName,
+    chapterName,
+    topicName,
+    noteid
+  )
   if (!resolved) notFound()
 
-  const { chapter, topic, note } = resolved
+  const { chapter, topic, note, navigation } = resolved
 
   return (
     <NoteView
@@ -29,6 +31,7 @@ export default async function NotePage({ params }: NotePageProps) {
       chapter={chapter}
       topic={topic}
       note={note}
+      navigation={navigation}
     />
   )
 }

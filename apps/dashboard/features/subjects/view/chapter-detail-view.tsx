@@ -26,14 +26,8 @@ import type {
   TopicItem,
   TopicStatus,
 } from "../model/chapter-data"
-import {
-  chapterSlug,
-  getLearningObjectives,
-  getQuizzesForChapter,
-  getTopicsForChapter,
-} from "../model/chapter-data"
-import { topicFirstNoteHref } from "../model/note-data"
-import { quizHref } from "../model/quiz-data"
+import { chapterSlug } from "../model/chapter-data"
+import { quizHref, topicFirstNoteHref } from "../model/content-navigation"
 
 // ── Circular progress ─────────────────────────────────────────────────────────
 
@@ -156,8 +150,13 @@ function TopicRow({
   topic: TopicItem
   index: number
 }) {
-  const locked = topic.status === "not_started"
-  const href = topicFirstNoteHref(subjectSlug, chapterSlugParam, topic.id)
+  const locked = topic.status === "not_started" || !topic.firstNoteId
+  const topicHref = topicFirstNoteHref(
+    subjectSlug,
+    chapterSlugParam,
+    topic.id,
+    topic.firstNoteId
+  )
 
   const rowClassName = cn(
     "group flex items-center gap-4 rounded-xl px-4 py-4 transition-all",
@@ -217,12 +216,12 @@ function TopicRow({
     </>
   )
 
-  if (locked) {
+  if (locked || !topicHref) {
     return <div className={rowClassName}>{inner}</div>
   }
 
   return (
-    <Link href={href} className={rowClassName}>
+    <Link href={topicHref} className={rowClassName}>
       {inner}
     </Link>
   )
@@ -364,18 +363,21 @@ type Tab = "notes" | "quiz"
 type ChapterDetailViewProps = {
   subjectSlug: string
   chapter: ChapterItem
+  topics: TopicItem[]
+  quizzes: QuizItem[]
+  objectives: string[]
 }
 
 export function ChapterDetailView({
   subjectSlug,
   chapter,
+  topics,
+  quizzes,
+  objectives,
 }: ChapterDetailViewProps) {
   const [tab, setTab] = useState<Tab>("notes")
 
   const chSlug = chapterSlug(chapter)
-  const objectives = getLearningObjectives(chapter)
-  const topics = getTopicsForChapter(chapter)
-  const quizzes = getQuizzesForChapter(chapter)
 
   const completedTopics = topics.filter((t) => t.status === "completed").length
   const completedQuizzes = quizzes.filter(

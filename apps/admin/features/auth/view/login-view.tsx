@@ -9,17 +9,21 @@ import Image from "next/image"
 
 import type { LoginController } from "../controller/use-login-controller"
 
-export type LoginViewProps = LoginController
+export type LoginViewProps = LoginController & {
+  initialFormError?: string | null
+}
 
 export function LoginView({
   showPassword,
   toggleShowPassword,
   fieldErrors,
   formError,
+  initialFormError,
   clearFieldError,
   onSubmit,
   isLoggingIn,
 }: LoginViewProps) {
+  const displayError = formError ?? initialFormError
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-[#f4f4f8] px-4 py-10">
       <div className="w-full max-w-[400px] rounded-2xl border border-border/60 bg-white p-8 shadow-[0_8px_30px_rgba(15,23,42,0.06)] sm:p-10">
@@ -127,12 +131,12 @@ export function LoginView({
             </div>
           </div>
 
-          {formError ? (
+          {displayError ? (
             <p
               role="alert"
               className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
             >
-              {formError}
+              {displayError}
             </p>
           ) : null}
 

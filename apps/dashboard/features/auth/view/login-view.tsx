@@ -33,17 +33,21 @@ const features = [
   },
 ] as const
 
-export type LoginViewProps = LoginController
+export type LoginViewProps = LoginController & {
+  initialFormError?: string | null
+}
 
 export function LoginView({
   showPassword,
   toggleShowPassword,
   fieldErrors,
   formError,
+  initialFormError,
   clearFieldError,
   onSubmit,
   isLoggingIn,
 }: LoginViewProps) {
+  const displayError = formError ?? initialFormError
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F3F3FF] p-4 lg:p-6 xl:p-8">
       <div className="flex w-full max-w-[960px] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] ring-1 ring-black/5 md:flex-row md:rounded-3xl">
@@ -205,12 +209,12 @@ export function LoginView({
                 </div>
               </div>
 
-              {formError ? (
+              {displayError ? (
                 <p
                   role="alert"
                   className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
                 >
-                  {formError}
+                  {displayError}
                 </p>
               ) : null}
 

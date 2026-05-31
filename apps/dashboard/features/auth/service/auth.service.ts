@@ -36,6 +36,10 @@ export class AuthService {
       throw new InvalidCredentialsError()
     }
 
+    if (user.role !== "student") {
+      throw new InvalidCredentialsError()
+    }
+
     const accessToken = await signAccessToken(
       {
         sub: user.id,

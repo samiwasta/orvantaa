@@ -7,7 +7,6 @@ import Image from "next/image"
 import Link from "next/link"
 
 import type { SubjectCardItem } from "../model/subject-cards"
-import { subjectCards } from "../model/subject-cards"
 
 function SubjectCard({ subject }: { subject: SubjectCardItem }) {
   const percent = Math.min(
@@ -61,11 +60,23 @@ function SubjectCard({ subject }: { subject: SubjectCardItem }) {
   )
 }
 
-export function SubjectsView() {
+type SubjectsViewProps = {
+  subjects: SubjectCardItem[]
+}
+
+export function SubjectsView({ subjects }: SubjectsViewProps) {
+  if (subjects.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        No subjects are available for your class yet.
+      </p>
+    )
+  }
+
   return (
     <div className="w-full">
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {subjectCards.map((subject) => (
+        {subjects.map((subject) => (
           <SubjectCard key={subject.id} subject={subject} />
         ))}
       </div>

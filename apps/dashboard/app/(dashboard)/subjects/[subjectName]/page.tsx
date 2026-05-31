@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation"
 
-import { getChaptersForSubject } from "@/features/subjects/model/chapter-data"
-import { getSubjectBySlug } from "@/features/subjects/model/subject-cards"
+import { loadSubjectChapters } from "@/features/curriculum/server/load-subject-chapters"
 import { ChapterCardsView } from "@/features/subjects/view/chapter-cards-view"
 
 type SubjectChaptersPageProps = {
@@ -12,11 +11,8 @@ export default async function SubjectChaptersPage({
   params,
 }: SubjectChaptersPageProps) {
   const { subjectName } = await params
-  const subject = getSubjectBySlug(subjectName)
-  if (!subject) notFound()
+  const data = await loadSubjectChapters(subjectName)
+  if (!data) notFound()
 
-  const chapters = getChaptersForSubject(subjectName)
-  if (!chapters?.length) notFound()
-
-  return <ChapterCardsView chapters={chapters} subjectSlug={subjectName} />
+  return <ChapterCardsView chapters={data.chapters} subjectSlug={subjectName} />
 }

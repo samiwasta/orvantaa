@@ -24,3 +24,11 @@ export async function requireAuthSession(): Promise<AccessTokenPayload> {
   }
   return session
 }
+
+export async function requireAdminSession(): Promise<AccessTokenPayload> {
+  const session = await requireAuthSession()
+  if (session.role !== "admin") {
+    throw new Error("Forbidden")
+  }
+  return session
+}

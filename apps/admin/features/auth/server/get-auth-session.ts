@@ -1,1 +1,5 @@
-export { getAuthSession, requireAuthSession } from "@/lib/auth/session"
+export {
+  getAuthSession,
+  requireAdminSession,
+  requireAuthSession,
+} from "@/lib/auth/session"

@@ -21,8 +21,9 @@ import { useState } from "react"
 
 import type { ChapterItem, TopicItem } from "../model/chapter-data"
 import { chapterSlug } from "../model/chapter-data"
+import { noteHref } from "../model/content-navigation"
 import type { NoteBlock, NoteContent } from "../model/note-data"
-import { getNoteNavigation, noteHref } from "../model/note-data"
+import type { buildNoteNavigation } from "../model/note-navigation"
 import { NoteAiTutorCard } from "./note-ai-tutor-card"
 import { NoteAiTutorFab } from "./note-ai-tutor-fab"
 
@@ -149,6 +150,30 @@ function NoteBlockRenderer({ block }: { block: NoteBlock }) {
       )
     case "list":
       return <FunList items={block.items} />
+    case "callout":
+      return (
+        <div className="rounded-xl border-l-4 border-[#6C5CE7] bg-violet-50 px-4 py-3.5 text-sm leading-relaxed text-foreground/90">
+          {block.text}
+        </div>
+      )
+    case "quote":
+      return (
+        <blockquote className="border-l-2 border-violet-200 pl-4 text-sm text-muted-foreground italic sm:text-[15px]">
+          {block.text}
+        </blockquote>
+      )
+    case "image":
+      return (
+        <figure className="overflow-hidden rounded-xl ring-1 ring-black/5">
+          <Image
+            src={block.url}
+            alt={block.alt ?? ""}
+            width={800}
+            height={450}
+            className="h-auto w-full object-cover"
+          />
+        </figure>
+      )
     default:
       return null
   }
@@ -185,11 +210,18 @@ type NoteViewProps = {
   chapter: ChapterItem
   topic: TopicItem
   note: NoteContent
+  navigation: ReturnType<typeof buildNoteNavigation>
 }
 
-export function NoteView({ subjectSlug, chapter, topic, note }: NoteViewProps) {
+export function NoteView({
+  subjectSlug,
+  chapter,
+  topic,
+  note,
+  navigation,
+}: NoteViewProps) {
   const chSlug = chapterSlug(chapter)
-  const { prev, next } = getNoteNavigation(chSlug, topic.id, note.id)
+  const { prev, next } = navigation
   const chapterHref = `/subjects/${subjectSlug}/${chSlug}`
   const progressPct = Math.round((note.lessonNumber / note.totalLessons) * 100)
   const showTopicBadge =
