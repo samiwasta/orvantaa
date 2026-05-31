@@ -9,11 +9,6 @@ import {
   Users,
 } from "lucide-react"
 
-import {
-  decodeContentClassSlug,
-  formatContentClassPageTitle,
-} from "@/features/content/model/content-class-slug"
-
 export type DashboardNavItemDefinition = {
   title: string
   href: string
@@ -57,10 +52,7 @@ export function resolveDashboardPageTitle(pathname: string): string {
   }
 
   if (pathname.startsWith("/content/") && pathname !== "/content") {
-    const slug = pathname.slice("/content/".length).split("/")[0]
-    if (slug) {
-      return `${formatContentClassPageTitle(decodeContentClassSlug(slug))} — Content`
-    }
+    return "Content"
   }
 
   const exact = PAGE_TITLES[pathname]

@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
-import { loadContentClasses } from "@/features/content/server/load-content-classes"
-import { ContentClassesCardsView } from "@/features/content/view/content-classes-cards-view"
+import { loadContentSchools } from "@/features/content/server/load-content-schools"
+import { ContentSchoolsView } from "@/features/content/view/content-schools-view"
 
 export const metadata: Metadata = {
   title: "Content - Orvantaa Admin",
@@ -9,11 +9,11 @@ export const metadata: Metadata = {
 }
 
 export default async function ContentPage() {
-  const { classes } = await loadContentClasses()
+  const { schools } = await loadContentSchools()
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <ContentClassesCardsView classes={classes} />
+      <ContentSchoolsView schools={schools} />
     </div>
   )
 }

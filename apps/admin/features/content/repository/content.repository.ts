@@ -1,171 +1,145 @@
 import { prisma } from "@/lib/db"
 
 import {
-  formatClassDisplayName,
-  formatSchoolCodeForClass,
-} from "@/features/classes/model/class-list-item"
-
-import { decodeContentClassSlug } from "../model/content-class-slug"
-import type { ContentClassInstance } from "../model/content-class-item"
-import type {
-  ContentClassSubjectsResult,
-  ContentSubjectListItem,
-} from "../model/content-subject-list-item"
-
-function compareContentInstances(
-  a: ContentClassInstance,
-  b: ContentClassInstance
-): number {
-  const school = a.schoolName.localeCompare(b.schoolName)
-  if (school !== 0) return school
-
-  const levelA = parseInt(a.className.match(/\d+/)?.[0] ?? "999", 10)
-  const levelB = parseInt(b.className.match(/\d+/)?.[0] ?? "999", 10)
-  if (levelA !== levelB) return levelA - levelB
-
-  return a.className.localeCompare(b.className)
-}
+  type ContentClassItem,
+  type ContentClassRef,
+  type ContentSchoolItem,
+  type ContentSchoolRef,
+  type ContentSubjectItem,
+  formatClassDisplay,
+  formatSchoolCode,
+  type SubjectInput,
+} from "../model/content-models"
 
 export class ContentRepository {
-  async findClassesForContent(): Promise<ContentClassInstance[]> {
-    const rows = await prisma.class.findMany({
+  async findSchools(): Promise<ContentSchoolItem[]> {
+    const rows = await prisma.school.findMany({
+      orderBy: { name: "asc" },
       select: {
         id: true,
         name: true,
-        sections: { select: { name: true } },
-        school: {
-          select: {
-            id: true,
-            name: true,
-            code: true,
-            board: { select: { name: true } },
-          },
-        },
-        _count: { select: { subjects: true } },
-        subjects: {
-          select: {
-            _count: { select: { chapters: true } },
-          },
-        },
+        code: true,
+        board: { select: { name: true } },
+        _count: { select: { classes: true } },
+        classes: { select: { _count: { select: { subjects: true } } } },
       },
     })
 
-    const items: ContentClassInstance[] = rows.map((row) => ({
+    return rows.map((row) => ({
       id: row.id,
-      schoolId: row.school.id,
-      className: row.name,
-      classDisplayName: formatClassDisplayName(row.name),
-      sectionNames: row.sections
-        .map((section) => section.name.trim())
-        .filter(Boolean),
-      schoolName: row.school.name,
-      schoolCode: formatSchoolCodeForClass(row.school.code, row.school.id),
-      boardName: row.school.board.name,
-      subjectCount: row._count.subjects,
-      chapterCount: row.subjects.reduce(
-        (sum, subject) => sum + subject._count.chapters,
+      name: row.name,
+      code: formatSchoolCode(row.code, row.id),
+      boardName: row.board.name,
+      classCount: row._count.classes,
+      subjectCount: row.classes.reduce(
+        (sum, cls) => sum + cls._count.subjects,
         0
       ),
     }))
-
-    return items.sort(compareContentInstances)
   }
 
-  async findSubjectsForClassGrade(
-    classNameParam: string
-  ): Promise<ContentClassSubjectsResult | null> {
-    const targetKey = decodeContentClassSlug(classNameParam).trim().toLowerCase()
-    if (!targetKey) return null
+  async findSchoolRef(schoolId: string): Promise<ContentSchoolRef | null> {
+    const row = await prisma.school.findUnique({
+      where: { id: schoolId },
+      select: { id: true, name: true, code: true },
+    })
+    if (!row) return null
+    return { id: row.id, name: row.name, code: formatSchoolCode(row.code, row.id) }
+  }
 
+  async findClassesForSchool(schoolId: string): Promise<ContentClassItem[]> {
     const rows = await prisma.class.findMany({
+      where: { schoolId },
+      orderBy: { name: "asc" },
       select: {
         id: true,
         name: true,
-        sections: { select: { name: true } },
-        schoolId: true,
-        subjects: {
-          select: {
-            slug: true,
-            title: true,
-            orderIndex: true,
-            _count: { select: { chapters: true } },
-          },
-          orderBy: { orderIndex: "asc" },
-        },
+        _count: { select: { sections: true, subjects: true } },
       },
     })
 
-    const matching = rows.filter(
-      (row) => row.name.trim().toLowerCase() === targetKey
-    )
-    if (matching.length === 0) return null
+    return rows.map((row) => ({
+      id: row.id,
+      schoolId,
+      name: row.name,
+      displayName: formatClassDisplay(row.name),
+      sectionCount: row._count.sections,
+      subjectCount: row._count.subjects,
+    }))
+  }
 
-    const sections = new Set<string>()
-    const schoolIds = new Set<string>()
-    const subjectAgg = new Map<
-      string,
-      {
-        slug: string
-        title: string
-        orderIndex: number
-        chapterCount: number
-        offeringCount: number
-        schoolIds: Set<string>
-      }
-    >()
-
-    for (const row of matching) {
-      schoolIds.add(row.schoolId)
-      for (const section of row.sections) {
-        const trimmed = section.name.trim()
-        if (trimmed) sections.add(trimmed)
-      }
-
-      for (const subject of row.subjects) {
-        let agg = subjectAgg.get(subject.slug)
-        if (!agg) {
-          agg = {
-            slug: subject.slug,
-            title: subject.title,
-            orderIndex: subject.orderIndex,
-            chapterCount: 0,
-            offeringCount: 0,
-            schoolIds: new Set(),
-          }
-          subjectAgg.set(subject.slug, agg)
-        }
-        agg.chapterCount += subject._count.chapters
-        agg.offeringCount += 1
-        agg.schoolIds.add(row.schoolId)
-        agg.orderIndex = Math.min(agg.orderIndex, subject.orderIndex)
-      }
-    }
-
-    const subjects: ContentSubjectListItem[] = [...subjectAgg.values()]
-      .map((agg) => ({
-        slug: agg.slug,
-        title: agg.title,
-        orderIndex: agg.orderIndex,
-        chapterCount: agg.chapterCount,
-        offeringCount: agg.offeringCount,
-        schoolCount: agg.schoolIds.size,
-      }))
-      .sort((a, b) => {
-        if (a.orderIndex !== b.orderIndex) return a.orderIndex - b.orderIndex
-        return a.title.localeCompare(b.title)
-      })
-
-    const canonicalName = matching[0]!.name
-
+  async findClassRef(classId: string): Promise<ContentClassRef | null> {
+    const row = await prisma.class.findUnique({
+      where: { id: classId },
+      select: {
+        id: true,
+        name: true,
+        school: { select: { id: true, name: true, code: true } },
+      },
+    })
+    if (!row) return null
     return {
-      className: canonicalName,
-      classDisplayName: formatClassDisplayName(canonicalName),
-      sections: [...sections].sort((a, b) =>
-        a.localeCompare(b, undefined, { numeric: true })
-      ),
-      schoolCount: schoolIds.size,
-      subjects,
+      id: row.id,
+      name: row.name,
+      displayName: formatClassDisplay(row.name),
+      schoolId: row.school.id,
+      schoolName: row.school.name,
+      schoolCode: formatSchoolCode(row.school.code, row.school.id),
     }
+  }
+
+  async findSubjectsForClass(classId: string): Promise<ContentSubjectItem[]> {
+    const rows = await prisma.subject.findMany({
+      where: { classId },
+      orderBy: [{ orderIndex: "asc" }, { title: "asc" }],
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        orderIndex: true,
+        _count: { select: { chapters: true } },
+      },
+    })
+
+    return rows.map((row) => ({
+      id: row.id,
+      classId,
+      title: row.title,
+      slug: row.slug,
+      orderIndex: row.orderIndex,
+      chapterCount: row._count.chapters,
+    }))
+  }
+
+  async createSubject(classId: string, input: SubjectInput): Promise<void> {
+    const last = await prisma.subject.findFirst({
+      where: { classId },
+      orderBy: { orderIndex: "desc" },
+      select: { orderIndex: true },
+    })
+    await prisma.subject.create({
+      data: {
+        classId,
+        title: input.title,
+        slug: input.slug,
+        orderIndex: (last?.orderIndex ?? -1) + 1,
+      },
+    })
+  }
+
+  async updateSubject(id: string, input: SubjectInput): Promise<void> {
+    await prisma.subject.update({
+      where: { id },
+      data: { title: input.title, slug: input.slug },
+    })
+  }
+
+  async deleteSubject(id: string): Promise<void> {
+    await prisma.subject.delete({ where: { id } })
+  }
+
+  async countSubjectChapters(id: string): Promise<number> {
+    return prisma.chapter.count({ where: { subjectId: id } })
   }
 }
 
