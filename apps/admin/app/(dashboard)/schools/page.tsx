@@ -9,11 +9,11 @@ export const metadata: Metadata = {
 }
 
 export default async function SchoolsPage() {
-  const { schools } = await loadSchools()
+  const { schools, boardOptions } = await loadSchools()
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <SchoolsTable schools={schools} />
+      <SchoolsTable schools={schools} boardOptions={boardOptions} />
     </div>
   )
 }
