@@ -31,10 +31,10 @@ export type ParseResult<T> =
   | { success: true; data: T }
   | { success: false; result: ActionResult<never> }
 
-export function parseInput<T>(
-  schema: z.ZodType<T>,
+export function parseInput<S extends z.ZodTypeAny>(
+  schema: S,
   raw: unknown
-): ParseResult<T> {
+): ParseResult<z.infer<S>> {
   const parsed = schema.safeParse(raw)
   if (parsed.success) {
     return { success: true, data: parsed.data }
