@@ -1,15 +1,27 @@
 "use client"
 
+import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu"
 import { Input } from "@workspace/ui/components/input"
-import { cn } from "@workspace/ui/lib/utils"
-import { Eye, MoreHorizontal, Pencil, Plus, Search } from "lucide-react"
+import { MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 
-import type { SchoolListItem } from "../model/school-list-item"
+import { useActionRunner } from "@/lib/actions/use-action-runner"
+import { ConfirmDialog } from "@/features/shared/view/confirm-dialog"
+
+import type { BoardOption, SchoolListItem } from "../model/school-list-item"
+import { deleteSchoolAction } from "../server/actions"
+import { SchoolFormDialog } from "./school-form-dialog"
 
 type SchoolsTableProps = {
   schools: SchoolListItem[]
+  boardOptions: BoardOption[]
 }
 
 function filterSchools(schools: SchoolListItem[], query: string): SchoolListItem[] {
@@ -32,13 +44,34 @@ function filterSchools(schools: SchoolListItem[], query: string): SchoolListItem
   })
 }
 
-export function SchoolsTable({ schools }: SchoolsTableProps) {
+export function SchoolsTable({ schools, boardOptions }: SchoolsTableProps) {
   const [search, setSearch] = useState("")
+  const [formOpen, setFormOpen] = useState(false)
+  const [editing, setEditing] = useState<SchoolListItem | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<SchoolListItem | null>(null)
 
   const filtered = useMemo(
     () => filterSchools(schools, search),
     [schools, search]
   )
+
+  const { run: runDelete, pending: deletePending } = useActionRunner(
+    deleteSchoolAction,
+    {
+      successMessage: "School deleted",
+      onSuccess: () => setDeleteTarget(null),
+    }
+  )
+
+  function openCreate() {
+    setEditing(null)
+    setFormOpen(true)
+  }
+
+  function openEdit(school: SchoolListItem) {
+    setEditing(school)
+    setFormOpen(true)
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -65,6 +98,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
           </p>
           <Button
             type="button"
+            onClick={openCreate}
             className="h-10 rounded-xl bg-[#6C5CE7] px-4 text-sm font-semibold text-white hover:bg-[#6C5CE7]/90"
           >
             <Plus className="size-4" aria-hidden />
@@ -96,7 +130,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                 <th className="px-4 py-3.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                   Students
                 </th>
-                <th className="sticky right-0 bg-muted/40 px-4 py-3.5 text-right text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                <th className="px-4 py-3.5 text-right text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                   Actions
                 </th>
               </tr>
@@ -129,16 +163,13 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                     </td>
                     <td className="px-4 py-3.5">{school.boardName}</td>
                     <td className="px-4 py-3.5">
-                      <span
-                        className={cn(
-                          "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium",
-                          school.boardKind === "university"
-                            ? "bg-[#3b82f6]/10 text-[#3b82f6]"
-                            : "bg-[#6C5CE7]/10 text-[#6C5CE7]"
-                        )}
+                      <Badge
+                        variant={
+                          school.boardKind === "university" ? "secondary" : "default"
+                        }
                       >
                         {school.boardKindLabel}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="px-4 py-3.5 tabular-nums text-muted-foreground">
                       {school.classCount}
@@ -146,42 +177,32 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                     <td className="px-4 py-3.5 tabular-nums text-muted-foreground">
                       {school.studentCount}
                     </td>
-                    <td
-                      className={cn(
-                        "sticky right-0 px-4 py-3.5 text-right",
-                        "bg-white group-hover:bg-[#faf9ff]"
-                      )}
-                    >
-                      <div className="inline-flex items-center justify-end gap-0.5">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="size-8 rounded-lg text-muted-foreground hover:bg-[#6C5CE7]/10 hover:text-[#6C5CE7]"
-                          aria-label={`View ${school.name}`}
-                          title="View school"
-                        >
-                          <Eye className="size-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="size-8 rounded-lg text-muted-foreground hover:bg-[#6C5CE7]/10 hover:text-[#6C5CE7]"
-                          aria-label={`Edit ${school.name}`}
-                          title="Edit school"
-                        >
-                          <Pencil className="size-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-8 rounded-lg text-muted-foreground hover:bg-muted"
-                          aria-label={`More actions for ${school.name}`}
-                        >
-                          <MoreHorizontal className="size-4" />
-                        </Button>
-                      </div>
+                    <td className="px-4 py-3.5 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 rounded-lg text-muted-foreground hover:bg-muted"
+                            aria-label={`Actions for ${school.name}`}
+                          >
+                            <MoreHorizontal className="size-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEdit(school)}>
+                            <Pencil className="size-4" aria-hidden />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() => setDeleteTarget(school)}
+                          >
+                            <Trash2 className="size-4" aria-hidden />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 ))
@@ -190,6 +211,32 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
           </table>
         </div>
       </div>
+
+      <SchoolFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        school={editing}
+        boardOptions={boardOptions}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null)
+        }}
+        title="Delete school"
+        description={
+          deleteTarget
+            ? `This permanently deletes "${deleteTarget.name}". This cannot be undone.`
+            : undefined
+        }
+        confirmLabel="Delete"
+        destructive
+        pending={deletePending}
+        onConfirm={() => {
+          if (deleteTarget) runDelete(deleteTarget.id)
+        }}
+      />
     </div>
   )
 }

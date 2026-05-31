@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/db"
 
 import {
+  type BoardOption,
   formatBoardKindLabel,
   formatSchoolDisplayCode,
   mapPrismaBoardKind,
+  type SchoolInput,
   type SchoolListItem,
 } from "../model/school-list-item"
 
@@ -15,6 +17,7 @@ export class SchoolRepository {
         id: true,
         name: true,
         code: true,
+        boardId: true,
         board: {
           select: {
             name: true,
@@ -48,6 +51,8 @@ export class SchoolRepository {
         id: row.id,
         schoolCode: formatSchoolDisplayCode(row.code, row.id),
         name: row.name,
+        code: row.code,
+        boardId: row.boardId,
         boardName: row.board.name,
         boardKind,
         boardKindLabel: formatBoardKindLabel(boardKind),
@@ -55,6 +60,47 @@ export class SchoolRepository {
         studentCount,
       }
     })
+  }
+
+  async findBoardOptions(): Promise<BoardOption[]> {
+    const rows = await prisma.board.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, kind: true },
+    })
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      kindLabel: formatBoardKindLabel(mapPrismaBoardKind(row.kind)),
+    }))
+  }
+
+  async createSchool(input: SchoolInput): Promise<void> {
+    await prisma.school.create({
+      data: {
+        name: input.name,
+        code: input.code ?? null,
+        boardId: input.boardId,
+      },
+    })
+  }
+
+  async updateSchool(id: string, input: SchoolInput): Promise<void> {
+    await prisma.school.update({
+      where: { id },
+      data: {
+        name: input.name,
+        code: input.code ?? null,
+        boardId: input.boardId,
+      },
+    })
+  }
+
+  async deleteSchool(id: string): Promise<void> {
+    await prisma.school.delete({ where: { id } })
+  }
+
+  async countClasses(id: string): Promise<number> {
+    return prisma.class.count({ where: { schoolId: id } })
   }
 }
 
