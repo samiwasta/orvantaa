@@ -2,9 +2,9 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { contentHref } from "@/features/content/model/content-nav"
-import { loadContentTopicDetail } from "@/features/content/server/load-content-topic-detail"
+import { loadContentNote } from "@/features/content/server/load-content-note"
 import { ContentBreadcrumbs } from "@/features/content/view/content-breadcrumbs"
-import { ContentTopicDetailView } from "@/features/content/view/content-topic-detail-view"
+import { NoteEditorView } from "@/features/content/view/note-editor-view"
 
 type PageProps = {
   params: Promise<{
@@ -13,28 +13,31 @@ type PageProps = {
     subjectId: string
     chapterId: string
     topicId: string
+    noteId: string
   }>
 }
 
 export const metadata: Metadata = {
-  title: "Content - Orvantaa Admin",
+  title: "Edit note - Orvantaa Admin",
 }
 
-export default async function ContentTopicPage({ params }: PageProps) {
-  const { schoolId, classId, subjectId, chapterId, topicId } = await params
-  const data = await loadContentTopicDetail(topicId)
+export default async function ContentNoteEditorPage({ params }: PageProps) {
+  const { schoolId, classId, subjectId, chapterId, topicId, noteId } =
+    await params
+  const data = await loadContentNote(noteId)
 
   if (
     !data ||
     data.topicRef.schoolId !== schoolId ||
     data.topicRef.classId !== classId ||
     data.topicRef.subjectId !== subjectId ||
-    data.topicRef.id !== chapterId
+    data.topicRef.id !== chapterId ||
+    data.topicRef.topicId !== topicId
   ) {
     notFound()
   }
 
-  const { topicRef, notes } = data
+  const { note, topicRef } = data
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -69,9 +72,25 @@ export default async function ContentTopicPage({ params }: PageProps) {
               topicId
             ),
           },
+          {
+            label: note.title,
+            href: contentHref.note(
+              schoolId,
+              classId,
+              subjectId,
+              chapterId,
+              topicId,
+              noteId
+            ),
+          },
         ]}
       />
-      <ContentTopicDetailView topicRef={topicRef} notes={notes} />
+      <NoteEditorView
+        topicRef={topicRef}
+        noteId={note.id}
+        initialTitle={note.title}
+        initialBlocks={note.blocks}
+      />
     </div>
   )
 }

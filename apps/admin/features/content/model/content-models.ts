@@ -156,3 +156,28 @@ export const topicInputSchema = z.object({
 })
 
 export type TopicInput = z.infer<typeof topicInputSchema>
+
+export type ContentNoteItem = {
+  id: string
+  topicId: string
+  title: string
+  orderIndex: number
+  blockCount: number
+}
+
+export type ContentTopicDetailRef = ContentChapterRef & {
+  topicId: string
+  topicTitle: string
+  topicSlug: string
+}
+
+export const noteInputSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, "Title is required")
+    .max(160, "Title is too long"),
+})
+
+export type NoteInput = z.infer<typeof noteInputSchema>
+

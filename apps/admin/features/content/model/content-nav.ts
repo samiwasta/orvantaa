@@ -22,4 +22,13 @@ export const contentHref = {
     chapterId: string,
     topicId: string
   ) => `/content/${schoolId}/${classId}/${subjectId}/${chapterId}/${topicId}`,
+  note: (
+    schoolId: string,
+    classId: string,
+    subjectId: string,
+    chapterId: string,
+    topicId: string,
+    noteId: string
+  ) =>
+    `/content/${schoolId}/${classId}/${subjectId}/${chapterId}/${topicId}/notes/${noteId}`,
 }
