@@ -39,7 +39,7 @@ async function seedAdminFromEnv() {
       lastName,
       gender,
       role: UserRole.ADMIN,
-      classId: null,
+      sectionId: null,
     },
     create: {
       username,

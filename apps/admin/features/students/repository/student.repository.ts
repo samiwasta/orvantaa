@@ -17,14 +17,18 @@ export class StudentRepository {
         email: true,
         firstName: true,
         lastName: true,
-        class: {
+        section: {
           select: {
             name: true,
-            section: true,
-            school: {
+            class: {
               select: {
                 name: true,
-                board: { select: { name: true } },
+                school: {
+                  select: {
+                    name: true,
+                    board: { select: { name: true } },
+                  },
+                },
               },
             },
           },
@@ -40,10 +44,10 @@ export class StudentRepository {
       fullName: formatUserFullName(row.firstName, row.lastName),
       email: row.email,
       phoneNumber: null,
-      schoolName: row.class?.school.name ?? null,
-      boardName: row.class?.school.board.name ?? null,
-      className: row.class?.name ?? null,
-      section: row.class?.section ?? null,
+      schoolName: row.section?.class.school.name ?? null,
+      boardName: row.section?.class.school.board.name ?? null,
+      className: row.section?.class.name ?? null,
+      section: row.section?.name ?? null,
     }))
   }
 }

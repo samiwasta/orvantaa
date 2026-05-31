@@ -22,7 +22,7 @@ export class UserRepository {
   ): Promise<{ user: User; classLabel: string | null } | null> {
     const row = await prisma.user.findUnique({
       where: { id },
-      include: { class: true },
+      include: { section: { include: { class: true } } },
     })
     if (!row) {
       return null
@@ -30,8 +30,8 @@ export class UserRepository {
 
     const role = mapPrismaRoleToAppRole(row.role)
     const classLabel =
-      role === "student" && row.class
-        ? formatClassLabel(row.class.name, row.class.section)
+      role === "student" && row.section
+        ? formatClassLabel(row.section.class.name, row.section.name)
         : null
 
     return {

@@ -13,7 +13,6 @@ export class ClassRepository {
       select: {
         id: true,
         name: true,
-        section: true,
         school: {
           select: {
             id: true,
@@ -22,12 +21,13 @@ export class ClassRepository {
             board: { select: { name: true } },
           },
         },
-        _count: {
+        sections: {
           select: {
-            students: true,
-            subjects: true,
+            name: true,
+            _count: { select: { students: true } },
           },
         },
+        _count: { select: { subjects: true } },
       },
     })
 
@@ -36,11 +36,17 @@ export class ClassRepository {
       schoolId: row.school.id,
       className: row.name,
       classDisplayName: formatClassDisplayName(row.name),
-      section: row.section?.trim() || null,
+      sectionNames: row.sections
+        .map((section) => section.name.trim())
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
       schoolName: row.school.name,
       schoolCode: formatSchoolCodeForClass(row.school.code, row.school.id),
       boardName: row.school.board.name,
-      studentCount: row._count.students,
+      studentCount: row.sections.reduce(
+        (sum, section) => sum + section._count.students,
+        0
+      ),
       subjectCount: row._count.subjects,
     }))
 
