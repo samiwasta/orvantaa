@@ -1,9 +1,12 @@
 import type {
+  ChapterInput,
+  ContentChapterItem,
   ContentClassItem,
   ContentClassRef,
   ContentSchoolItem,
   ContentSchoolRef,
   ContentSubjectItem,
+  ContentSubjectRef,
   SubjectInput,
 } from "../model/content-models"
 import {
@@ -52,6 +55,34 @@ export class ContentService {
       )
     }
     await this.repository.deleteSubject(id)
+  }
+
+  async getSubjectRef(subjectId: string): Promise<ContentSubjectRef | null> {
+    return this.repository.findSubjectRef(subjectId)
+  }
+
+  async listChaptersForSubject(
+    subjectId: string
+  ): Promise<ContentChapterItem[]> {
+    return this.repository.findChaptersForSubject(subjectId)
+  }
+
+  async createChapter(subjectId: string, input: ChapterInput): Promise<void> {
+    await this.repository.createChapter(subjectId, input)
+  }
+
+  async updateChapter(id: string, input: ChapterInput): Promise<void> {
+    await this.repository.updateChapter(id, input)
+  }
+
+  async deleteChapter(id: string): Promise<void> {
+    const topicCount = await this.repository.countChapterTopics(id)
+    if (topicCount > 0) {
+      throw new Error(
+        `Cannot delete a chapter with ${topicCount} topic${topicCount === 1 ? "" : "s"}. Remove them first.`
+      )
+    }
+    await this.repository.deleteChapter(id)
   }
 }
 

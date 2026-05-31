@@ -1,11 +1,14 @@
 import { prisma } from "@/lib/db"
 
 import {
+  type ChapterInput,
+  type ContentChapterItem,
   type ContentClassItem,
   type ContentClassRef,
   type ContentSchoolItem,
   type ContentSchoolRef,
   type ContentSubjectItem,
+  type ContentSubjectRef,
   formatClassDisplay,
   formatSchoolCode,
   type SubjectInput,
@@ -140,6 +143,88 @@ export class ContentRepository {
 
   async countSubjectChapters(id: string): Promise<number> {
     return prisma.chapter.count({ where: { subjectId: id } })
+  }
+
+  async findSubjectRef(subjectId: string): Promise<ContentSubjectRef | null> {
+    const row = await prisma.subject.findUnique({
+      where: { id: subjectId },
+      select: {
+        id: true,
+        title: true,
+        class: {
+          select: {
+            id: true,
+            name: true,
+            school: { select: { id: true, name: true } },
+          },
+        },
+      },
+    })
+    if (!row) return null
+    return {
+      id: row.id,
+      title: row.title,
+      classId: row.class.id,
+      classDisplayName: formatClassDisplay(row.class.name),
+      schoolId: row.class.school.id,
+      schoolName: row.class.school.name,
+    }
+  }
+
+  async findChaptersForSubject(
+    subjectId: string
+  ): Promise<ContentChapterItem[]> {
+    const rows = await prisma.chapter.findMany({
+      where: { subjectId },
+      orderBy: [{ number: "asc" }, { title: "asc" }],
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        number: true,
+        _count: { select: { topics: true } },
+      },
+    })
+
+    return rows.map((row) => ({
+      id: row.id,
+      subjectId,
+      title: row.title,
+      slug: row.slug,
+      orderIndex: row.number,
+      topicCount: row._count.topics,
+    }))
+  }
+
+  async createChapter(subjectId: string, input: ChapterInput): Promise<void> {
+    const last = await prisma.chapter.findFirst({
+      where: { subjectId },
+      orderBy: { number: "desc" },
+      select: { number: true },
+    })
+    await prisma.chapter.create({
+      data: {
+        subjectId,
+        title: input.title,
+        slug: input.slug,
+        number: (last?.number ?? 0) + 1,
+      },
+    })
+  }
+
+  async updateChapter(id: string, input: ChapterInput): Promise<void> {
+    await prisma.chapter.update({
+      where: { id },
+      data: { title: input.title, slug: input.slug },
+    })
+  }
+
+  async deleteChapter(id: string): Promise<void> {
+    await prisma.chapter.delete({ where: { id } })
+  }
+
+  async countChapterTopics(id: string): Promise<number> {
+    return prisma.topic.count({ where: { chapterId: id } })
   }
 }
 
