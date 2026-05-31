@@ -1,14 +1,34 @@
+import { z } from "zod"
+
+export type ClassSectionItem = {
+  id: string
+  name: string
+  studentCount: number
+}
+
 export type ClassListItem = {
   id: string
   schoolId: string
   className: string
   classDisplayName: string
-  sectionNames: string[]
+  sections: ClassSectionItem[]
   schoolName: string
   schoolCode: string
   boardName: string
   studentCount: number
   subjectCount: number
+}
+
+export type SchoolOption = {
+  id: string
+  name: string
+}
+
+export function classSectionNames(item: ClassListItem): string[] {
+  return item.sections
+    .map((section) => section.name.trim())
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
 }
 
 export function formatClassDisplayName(className: string): string {
@@ -40,3 +60,25 @@ export function compareClassListItems(a: ClassListItem, b: ClassListItem): numbe
 
   return a.className.localeCompare(b.className)
 }
+
+export const classInputSchema = z.object({
+  schoolId: z.string().trim().min(1, "Select a school"),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Class name is required")
+    .max(40, "Class name is too long"),
+})
+
+export type ClassInput = z.infer<typeof classInputSchema>
+
+export const sectionInputSchema = z.object({
+  classId: z.string().trim().min(1, "Missing class"),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Section name is required")
+    .max(40, "Section name is too long"),
+})
+
+export type SectionInput = z.infer<typeof sectionInputSchema>
