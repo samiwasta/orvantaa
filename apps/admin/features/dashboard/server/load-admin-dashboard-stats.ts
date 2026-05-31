@@ -31,7 +31,7 @@ export const loadAdminDashboardStats = cache(
       prisma.subject.count(),
       prisma.chapter.count(),
       prisma.board.count(),
-      prisma.user.count({ where: { role: "STUDENT", classId: null } }),
+      prisma.user.count({ where: { role: "STUDENT", sectionId: null } }),
       prisma.user.findMany({
         where: { role: "STUDENT", createdAt: { gte: start } },
         select: { createdAt: true },
@@ -49,7 +49,7 @@ export const loadAdminDashboardStats = cache(
           email: true,
           role: true,
           createdAt: true,
-          class: { select: { name: true, section: true } },
+          section: { select: { name: true, class: { select: { name: true } } } },
         },
       }),
     ])
@@ -87,8 +87,8 @@ export const loadAdminDashboardStats = cache(
       email: u.email,
       role: u.role,
       createdAt: u.createdAt.toISOString(),
-      classLabel: u.class
-        ? `Class ${u.class.name}${u.class.section ? ` - ${u.class.section}` : ""}`
+      classLabel: u.section
+        ? `Class ${u.section.class.name} - ${u.section.name}`
         : null,
     }))
 

@@ -23,7 +23,9 @@ export class SchoolRepository {
         },
         classes: {
           select: {
-            _count: { select: { students: true } },
+            sections: {
+              select: { _count: { select: { students: true } } },
+            },
           },
         },
         _count: { select: { classes: true } },
@@ -33,7 +35,12 @@ export class SchoolRepository {
     return rows.map((row) => {
       const boardKind = mapPrismaBoardKind(row.board.kind)
       const studentCount = row.classes.reduce(
-        (sum, cls) => sum + cls._count.students,
+        (sum, cls) =>
+          sum +
+          cls.sections.reduce(
+            (sectionSum, section) => sectionSum + section._count.students,
+            0
+          ),
         0
       )
 

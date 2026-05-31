@@ -23,6 +23,12 @@ enum BoardKind {
   UNIVERSITY
 }
 
+enum QuizDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
 // ─── Board / University ───────────────────────────────────────────────────────
 
 model Board {
@@ -56,23 +62,39 @@ model School {
   @@map("schools")
 }
 
-// ─── Class ────────────────────────────────────────────────────────────────────
+// ─── Class (a grade offered at a school) ────────────────────────────────────────
 
 model Class {
   id        String   @id @default(cuid())
   name      String
-  section   String?
   schoolId  String
   school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  students User[]
+  sections Section[]
   subjects Subject[]
 
-  @@unique([schoolId, name, section])
+  @@unique([schoolId, name])
   @@index([schoolId])
   @@map("classes")
+}
+
+// ─── Section (a division of a class) ────────────────────────────────────────────
+
+model Section {
+  id        String   @id @default(cuid())
+  name      String
+  classId   String
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  students User[]
+
+  @@unique([classId, name])
+  @@index([classId])
+  @@map("sections")
 }
 
 // ─── Subject ──────────────────────────────────────────────────────────────────
@@ -107,10 +129,100 @@ model Chapter {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  topics  Topic[]
+  quizzes Quiz[]
+
   @@unique([subjectId, number])
   @@unique([subjectId, slug])
   @@index([subjectId])
   @@map("chapters")
+}
+
+// ─── Topic ──────────────────────────────────────────────────────────────────
+
+model Topic {
+  id         String   @id @default(cuid())
+  title      String
+  slug       String
+  orderIndex Int      @default(0)
+  chapterId  String
+  chapter    Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  notes Note[]
+
+  @@unique([chapterId, slug])
+  @@index([chapterId])
+  @@map("topics")
+}
+
+// ─── Note (structured block content) ────────────────────────────────────────────
+
+model Note {
+  id         String   @id @default(cuid())
+  title      String
+  orderIndex Int      @default(0)
+  topicId    String
+  topic      Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  blocks     Json     @default("[]")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([topicId])
+  @@map("notes")
+}
+
+// ─── Quiz ──────────────────────────────────────────────────────────────────
+
+model Quiz {
+  id         String         @id @default(cuid())
+  title      String
+  difficulty QuizDifficulty @default(MEDIUM)
+  orderIndex Int            @default(0)
+  chapterId  String
+  chapter    Chapter        @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  questions Question[]
+
+  @@index([chapterId])
+  @@map("quizzes")
+}
+
+// ─── Question (MCQ) ──────────────────────────────────────────────────────────
+
+model Question {
+  id          String   @id @default(cuid())
+  prompt      String
+  explanation String?
+  orderIndex  Int      @default(0)
+  quizId      String
+  quiz        Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  options Option[]
+
+  @@index([quizId])
+  @@map("questions")
+}
+
+// ─── Option (MCQ choice) ──────────────────────────────────────────────────────
+
+model Option {
+  id         String   @id @default(cuid())
+  label      String
+  isCorrect  Boolean  @default(false)
+  orderIndex Int      @default(0)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([questionId])
+  @@map("options")
 }
 
 // ─── User ─────────────────────────────────────────────────────────────────────
@@ -124,14 +236,14 @@ model User {
   lastName     String   @default("")
   gender       Gender   @default(FEMALE)
   role         UserRole @default(STUDENT)
-  classId      String?
-  class        Class?   @relation(fields: [classId], references: [id], onDelete: SetNull)
+  sectionId    String?
+  section      Section? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   passwordResetTokens PasswordResetToken[]
 
-  @@index([classId])
+  @@index([sectionId])
   @@index([role])
   @@map("users")
 }

@@ -3,7 +3,7 @@ export type ClassListItem = {
   schoolId: string
   className: string
   classDisplayName: string
-  section: string | null
+  sectionNames: string[]
   schoolName: string
   schoolCode: string
   boardName: string
@@ -38,7 +38,5 @@ export function compareClassListItems(a: ClassListItem, b: ClassListItem): numbe
   const levelB = parseClassLevel(b.className)
   if (levelA !== levelB) return levelA - levelB
 
-  const sectionA = a.section ?? ""
-  const sectionB = b.section ?? ""
-  return sectionA.localeCompare(sectionB)
+  return a.className.localeCompare(b.className)
 }

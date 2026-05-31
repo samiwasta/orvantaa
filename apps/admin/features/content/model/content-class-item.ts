@@ -9,7 +9,7 @@ export type ContentClassInstance = {
   schoolId: string
   className: string
   classDisplayName: string
-  section: string | null
+  sectionNames: string[]
   schoolName: string
   schoolCode: string
   boardName: string
@@ -37,8 +37,10 @@ function gradeKey(className: string): string {
 function collectSections(instances: ContentClassInstance[]): string[] {
   const sections = new Set<string>()
   for (const instance of instances) {
-    const section = instance.section?.trim()
-    if (section) sections.add(section)
+    for (const section of instance.sectionNames) {
+      const trimmed = section.trim()
+      if (trimmed) sections.add(trimmed)
+    }
   }
   return [...sections].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
 }

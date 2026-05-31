@@ -23,7 +23,7 @@ function compareContentInstances(
   const levelB = parseInt(b.className.match(/\d+/)?.[0] ?? "999", 10)
   if (levelA !== levelB) return levelA - levelB
 
-  return (a.section ?? "").localeCompare(b.section ?? "")
+  return a.className.localeCompare(b.className)
 }
 
 export class ContentRepository {
@@ -32,7 +32,7 @@ export class ContentRepository {
       select: {
         id: true,
         name: true,
-        section: true,
+        sections: { select: { name: true } },
         school: {
           select: {
             id: true,
@@ -55,7 +55,9 @@ export class ContentRepository {
       schoolId: row.school.id,
       className: row.name,
       classDisplayName: formatClassDisplayName(row.name),
-      section: row.section?.trim() || null,
+      sectionNames: row.sections
+        .map((section) => section.name.trim())
+        .filter(Boolean),
       schoolName: row.school.name,
       schoolCode: formatSchoolCodeForClass(row.school.code, row.school.id),
       boardName: row.school.board.name,
@@ -79,7 +81,7 @@ export class ContentRepository {
       select: {
         id: true,
         name: true,
-        section: true,
+        sections: { select: { name: true } },
         schoolId: true,
         subjects: {
           select: {
@@ -114,8 +116,10 @@ export class ContentRepository {
 
     for (const row of matching) {
       schoolIds.add(row.schoolId)
-      const section = row.section?.trim()
-      if (section) sections.add(section)
+      for (const section of row.sections) {
+        const trimmed = section.name.trim()
+        if (trimmed) sections.add(trimmed)
+      }
 
       for (const subject of row.subjects) {
         let agg = subjectAgg.get(subject.slug)

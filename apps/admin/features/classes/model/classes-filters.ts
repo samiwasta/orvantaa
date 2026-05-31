@@ -22,8 +22,10 @@ function gradeKey(className: string): string {
 function collectSections(instances: ClassListItem[]): string[] {
   const sections = new Set<string>()
   for (const instance of instances) {
-    const section = instance.section?.trim()
-    if (section) sections.add(section)
+    for (const section of instance.sectionNames) {
+      const trimmed = section.trim()
+      if (trimmed) sections.add(trimmed)
+    }
   }
   return [...sections].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
 }
@@ -54,7 +56,7 @@ export function filterClasses(
     const haystack = [
       c.classDisplayName,
       c.className,
-      c.section,
+      ...c.sectionNames,
       c.schoolName,
       c.schoolCode,
       c.boardName,
@@ -179,10 +181,10 @@ export function groupInstancesBySchool(
     const existing = map.get(instance.schoolId)
 
     if (existing) {
-      if (instance.section?.trim()) {
-        const section = instance.section.trim()
-        if (!existing.sections.includes(section)) {
-          existing.sections.push(section)
+      for (const section of instance.sectionNames) {
+        const trimmed = section.trim()
+        if (trimmed && !existing.sections.includes(trimmed)) {
+          existing.sections.push(trimmed)
         }
       }
       existing.studentCount += instance.studentCount
@@ -195,7 +197,7 @@ export function groupInstancesBySchool(
       schoolName: instance.schoolName,
       schoolCode: instance.schoolCode,
       boardName: instance.boardName,
-      sections: instance.section?.trim() ? [instance.section.trim()] : [],
+      sections: instance.sectionNames.map((s) => s.trim()).filter(Boolean),
       studentCount: instance.studentCount,
       subjectCount: instance.subjectCount,
     })
