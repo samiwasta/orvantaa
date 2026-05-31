@@ -13,7 +13,7 @@ const actions = [
   {
     label: "Add student",
     description: "Create a new student account",
-    href: "/users",
+    href: "/students",
     icon: UserPlus,
     color: "#6C5CE7",
   },

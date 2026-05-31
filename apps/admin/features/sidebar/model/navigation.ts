@@ -2,8 +2,8 @@ import type { LucideIcon } from "lucide-react"
 import {
   BookOpen,
   GraduationCap,
-  LayoutDashboard,
   Landmark,
+  LayoutDashboard,
   School,
   Settings,
   Users,
@@ -17,7 +17,7 @@ export type DashboardNavItemDefinition = {
 
 export const dashboardNavItems: DashboardNavItemDefinition[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Students", href: "/users", icon: Users },
+  { title: "Students", href: "/students", icon: Users },
   { title: "Schools", href: "/schools", icon: School },
   { title: "Classes", href: "/classes", icon: GraduationCap },
   { title: "Content", href: "/content", icon: BookOpen },
@@ -27,7 +27,7 @@ export const dashboardNavItems: DashboardNavItemDefinition[] = [
 
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "Dashboard",
-  "/users": "Users",
+  "/students": "Students",
   "/schools": "Schools",
   "/classes": "Classes",
   "/content": "Content",

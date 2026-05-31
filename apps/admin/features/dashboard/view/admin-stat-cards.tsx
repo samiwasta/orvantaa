@@ -96,7 +96,7 @@ export function AdminStatCards({ counts }: Props) {
         sub={unassignedStudents > 0 ? `${unassignedStudents} unassigned` : "all assigned"}
         icon={Users}
         color="#6C5CE7"
-        href="/users"
+        href="/students"
         highlight
       />
       <StatCard
@@ -157,7 +157,7 @@ export function AdminStatCards({ counts }: Props) {
         sub={`${assignedStudents} of ${totalStudents} in a class`}
         icon={UserCheck}
         color="#6C5CE7"
-        href="/users"
+        href="/students"
       />
     </div>
   )

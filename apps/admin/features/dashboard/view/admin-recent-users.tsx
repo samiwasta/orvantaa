@@ -47,7 +47,7 @@ export function AdminRecentUsers({ users }: Props) {
           </p>
         </div>
         <Link
-          href="/users"
+          href="/students"
           className="text-xs font-medium text-[#6C5CE7] hover:underline"
         >
           View all
