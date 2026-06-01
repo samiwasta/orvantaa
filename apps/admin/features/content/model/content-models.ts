@@ -1,17 +1,25 @@
 import { z } from "zod"
 
-export type ContentSchoolItem = {
+export type ContentBoardItem = {
   id: string
   name: string
-  code: string
-  boardName: string
+  slug: string
+  kindLabel: string
   classCount: number
   subjectCount: number
 }
 
+export type ContentBoardRef = {
+  id: string
+  name: string
+  slug: string
+}
+
 export type ContentClassItem = {
   id: string
+  boardId: string
   schoolId: string
+  schoolName: string
   name: string
   displayName: string
   sectionCount: number
@@ -23,6 +31,7 @@ export type ContentSubjectItem = {
   classId: string
   title: string
   slug: string
+  imageUrl: string | null
   orderIndex: number
   chapterCount: number
 }
@@ -41,6 +50,8 @@ export type ContentSubjectRef = {
   title: string
   classId: string
   classDisplayName: string
+  boardId: string
+  boardName: string
   schoolId: string
   schoolName: string
 }
@@ -62,20 +73,18 @@ export type ContentChapterRef = {
   subjectTitle: string
   classId: string
   classDisplayName: string
+  boardId: string
+  boardName: string
   schoolId: string
   schoolName: string
-}
-
-export type ContentSchoolRef = {
-  id: string
-  name: string
-  code: string
 }
 
 export type ContentClassRef = {
   id: string
   name: string
   displayName: string
+  boardId: string
+  boardName: string
   schoolId: string
   schoolName: string
   schoolCode: string
@@ -115,6 +124,14 @@ export const subjectInputSchema = z.object({
       /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
       "Use lowercase letters, numbers, and hyphens"
     ),
+  imageUrl: z
+    .string()
+    .max(500)
+    .optional()
+    .transform((value) => {
+      const trimmed = value?.trim()
+      return trimmed ? trimmed : null
+    }),
 })
 
 export type SubjectInput = z.infer<typeof subjectInputSchema>

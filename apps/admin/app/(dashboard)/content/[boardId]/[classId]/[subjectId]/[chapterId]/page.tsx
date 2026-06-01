@@ -9,7 +9,7 @@ import { ContentTopicsView } from "@/features/content/view/content-topics-view"
 
 type PageProps = {
   params: Promise<{
-    schoolId: string
+    boardId: string
     classId: string
     subjectId: string
     chapterId: string
@@ -21,12 +21,12 @@ export const metadata: Metadata = {
 }
 
 export default async function ContentChapterPage({ params }: PageProps) {
-  const { schoolId, classId, subjectId, chapterId } = await params
+  const { boardId, classId, subjectId, chapterId } = await params
   const data = await loadContentTopics(chapterId)
 
   if (
     !data ||
-    data.chapterRef.schoolId !== schoolId ||
+    data.chapterRef.boardId !== boardId ||
     data.chapterRef.classId !== classId ||
     data.chapterRef.subjectId !== subjectId
   ) {
@@ -39,20 +39,20 @@ export default async function ContentChapterPage({ params }: PageProps) {
     <div className="flex flex-1 flex-col gap-6">
       <ContentBreadcrumbs
         items={[
-          { label: "Schools", href: contentHref.root() },
-          { label: chapterRef.schoolName, href: contentHref.school(schoolId) },
+          { label: "Content", href: contentHref.root() },
+          { label: chapterRef.boardName, href: contentHref.board(boardId) },
           {
             label: chapterRef.classDisplayName,
-            href: contentHref.class(schoolId, classId),
+            href: contentHref.class(boardId, classId),
           },
           {
             label: chapterRef.subjectTitle,
-            href: contentHref.subject(schoolId, classId, subjectId),
+            href: contentHref.subject(boardId, classId, subjectId),
           },
           {
             label: chapterRef.title,
             href: contentHref.chapter(
-              schoolId,
+              boardId,
               classId,
               subjectId,
               chapterId

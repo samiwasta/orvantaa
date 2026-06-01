@@ -75,7 +75,7 @@ export function ContentChapterQuizzesView({
         setCreateOpen(false)
         router.push(
           contentHref.quiz(
-            chapterRef.schoolId,
+            chapterRef.boardId,
             chapterRef.classId,
             chapterRef.subjectId,
             chapterRef.id,
@@ -141,7 +141,7 @@ export function ContentChapterQuizzesView({
             >
               <Link
                 href={contentHref.quiz(
-                  chapterRef.schoolId,
+                  chapterRef.boardId,
                   chapterRef.classId,
                   chapterRef.subjectId,
                   chapterRef.id,
@@ -188,7 +188,7 @@ export function ContentChapterQuizzesView({
                   <DropdownMenuItem asChild>
                     <Link
                       href={contentHref.quiz(
-                        chapterRef.schoolId,
+                        chapterRef.boardId,
                         chapterRef.classId,
                         chapterRef.subjectId,
                         chapterRef.id,

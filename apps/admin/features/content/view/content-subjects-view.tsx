@@ -7,7 +7,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
-import { BookOpen, ChevronRight, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
+import { cn } from "@workspace/ui/lib/utils"
+import { BookOpen, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
 import { useState } from "react"
 
@@ -22,6 +24,11 @@ import { SubjectFormDialog } from "./subject-form-dialog"
 type ContentSubjectsViewProps = {
   classRef: ContentClassRef
   subjects: ContentSubjectItem[]
+}
+
+function subjectThumbnailSrc(imageUrl: string | null): string {
+  if (imageUrl?.trim()) return imageUrl
+  return "/maths.jpg"
 }
 
 export function ContentSubjectsView({
@@ -55,7 +62,8 @@ export function ContentSubjectsView({
           <span className="font-medium text-foreground">
             {classRef.displayName}
           </span>{" "}
-          at {classRef.schoolName}.
+          ({classRef.schoolName}). Open a subject to add chapters, notes, and
+          quizzes.
         </p>
         <Button
           type="button"
@@ -76,65 +84,74 @@ export function ContentSubjectsView({
           </p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {subjects.map((subject) => (
-            <li
+            <div
               key={subject.id}
-              className="group flex items-center gap-3 rounded-2xl border border-border/60 bg-white p-3 shadow-sm ring-1 ring-black/[0.04] transition-all hover:border-[#6C5CE7]/35 hover:shadow-md"
+              className={cn(
+                "group relative flex flex-col overflow-hidden rounded-2xl border border-border/60 bg-white shadow-sm ring-1 ring-black/[0.04]",
+                "transition-all hover:border-[#6C5CE7]/35 hover:shadow-md"
+              )}
             >
               <Link
                 href={contentHref.subject(
-                  classRef.schoolId,
+                  classRef.boardId,
                   classRef.id,
                   subject.id
                 )}
-                className="flex min-w-0 flex-1 items-center gap-3"
+                className="flex flex-1 flex-col"
               >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#3b82f6]/10 text-[#3b82f6]">
-                  <BookOpen className="size-5" aria-hidden />
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-foreground">
+                <div className="relative h-36 w-full bg-muted">
+                  <Image
+                    src={subjectThumbnailSrc(subject.imageUrl)}
+                    alt={subject.title}
+                    fill
+                    sizes="(max-width: 640px) 100vw, 25vw"
+                    className="object-cover"
+                  />
+                </div>
+                <div className="flex flex-1 flex-col p-4">
+                  <p className="font-heading text-base font-semibold text-foreground">
                     {subject.title}
                   </p>
-                  <p className="truncate text-xs text-muted-foreground">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     {subject.slug} · {subject.chapterCount} chapter
                     {subject.chapterCount === 1 ? "" : "s"}
                   </p>
                 </div>
               </Link>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-8 rounded-lg text-muted-foreground hover:bg-muted"
-                    aria-label={`Actions for ${subject.title}`}
-                  >
-                    <MoreHorizontal className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => openEdit(subject)}>
-                    <Pencil className="size-4" aria-hidden />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onClick={() => setDeleteTarget(subject)}
-                  >
-                    <Trash2 className="size-4" aria-hidden />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <ChevronRight
-                className="size-4 shrink-0 text-muted-foreground/30"
-                aria-hidden
-              />
-            </li>
+              <div className="absolute top-2 right-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="icon"
+                      className="size-8 rounded-lg bg-white/90 shadow-sm"
+                      aria-label={`Actions for ${subject.title}`}
+                      onClick={(e) => e.preventDefault()}
+                    >
+                      <MoreHorizontal className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => openEdit(subject)}>
+                      <Pencil className="size-4" aria-hidden />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={() => setDeleteTarget(subject)}
+                    >
+                      <Trash2 className="size-4" aria-hidden />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
 
       <SubjectFormDialog

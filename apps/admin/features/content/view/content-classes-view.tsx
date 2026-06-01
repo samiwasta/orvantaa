@@ -1,22 +1,23 @@
 "use client"
 
-import { BookOpen, ChevronRight, GraduationCap, Users } from "lucide-react"
+import { BookOpen, ChevronRight, GraduationCap, School } from "lucide-react"
 import Link from "next/link"
 
 import { contentHref } from "../model/content-nav"
-import type { ContentClassItem, ContentSchoolRef } from "../model/content-models"
+import type { ContentBoardRef, ContentClassItem } from "../model/content-models"
 
 type ContentClassesViewProps = {
-  school: ContentSchoolRef
+  board: ContentBoardRef
   classes: ContentClassItem[]
 }
 
-export function ContentClassesView({ school, classes }: ContentClassesViewProps) {
+export function ContentClassesView({ board, classes }: ContentClassesViewProps) {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-muted-foreground">
-        Classes at <span className="font-medium text-foreground">{school.name}</span>.
-        Pick a class to manage its subjects.
+        Classes under{" "}
+        <span className="font-medium text-foreground">{board.name}</span>. Pick a
+        class to manage its subjects.
       </p>
 
       {classes.length === 0 ? (
@@ -24,7 +25,7 @@ export function ContentClassesView({ school, classes }: ContentClassesViewProps)
           <GraduationCap className="size-10 text-muted-foreground/40" aria-hidden />
           <p className="mt-4 text-sm font-medium text-foreground">No classes yet</p>
           <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-            Add classes to this school from the Classes page.
+            Add schools and classes from the Schools and Classes pages.
           </p>
         </div>
       ) : (
@@ -32,7 +33,7 @@ export function ContentClassesView({ school, classes }: ContentClassesViewProps)
           {classes.map((classItem) => (
             <Link
               key={classItem.id}
-              href={contentHref.class(school.id, classItem.id)}
+              href={contentHref.class(board.id, classItem.id)}
               className="group flex flex-col rounded-2xl border border-border/60 bg-white p-4 shadow-sm ring-1 ring-black/[0.04] transition-all hover:border-[#6C5CE7]/35 hover:shadow-md hover:ring-[#6C5CE7]/10"
             >
               <div className="flex items-start justify-between gap-2">
@@ -47,6 +48,10 @@ export function ContentClassesView({ school, classes }: ContentClassesViewProps)
               <p className="mt-3 font-heading text-lg font-semibold text-foreground">
                 {classItem.displayName}
               </p>
+              <p className="mt-1 flex items-center gap-1 truncate text-xs text-muted-foreground">
+                <School className="size-3.5 shrink-0" aria-hidden />
+                {classItem.schoolName}
+              </p>
               <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/50 pt-3">
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                   <BookOpen className="size-3.5" aria-hidden />
@@ -54,13 +59,6 @@ export function ContentClassesView({ school, classes }: ContentClassesViewProps)
                     {classItem.subjectCount}
                   </span>{" "}
                   subjects
-                </span>
-                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                  <Users className="size-3.5" aria-hidden />
-                  <span className="font-medium text-foreground">
-                    {classItem.sectionCount}
-                  </span>{" "}
-                  sections
                 </span>
               </div>
             </Link>

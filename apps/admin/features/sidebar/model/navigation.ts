@@ -17,10 +17,10 @@ export type DashboardNavItemDefinition = {
 
 export const dashboardNavItems: DashboardNavItemDefinition[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { title: "Content", href: "/content", icon: BookOpen },
   { title: "Students", href: "/students", icon: Users },
   { title: "Schools", href: "/schools", icon: School },
   { title: "Classes", href: "/classes", icon: GraduationCap },
-  { title: "Content", href: "/content", icon: BookOpen },
   { title: "Boards", href: "/boards", icon: Landmark },
   { title: "Settings", href: "/settings", icon: Settings },
 ]

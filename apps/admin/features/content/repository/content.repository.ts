@@ -2,14 +2,16 @@ import { Prisma } from "@prisma/client"
 
 import { prisma } from "@/lib/db"
 
+import { formatBoardKindLabel, mapPrismaBoardKind } from "@/features/boards/model/board-list-item"
+
 import {
   type ChapterInput,
+  type ContentBoardItem,
+  type ContentBoardRef,
   type ContentChapterItem,
   type ContentChapterRef,
   type ContentClassItem,
   type ContentClassRef,
-  type ContentSchoolItem,
-  type ContentSchoolRef,
   type ContentSubjectItem,
   type ContentSubjectRef,
   type ContentNoteItem,
@@ -33,60 +35,85 @@ import {
 } from "../model/quiz-models"
 
 export class ContentRepository {
-  async findSchools(): Promise<ContentSchoolItem[]> {
-    const rows = await prisma.school.findMany({
+  async findBoards(): Promise<ContentBoardItem[]> {
+    const rows = await prisma.board.findMany({
       orderBy: { name: "asc" },
       select: {
         id: true,
         name: true,
-        code: true,
-        board: { select: { name: true } },
-        _count: { select: { classes: true } },
-        classes: { select: { _count: { select: { subjects: true } } } },
+        slug: true,
+        kind: true,
+        schools: {
+          select: {
+            classes: {
+              select: { _count: { select: { subjects: true } } },
+            },
+          },
+        },
       },
     })
 
-    return rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      code: formatSchoolCode(row.code, row.id),
-      boardName: row.board.name,
-      classCount: row._count.classes,
-      subjectCount: row.classes.reduce(
-        (sum, cls) => sum + cls._count.subjects,
-        0
-      ),
-    }))
+    return rows.map((row) => {
+      const classes = row.schools.flatMap((school) => school.classes)
+      return {
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        kindLabel: formatBoardKindLabel(mapPrismaBoardKind(row.kind)),
+        classCount: classes.length,
+        subjectCount: classes.reduce(
+          (sum, cls) => sum + cls._count.subjects,
+          0
+        ),
+      }
+    })
   }
 
-  async findSchoolRef(schoolId: string): Promise<ContentSchoolRef | null> {
-    const row = await prisma.school.findUnique({
-      where: { id: schoolId },
-      select: { id: true, name: true, code: true },
+  async findBoardRef(boardId: string): Promise<ContentBoardRef | null> {
+    const row = await prisma.board.findUnique({
+      where: { id: boardId },
+      select: { id: true, name: true, slug: true },
     })
     if (!row) return null
-    return { id: row.id, name: row.name, code: formatSchoolCode(row.code, row.id) }
+    return { id: row.id, name: row.name, slug: row.slug }
   }
 
-  async findClassesForSchool(schoolId: string): Promise<ContentClassItem[]> {
+  async findClassesForBoard(boardId: string): Promise<ContentClassItem[]> {
     const rows = await prisma.class.findMany({
-      where: { schoolId },
-      orderBy: { name: "asc" },
+      where: { school: { boardId } },
+      orderBy: [{ school: { name: "asc" } }, { name: "asc" }],
       select: {
         id: true,
         name: true,
+        schoolId: true,
+        school: {
+          select: { id: true, name: true, boardId: true },
+        },
         _count: { select: { sections: true, subjects: true } },
       },
     })
 
     return rows.map((row) => ({
       id: row.id,
-      schoolId,
+      boardId: row.school.boardId,
+      schoolId: row.schoolId,
+      schoolName: row.school.name,
       name: row.name,
       displayName: formatClassDisplay(row.name),
       sectionCount: row._count.sections,
       subjectCount: row._count.subjects,
     }))
+  }
+
+  async classBelongsToBoard(
+    classId: string,
+    boardId: string
+  ): Promise<boolean> {
+    const row = await prisma.class.findFirst({
+      where: { id: classId, school: { boardId } },
+      select: { id: true },
+    })
+    return Boolean(row)
   }
 
   async findClassRef(classId: string): Promise<ContentClassRef | null> {
@@ -95,7 +122,14 @@ export class ContentRepository {
       select: {
         id: true,
         name: true,
-        school: { select: { id: true, name: true, code: true } },
+        school: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            board: { select: { id: true, name: true } },
+          },
+        },
       },
     })
     if (!row) return null
@@ -103,6 +137,8 @@ export class ContentRepository {
       id: row.id,
       name: row.name,
       displayName: formatClassDisplay(row.name),
+      boardId: row.school.board.id,
+      boardName: row.school.board.name,
       schoolId: row.school.id,
       schoolName: row.school.name,
       schoolCode: formatSchoolCode(row.school.code, row.school.id),
@@ -117,6 +153,7 @@ export class ContentRepository {
         id: true,
         title: true,
         slug: true,
+        imageUrl: true,
         orderIndex: true,
         _count: { select: { chapters: true } },
       },
@@ -127,6 +164,7 @@ export class ContentRepository {
       classId,
       title: row.title,
       slug: row.slug,
+      imageUrl: row.imageUrl,
       orderIndex: row.orderIndex,
       chapterCount: row._count.chapters,
     }))
@@ -143,6 +181,7 @@ export class ContentRepository {
         classId,
         title: input.title,
         slug: input.slug,
+        imageUrl: input.imageUrl ?? null,
         orderIndex: (last?.orderIndex ?? -1) + 1,
       },
     })
@@ -151,7 +190,11 @@ export class ContentRepository {
   async updateSubject(id: string, input: SubjectInput): Promise<void> {
     await prisma.subject.update({
       where: { id },
-      data: { title: input.title, slug: input.slug },
+      data: {
+        title: input.title,
+        slug: input.slug,
+        imageUrl: input.imageUrl ?? null,
+      },
     })
   }
 
@@ -173,7 +216,13 @@ export class ContentRepository {
           select: {
             id: true,
             name: true,
-            school: { select: { id: true, name: true } },
+            school: {
+              select: {
+                id: true,
+                name: true,
+                board: { select: { id: true, name: true } },
+              },
+            },
           },
         },
       },
@@ -184,6 +233,8 @@ export class ContentRepository {
       title: row.title,
       classId: row.class.id,
       classDisplayName: formatClassDisplay(row.class.name),
+      boardId: row.class.school.board.id,
+      boardName: row.class.school.board.name,
       schoolId: row.class.school.id,
       schoolName: row.class.school.name,
     }
@@ -260,7 +311,13 @@ export class ContentRepository {
               select: {
                 id: true,
                 name: true,
-                school: { select: { id: true, name: true } },
+                school: {
+                  select: {
+                    id: true,
+                    name: true,
+                    board: { select: { id: true, name: true } },
+                  },
+                },
               },
             },
           },
@@ -276,6 +333,8 @@ export class ContentRepository {
       subjectTitle: row.subject.title,
       classId: row.subject.class.id,
       classDisplayName: formatClassDisplay(row.subject.class.name),
+      boardId: row.subject.class.school.board.id,
+      boardName: row.subject.class.school.board.name,
       schoolId: row.subject.class.school.id,
       schoolName: row.subject.class.school.name,
     }
@@ -355,7 +414,13 @@ export class ContentRepository {
                   select: {
                     id: true,
                     name: true,
-                    school: { select: { id: true, name: true } },
+                    school: {
+                      select: {
+                        id: true,
+                        name: true,
+                        board: { select: { id: true, name: true } },
+                      },
+                    },
                   },
                 },
               },
@@ -376,6 +441,8 @@ export class ContentRepository {
       subjectTitle: row.chapter.subject.title,
       classId: row.chapter.subject.class.id,
       classDisplayName: formatClassDisplay(row.chapter.subject.class.name),
+      boardId: row.chapter.subject.class.school.board.id,
+      boardName: row.chapter.subject.class.school.board.name,
       schoolId: row.chapter.subject.class.school.id,
       schoolName: row.chapter.subject.class.school.name,
     }

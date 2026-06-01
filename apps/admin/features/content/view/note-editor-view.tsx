@@ -32,7 +32,7 @@ export function NoteEditorView({
   const [blocks, setBlocks] = useState<NoteBlock[]>(initialBlocks)
 
   const topicHref = contentHref.topic(
-    topicRef.schoolId,
+    topicRef.boardId,
     topicRef.classId,
     topicRef.subjectId,
     topicRef.id,

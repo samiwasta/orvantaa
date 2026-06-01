@@ -60,7 +60,7 @@ export function QuizEditorView({ chapterRef, initialQuiz }: QuizEditorViewProps)
   )
 
   const chapterHref = contentHref.chapter(
-    chapterRef.schoolId,
+    chapterRef.boardId,
     chapterRef.classId,
     chapterRef.subjectId,
     chapterRef.id

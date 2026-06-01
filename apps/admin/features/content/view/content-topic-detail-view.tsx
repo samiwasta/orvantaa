@@ -51,7 +51,7 @@ export function ContentTopicDetailView({
         setNewTitle("")
         router.push(
           contentHref.note(
-            topicRef.schoolId,
+            topicRef.boardId,
             topicRef.classId,
             topicRef.subjectId,
             topicRef.id,
@@ -116,7 +116,7 @@ export function ContentTopicDetailView({
             >
               <Link
                 href={contentHref.note(
-                  topicRef.schoolId,
+                  topicRef.boardId,
                   topicRef.classId,
                   topicRef.subjectId,
                   topicRef.id,
@@ -152,7 +152,7 @@ export function ContentTopicDetailView({
                   <DropdownMenuItem asChild>
                     <Link
                       href={contentHref.note(
-                        topicRef.schoolId,
+                        topicRef.boardId,
                         topicRef.classId,
                         topicRef.subjectId,
                         topicRef.id,

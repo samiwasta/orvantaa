@@ -8,7 +8,7 @@ import { ContentTopicDetailView } from "@/features/content/view/content-topic-de
 
 type PageProps = {
   params: Promise<{
-    schoolId: string
+    boardId: string
     classId: string
     subjectId: string
     chapterId: string
@@ -21,12 +21,12 @@ export const metadata: Metadata = {
 }
 
 export default async function ContentTopicPage({ params }: PageProps) {
-  const { schoolId, classId, subjectId, chapterId, topicId } = await params
+  const { boardId, classId, subjectId, chapterId, topicId } = await params
   const data = await loadContentTopicDetail(topicId)
 
   if (
     !data ||
-    data.topicRef.schoolId !== schoolId ||
+    data.topicRef.boardId !== boardId ||
     data.topicRef.classId !== classId ||
     data.topicRef.subjectId !== subjectId ||
     data.topicRef.id !== chapterId
@@ -40,20 +40,20 @@ export default async function ContentTopicPage({ params }: PageProps) {
     <div className="flex flex-1 flex-col gap-6">
       <ContentBreadcrumbs
         items={[
-          { label: "Schools", href: contentHref.root() },
-          { label: topicRef.schoolName, href: contentHref.school(schoolId) },
+          { label: "Content", href: contentHref.root() },
+          { label: topicRef.boardName, href: contentHref.board(boardId) },
           {
             label: topicRef.classDisplayName,
-            href: contentHref.class(schoolId, classId),
+            href: contentHref.class(boardId, classId),
           },
           {
             label: topicRef.subjectTitle,
-            href: contentHref.subject(schoolId, classId, subjectId),
+            href: contentHref.subject(boardId, classId, subjectId),
           },
           {
             label: topicRef.title,
             href: contentHref.chapter(
-              schoolId,
+              boardId,
               classId,
               subjectId,
               chapterId
@@ -62,7 +62,7 @@ export default async function ContentTopicPage({ params }: PageProps) {
           {
             label: topicRef.topicTitle,
             href: contentHref.topic(
-              schoolId,
+              boardId,
               classId,
               subjectId,
               chapterId,

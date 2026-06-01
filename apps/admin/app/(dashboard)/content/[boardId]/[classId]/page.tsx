@@ -7,7 +7,7 @@ import { ContentBreadcrumbs } from "@/features/content/view/content-breadcrumbs"
 import { ContentSubjectsView } from "@/features/content/view/content-subjects-view"
 
 type PageProps = {
-  params: Promise<{ schoolId: string; classId: string }>
+  params: Promise<{ boardId: string; classId: string }>
 }
 
 export const metadata: Metadata = {
@@ -15,10 +15,10 @@ export const metadata: Metadata = {
 }
 
 export default async function ContentClassPage({ params }: PageProps) {
-  const { schoolId, classId } = await params
-  const data = await loadContentSubjects(classId)
+  const { boardId, classId } = await params
+  const data = await loadContentSubjects(boardId, classId)
 
-  if (!data || data.classRef.schoolId !== schoolId) {
+  if (!data || data.classRef.boardId !== boardId) {
     notFound()
   }
 
@@ -28,11 +28,11 @@ export default async function ContentClassPage({ params }: PageProps) {
     <div className="flex flex-1 flex-col gap-6">
       <ContentBreadcrumbs
         items={[
-          { label: "Schools", href: contentHref.root() },
-          { label: classRef.schoolName, href: contentHref.school(schoolId) },
+          { label: "Content", href: contentHref.root() },
+          { label: classRef.boardName, href: contentHref.board(boardId) },
           {
             label: classRef.displayName,
-            href: contentHref.class(schoolId, classId),
+            href: contentHref.class(boardId, classId),
           },
         ]}
       />

@@ -81,7 +81,7 @@ export function ContentTopicsView({
             >
               <Link
                 href={contentHref.topic(
-                  chapterRef.schoolId,
+                  chapterRef.boardId,
                   chapterRef.classId,
                   chapterRef.subjectId,
                   chapterRef.id,

@@ -1,11 +1,11 @@
 import type {
   ChapterInput,
+  ContentBoardItem,
+  ContentBoardRef,
   ContentChapterItem,
   ContentChapterRef,
   ContentClassItem,
   ContentClassRef,
-  ContentSchoolItem,
-  ContentSchoolRef,
   ContentSubjectItem,
   ContentSubjectRef,
   ContentNoteItem,
@@ -32,20 +32,27 @@ export class ContentService {
     private readonly repository: ContentRepository = contentRepository
   ) {}
 
-  async listSchools(): Promise<ContentSchoolItem[]> {
-    return this.repository.findSchools()
+  async listBoards(): Promise<ContentBoardItem[]> {
+    return this.repository.findBoards()
   }
 
-  async getSchoolRef(schoolId: string): Promise<ContentSchoolRef | null> {
-    return this.repository.findSchoolRef(schoolId)
+  async getBoardRef(boardId: string): Promise<ContentBoardRef | null> {
+    return this.repository.findBoardRef(boardId)
   }
 
-  async listClassesForSchool(schoolId: string): Promise<ContentClassItem[]> {
-    return this.repository.findClassesForSchool(schoolId)
+  async listClassesForBoard(boardId: string): Promise<ContentClassItem[]> {
+    return this.repository.findClassesForBoard(boardId)
   }
 
   async getClassRef(classId: string): Promise<ContentClassRef | null> {
     return this.repository.findClassRef(classId)
+  }
+
+  async classBelongsToBoard(
+    classId: string,
+    boardId: string
+  ): Promise<boolean> {
+    return this.repository.classBelongsToBoard(classId, boardId)
   }
 
   async listSubjectsForClass(classId: string): Promise<ContentSubjectItem[]> {

@@ -81,7 +81,7 @@ export function ContentChaptersView({
             >
               <Link
                 href={contentHref.chapter(
-                  subjectRef.schoolId,
+                  subjectRef.boardId,
                   subjectRef.classId,
                   subjectRef.id,
                   chapter.id
