@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   School,
   Settings,
-  Users,
 } from "lucide-react"
 
 export type DashboardNavItemDefinition = {
@@ -18,7 +17,6 @@ export type DashboardNavItemDefinition = {
 export const dashboardNavItems: DashboardNavItemDefinition[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { title: "Content", href: "/content", icon: BookOpen },
-  { title: "Students", href: "/students", icon: Users },
   { title: "Schools", href: "/schools", icon: School },
   { title: "Classes", href: "/classes", icon: GraduationCap },
   { title: "Boards", href: "/boards", icon: Landmark },
@@ -27,7 +25,6 @@ export const dashboardNavItems: DashboardNavItemDefinition[] = [
 
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "Dashboard",
-  "/students": "Students",
   "/schools": "Schools",
   "/classes": "Classes",
   "/content": "Content",
@@ -53,6 +50,10 @@ export function resolveDashboardPageTitle(pathname: string): string {
 
   if (pathname.startsWith("/content/") && pathname !== "/content") {
     return "Content"
+  }
+
+  if (pathname.startsWith("/schools/") && pathname !== "/schools") {
+    return "Schools"
   }
 
   const exact = PAGE_TITLES[pathname]

@@ -47,6 +47,9 @@ export function SchoolFormDialog({
   const [name, setName] = useState("")
   const [code, setCode] = useState("")
   const [boardId, setBoardId] = useState("")
+  const [subscriptionStatus, setSubscriptionStatus] = useState<
+    SchoolListItem["subscriptionStatus"]
+  >("active")
 
   const { run, pending, fieldErrors, formError, reset } = useActionRunner<
     [SchoolInput] | [string, SchoolInput],
@@ -68,6 +71,7 @@ export function SchoolFormDialog({
     setName(school?.name ?? "")
     setCode(school?.code ?? "")
     setBoardId(school?.boardId ?? "")
+    setSubscriptionStatus(school?.subscriptionStatus ?? "active")
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, school])
 
@@ -77,6 +81,7 @@ export function SchoolFormDialog({
       name,
       code: code.trim() === "" ? null : code.trim(),
       boardId,
+      subscriptionStatus,
     }
     if (isEdit && school) {
       run(school.id, input)
@@ -140,6 +145,27 @@ export function SchoolFormDialog({
             />
             <FieldHint>Leave blank to auto-display a short id.</FieldHint>
             <FieldError>{fieldErrors.code?.[0]}</FieldError>
+          </Field>
+
+          <Field>
+            <FieldLabel required>Subscription</FieldLabel>
+            <Select
+              value={subscriptionStatus}
+              onValueChange={(value) =>
+                setSubscriptionStatus(value as SchoolListItem["subscriptionStatus"])
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="hold">Hold</SelectItem>
+                <SelectItem value="blocked">Blocked</SelectItem>
+              </SelectContent>
+            </Select>
+            <FieldError>{fieldErrors.subscriptionStatus?.[0]}</FieldError>
           </Field>
 
           {formError ? (

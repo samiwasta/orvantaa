@@ -1,6 +1,15 @@
+import type { SchoolSubscriptionStatus as PrismaSchoolSubscriptionStatus } from "@prisma/client"
 import { z } from "zod"
 
 export type SchoolBoardKind = "board" | "university"
+
+export type SchoolSubscriptionStatus =
+  | "active"
+  | "inactive"
+  | "hold"
+  | "blocked"
+
+export type SchoolSyllabusStatus = "assigned" | "not_assigned"
 
 export type SchoolListItem = {
   id: string
@@ -13,6 +22,10 @@ export type SchoolListItem = {
   boardKindLabel: string
   classCount: number
   studentCount: number
+  syllabusStatus: SchoolSyllabusStatus
+  syllabusLabel: string
+  subscriptionStatus: SchoolSubscriptionStatus
+  subscriptionLabel: string
 }
 
 export type BoardOption = {
@@ -31,6 +44,7 @@ export const schoolInputSchema = z.object({
     .nullable()
     .optional(),
   boardId: z.string().trim().min(1, "Select a board"),
+  subscriptionStatus: z.enum(["active", "inactive", "hold", "blocked"]),
 })
 
 export type SchoolInput = z.infer<typeof schoolInputSchema>
@@ -41,10 +55,65 @@ export function formatSchoolDisplayCode(code: string | null, id: string): string
   return id.slice(0, 8).toUpperCase()
 }
 
+export function schoolDetailHref(schoolCode: string): string {
+  return `/schools/${encodeURIComponent(schoolCode)}`
+}
+
+export function parseSchoolRouteCode(routeCode: string): string {
+  return decodeURIComponent(routeCode).trim()
+}
+
 export function formatBoardKindLabel(kind: SchoolBoardKind): string {
   return kind === "university" ? "University" : "Board"
 }
 
 export function mapPrismaBoardKind(kind: "BOARD" | "UNIVERSITY"): SchoolBoardKind {
   return kind === "UNIVERSITY" ? "university" : "board"
+}
+
+export function mapPrismaSubscriptionStatus(
+  status: PrismaSchoolSubscriptionStatus
+): SchoolSubscriptionStatus {
+  switch (status) {
+    case "INACTIVE":
+      return "inactive"
+    case "HOLD":
+      return "hold"
+    case "BLOCKED":
+      return "blocked"
+    default:
+      return "active"
+  }
+}
+
+export function mapSubscriptionStatusToPrisma(
+  status: SchoolSubscriptionStatus
+): PrismaSchoolSubscriptionStatus {
+  switch (status) {
+    case "inactive":
+      return "INACTIVE"
+    case "hold":
+      return "HOLD"
+    case "blocked":
+      return "BLOCKED"
+    default:
+      return "ACTIVE"
+  }
+}
+
+export function formatSubscriptionLabel(status: SchoolSubscriptionStatus): string {
+  switch (status) {
+    case "inactive":
+      return "Inactive"
+    case "hold":
+      return "Hold"
+    case "blocked":
+      return "Blocked"
+    default:
+      return "Active"
+  }
+}
+
+export function formatSyllabusLabel(status: SchoolSyllabusStatus): string {
+  return status === "assigned" ? "Assigned" : "Not Assigned"
 }

@@ -29,6 +29,18 @@ enum QuizDifficulty {
   HARD
 }
 
+enum SchoolSubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  HOLD
+  BLOCKED
+}
+
+enum StudentMailStatus {
+  NOT_SENT
+  SENT
+}
+
 // ─── Board / University ───────────────────────────────────────────────────────
 
 model Board {
@@ -48,13 +60,14 @@ model Board {
 // ─── School ───────────────────────────────────────────────────────────────────
 
 model School {
-  id        String   @id @default(cuid())
-  name      String
-  code      String?  @unique
-  boardId   String
-  board     Board    @relation(fields: [boardId], references: [id], onDelete: Restrict)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String                   @id @default(cuid())
+  name               String
+  code               String?                  @unique
+  boardId            String
+  board              Board                    @relation(fields: [boardId], references: [id], onDelete: Restrict)
+  subscriptionStatus SchoolSubscriptionStatus @default(ACTIVE)
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
 
   classes Class[]
 
@@ -232,6 +245,9 @@ model User {
   username     String   @unique
   email        String   @unique
   passwordHash String
+  studentCode  String?  @unique
+  phone        String?
+  mailStatus   StudentMailStatus @default(NOT_SENT)
   firstName    String
   lastName     String   @default("")
   gender       Gender   @default(FEMALE)

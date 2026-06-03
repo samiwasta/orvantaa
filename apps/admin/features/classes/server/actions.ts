@@ -3,6 +3,7 @@
 import { Prisma } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 
+import { schoolDetailHref } from "@/features/schools/model/school-list-item"
 import {
   type ActionResult,
   actionError,
@@ -24,7 +25,8 @@ function isUniqueError(error: unknown): boolean {
 }
 
 export async function createClassAction(
-  raw: unknown
+  raw: unknown,
+  schoolCode?: string
 ): Promise<ActionResult<undefined>> {
   const parsed = parseInput(classInputSchema, raw)
   if (!parsed.success) return parsed.result
@@ -32,6 +34,10 @@ export async function createClassAction(
   try {
     await classService.createClass(parsed.data)
     revalidatePath("/classes")
+    if (schoolCode) {
+      revalidatePath(schoolDetailHref(schoolCode))
+      revalidatePath("/schools")
+    }
     return actionOk(undefined, "Class created")
   } catch (error) {
     if (isUniqueError(error)) {
@@ -62,13 +68,18 @@ export async function updateClassAction(
 }
 
 export async function deleteClassAction(
-  id: string
+  id: string,
+  schoolCode?: string
 ): Promise<ActionResult<{ id: string }>> {
   if (!id) return actionError("Missing class id.")
 
   try {
     await classService.deleteClass(id)
     revalidatePath("/classes")
+    if (schoolCode) {
+      revalidatePath(schoolDetailHref(schoolCode))
+      revalidatePath("/schools")
+    }
     return actionOk({ id }, "Class deleted")
   } catch (error) {
     const message =

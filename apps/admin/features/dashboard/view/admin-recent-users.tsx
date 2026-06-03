@@ -1,7 +1,5 @@
 import { cn } from "@workspace/ui/lib/utils"
 import { GraduationCap, UserCog } from "lucide-react"
-import Link from "next/link"
-
 import type { RecentUser } from "../model/admin-dashboard-stats"
 
 function initials(fullName: string): string {
@@ -37,21 +35,13 @@ type Props = { users: RecentUser[] }
 export function AdminRecentUsers({ users }: Props) {
   return (
     <div className="flex flex-col gap-0 overflow-hidden rounded-2xl border bg-white shadow-sm ring-1 ring-black/[0.04] lg:col-span-2">
-      <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
-        <div>
-          <p className="font-heading text-[15px] font-semibold tracking-tight text-foreground">
-            Recent signups
-          </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Latest {users.length} registered students
-          </p>
-        </div>
-        <Link
-          href="/students"
-          className="text-xs font-medium text-[#6C5CE7] hover:underline"
-        >
-          View all
-        </Link>
+      <div className="border-b border-border/50 px-5 py-4">
+        <p className="font-heading text-[15px] font-semibold tracking-tight text-foreground">
+          Recent signups
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Latest {users.length} registered students
+        </p>
       </div>
 
       {users.length === 0 ? (

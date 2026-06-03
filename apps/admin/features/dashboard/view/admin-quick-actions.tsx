@@ -5,18 +5,10 @@ import {
   Landmark,
   PlusCircle,
   School,
-  UserPlus,
 } from "lucide-react"
 import Link from "next/link"
 
 const actions = [
-  {
-    label: "Add student",
-    description: "Create a new student account",
-    href: "/students",
-    icon: UserPlus,
-    color: "#6C5CE7",
-  },
   {
     label: "New school",
     description: "Register a school",

@@ -4,9 +4,15 @@ import {
   type BoardOption,
   formatBoardKindLabel,
   formatSchoolDisplayCode,
+  formatSubscriptionLabel,
+  formatSyllabusLabel,
   mapPrismaBoardKind,
+  mapPrismaSubscriptionStatus,
+  mapSubscriptionStatusToPrisma,
+  parseSchoolRouteCode,
   type SchoolInput,
   type SchoolListItem,
+  type SchoolSyllabusStatus,
 } from "../model/school-list-item"
 
 export class SchoolRepository {
@@ -18,6 +24,7 @@ export class SchoolRepository {
         name: true,
         code: true,
         boardId: true,
+        subscriptionStatus: true,
         board: {
           select: {
             name: true,
@@ -26,6 +33,7 @@ export class SchoolRepository {
         },
         classes: {
           select: {
+            _count: { select: { subjects: true } },
             sections: {
               select: { _count: { select: { students: true } } },
             },
@@ -46,6 +54,11 @@ export class SchoolRepository {
           ),
         0
       )
+      const hasSubjects = row.classes.some((cls) => cls._count.subjects > 0)
+      const syllabusStatus: SchoolSyllabusStatus = hasSubjects
+        ? "assigned"
+        : "not_assigned"
+      const subscriptionStatus = mapPrismaSubscriptionStatus(row.subscriptionStatus)
 
       return {
         id: row.id,
@@ -58,7 +71,42 @@ export class SchoolRepository {
         boardKindLabel: formatBoardKindLabel(boardKind),
         classCount: row._count.classes,
         studentCount,
+        syllabusStatus,
+        syllabusLabel: formatSyllabusLabel(syllabusStatus),
+        subscriptionStatus,
+        subscriptionLabel: formatSubscriptionLabel(subscriptionStatus),
       }
+    })
+  }
+
+  async findSchoolByRouteCode(routeCode: string): Promise<SchoolListItem | null> {
+    const normalized = parseSchoolRouteCode(routeCode)
+    if (!normalized) return null
+
+    const byCode = await prisma.school.findFirst({
+      where: { code: { equals: normalized, mode: "insensitive" } },
+      select: { id: true },
+    })
+
+    if (byCode) {
+      const schools = await this.findAllSchools()
+      return schools.find((s) => s.id === byCode.id) ?? null
+    }
+
+    const schools = await this.findAllSchools()
+    const upper = normalized.toUpperCase()
+    return schools.find((s) => s.schoolCode === upper) ?? null
+  }
+
+  async updateSubscriptionStatus(
+    id: string,
+    subscriptionStatus: SchoolInput["subscriptionStatus"]
+  ): Promise<void> {
+    await prisma.school.update({
+      where: { id },
+      data: {
+        subscriptionStatus: mapSubscriptionStatusToPrisma(subscriptionStatus),
+      },
     })
   }
 
@@ -80,6 +128,7 @@ export class SchoolRepository {
         name: input.name,
         code: input.code ?? null,
         boardId: input.boardId,
+        subscriptionStatus: mapSubscriptionStatusToPrisma(input.subscriptionStatus),
       },
     })
   }
@@ -91,6 +140,7 @@ export class SchoolRepository {
         name: input.name,
         code: input.code ?? null,
         boardId: input.boardId,
+        subscriptionStatus: mapSubscriptionStatusToPrisma(input.subscriptionStatus),
       },
     })
   }

@@ -35,6 +35,8 @@ type ClassFormDialogProps = {
   classItem?: ClassListItem | null
   schoolOptions: SchoolOption[]
   defaultSchoolId?: string
+  defaultSchoolName?: string
+  revalidateSchoolCode?: string
 }
 
 export function ClassFormDialog({
@@ -43,8 +45,11 @@ export function ClassFormDialog({
   classItem,
   schoolOptions,
   defaultSchoolId,
+  defaultSchoolName,
+  revalidateSchoolCode,
 }: ClassFormDialogProps) {
   const isEdit = Boolean(classItem)
+  const schoolLocked = Boolean(defaultSchoolId && !isEdit)
 
   const [schoolId, setSchoolId] = useState("")
   const [name, setName] = useState("")
@@ -56,7 +61,7 @@ export function ClassFormDialog({
     ((...args: unknown[]) =>
       isEdit
         ? updateClassAction(args[0] as string, args[1] as string)
-        : createClassAction(args[0] as ClassInput)) as never,
+        : createClassAction(args[0] as ClassInput, revalidateSchoolCode)) as never,
     {
       successMessage: isEdit ? "Class updated" : "Class created",
       onSuccess: () => onOpenChange(false),
@@ -97,6 +102,11 @@ export function ClassFormDialog({
             <Field>
               <FieldLabel>School</FieldLabel>
               <Input value={classItem?.schoolName ?? ""} disabled />
+            </Field>
+          ) : schoolLocked ? (
+            <Field>
+              <FieldLabel>School</FieldLabel>
+              <Input value={defaultSchoolName ?? ""} disabled />
             </Field>
           ) : (
             <Field>

@@ -1,0 +1,47 @@
+import type { Metadata } from "next"
+import { notFound } from "next/navigation"
+import { Suspense } from "react"
+
+import { loadSchoolDetail } from "@/features/schools/server/load-school-detail"
+import { SchoolDetailView } from "@/features/schools/view/school-detail-view"
+
+type PageProps = {
+  params: Promise<{ schoolCode: string }>
+  searchParams: Promise<{ tab?: string; class?: string }>
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { schoolCode } = await params
+  return {
+    title: `${schoolCode} - Orvantaa Admin`,
+  }
+}
+
+export default async function SchoolDetailPage({ params, searchParams }: PageProps) {
+  const { schoolCode } = await params
+  const { tab, class: classFilter } = await searchParams
+
+  const activeTab =
+    tab === "syllabus" || tab === "subscription" || tab === "students"
+      ? tab
+      : "students"
+  const activeClassId = classFilter ?? "all"
+
+  const data = await loadSchoolDetail(schoolCode, activeClassId)
+  if (!data) notFound()
+
+  return (
+    <Suspense>
+      <SchoolDetailView
+        school={data.school}
+        students={data.students}
+        classTabs={data.classTabs}
+        sectionOptions={data.sectionOptions}
+        syllabusRows={data.syllabusRows}
+        boardClassOptions={data.boardClassOptions}
+        initialTab={activeTab}
+        initialClassId={activeClassId}
+      />
+    </Suspense>
+  )
+}

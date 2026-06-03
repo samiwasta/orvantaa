@@ -1,23 +1,22 @@
 "use client"
 
-import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu"
 import { Input } from "@workspace/ui/components/input"
-import { MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react"
+import { Eye, Pencil, Plus, Search, Trash2 } from "lucide-react"
+import Link from "next/link"
 import { useMemo, useState } from "react"
 
-import { useActionRunner } from "@/lib/actions/use-action-runner"
 import { ConfirmDialog } from "@/features/shared/view/confirm-dialog"
+import { useActionRunner } from "@/lib/actions/use-action-runner"
 
-import type { BoardOption, SchoolListItem } from "../model/school-list-item"
+import {
+  type BoardOption,
+  schoolDetailHref,
+  type SchoolListItem,
+} from "../model/school-list-item"
 import { deleteSchoolAction } from "../server/actions"
 import { SchoolFormDialog } from "./school-form-dialog"
+import { SubscriptionStatusBadge, SyllabusStatusBadge } from "./school-status-badges"
 
 type SchoolsTableProps = {
   schools: SchoolListItem[]
@@ -33,8 +32,8 @@ function filterSchools(schools: SchoolListItem[], query: string): SchoolListItem
       s.schoolCode,
       s.name,
       s.boardName,
-      s.boardKindLabel,
-      String(s.classCount),
+      s.syllabusLabel,
+      s.subscriptionLabel,
       String(s.studentCount),
     ]
       .join(" ")
@@ -49,7 +48,6 @@ export function SchoolsTable({ schools, boardOptions }: SchoolsTableProps) {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<SchoolListItem | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<SchoolListItem | null>(null)
-
   const filtered = useMemo(
     () => filterSchools(schools, search),
     [schools, search]
@@ -109,7 +107,7 @@ export function SchoolsTable({ schools, boardOptions }: SchoolsTableProps) {
 
       <div className="overflow-hidden rounded-2xl border border-border/60 bg-white shadow-sm ring-1 ring-black/[0.04]">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[880px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[960px] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-border/60 bg-muted/40">
                 <th className="px-4 py-3.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
@@ -122,13 +120,13 @@ export function SchoolsTable({ schools, boardOptions }: SchoolsTableProps) {
                   Board
                 </th>
                 <th className="px-4 py-3.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                  Board type
-                </th>
-                <th className="px-4 py-3.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                  Classes
-                </th>
-                <th className="px-4 py-3.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                   Students
+                </th>
+                <th className="px-4 py-3.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Syllabus
+                </th>
+                <th className="px-4 py-3.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Subscription
                 </th>
                 <th className="px-4 py-3.5 text-right text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                   Actions
@@ -162,47 +160,50 @@ export function SchoolsTable({ schools, boardOptions }: SchoolsTableProps) {
                       <p className="font-medium text-foreground">{school.name}</p>
                     </td>
                     <td className="px-4 py-3.5">{school.boardName}</td>
-                    <td className="px-4 py-3.5">
-                      <Badge
-                        variant={
-                          school.boardKind === "university" ? "secondary" : "default"
-                        }
-                      >
-                        {school.boardKindLabel}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3.5 tabular-nums text-muted-foreground">
-                      {school.classCount}
-                    </td>
-                    <td className="px-4 py-3.5 tabular-nums text-muted-foreground">
+                    <td className="px-4 py-3.5 tabular-nums text-foreground">
                       {school.studentCount}
                     </td>
-                    <td className="px-4 py-3.5 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-8 rounded-lg text-muted-foreground hover:bg-muted"
-                            aria-label={`Actions for ${school.name}`}
-                          >
-                            <MoreHorizontal className="size-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEdit(school)}>
-                            <Pencil className="size-4" aria-hidden />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => setDeleteTarget(school)}
-                          >
-                            <Trash2 className="size-4" aria-hidden />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <td className="px-4 py-3.5">
+                      <SyllabusStatusBadge school={school} />
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <SubscriptionStatusBadge school={school} />
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 rounded-lg text-muted-foreground hover:bg-muted"
+                          aria-label={`View details for ${school.name}`}
+                          asChild
+                        >
+                          <Link href={schoolDetailHref(school.schoolCode)}>
+                            <Eye className="size-4" />
+                          </Link>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 rounded-lg text-muted-foreground hover:bg-muted"
+                          aria-label={`Update ${school.name}`}
+                          onClick={() => openEdit(school)}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          aria-label={`Delete ${school.name}`}
+                          onClick={() => setDeleteTarget(school)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))

@@ -15,6 +15,7 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
+    "db:check": "tsx scripts/check-db-connection.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {

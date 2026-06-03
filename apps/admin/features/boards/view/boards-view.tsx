@@ -2,14 +2,8 @@
 
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu"
 import { Input } from "@workspace/ui/components/input"
-import { Landmark, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react"
+import { Landmark, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 
 import { useActionRunner } from "@/lib/actions/use-action-runner"
@@ -93,14 +87,11 @@ export function BoardsView({ boards }: BoardsViewProps) {
 
       <div className="overflow-hidden rounded-2xl border border-border/60 bg-white shadow-sm ring-1 ring-black/[0.04]">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[640px] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-border/60 bg-muted/40">
                 <th className="px-4 py-3.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                   Name
-                </th>
-                <th className="px-4 py-3.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                  Slug
                 </th>
                 <th className="px-4 py-3.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                   Type
@@ -120,7 +111,7 @@ export function BoardsView({ boards }: BoardsViewProps) {
               {filtered.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={5}
                     className="px-4 py-16 text-center text-sm text-muted-foreground"
                   >
                     {search.trim()
@@ -143,11 +134,6 @@ export function BoardsView({ boards }: BoardsViewProps) {
                       </div>
                     </td>
                     <td className="px-4 py-3.5">
-                      <span className="font-mono text-xs text-muted-foreground">
-                        {board.slug}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5">
                       <Badge variant={board.kind === "university" ? "secondary" : "default"}>
                         {board.kindLabel}
                       </Badge>
@@ -158,32 +144,29 @@ export function BoardsView({ boards }: BoardsViewProps) {
                     <td className="px-4 py-3.5 tabular-nums text-muted-foreground">
                       {board.schoolCount}
                     </td>
-                    <td className="px-4 py-3.5 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-8 rounded-lg text-muted-foreground hover:bg-muted"
-                            aria-label={`Actions for ${board.name}`}
-                          >
-                            <MoreHorizontal className="size-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEdit(board)}>
-                            <Pencil className="size-4" aria-hidden />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => setDeleteTarget(board)}
-                          >
-                            <Trash2 className="size-4" aria-hidden />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 rounded-lg text-muted-foreground hover:bg-muted"
+                          aria-label={`Edit ${board.name}`}
+                          onClick={() => openEdit(board)}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          aria-label={`Delete ${board.name}`}
+                          onClick={() => setDeleteTarget(board)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))
