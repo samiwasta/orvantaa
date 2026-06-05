@@ -25,6 +25,55 @@ export function mapBoardKindToPrisma(kind: BoardKind): PrismaBoardKind {
   return kind === "university" ? "UNIVERSITY" : "BOARD"
 }
 
+const BOARD_NAME_STOP_WORDS = new Set([
+  "a",
+  "an",
+  "the",
+  "of",
+  "and",
+  "for",
+  "in",
+  "on",
+  "at",
+  "to",
+  "from",
+  "with",
+])
+
+export function deriveBoardAcronymFromName(value: string): string {
+  const trimmed = value.trim()
+  if (!trimmed) return ""
+
+  const singleToken = trimmed.replace(/[^a-zA-Z0-9]/g, "")
+  if (!/\s/.test(trimmed) && singleToken.length >= 2 && singleToken.length <= 12) {
+    return singleToken.toUpperCase()
+  }
+
+  const words = trimmed
+    .split(/[\s,/()-]+/)
+    .map((word) => word.replace(/[^a-zA-Z0-9]/g, ""))
+    .filter(Boolean)
+
+  const acronym = words
+    .filter((word) => !BOARD_NAME_STOP_WORDS.has(word.toLowerCase()))
+    .map((word) => word[0]!.toUpperCase())
+    .join("")
+
+  return acronym
+}
+
+export function deriveBoardSlugFromName(value: string): string {
+  const acronym = deriveBoardAcronymFromName(value)
+  if (acronym.length >= 2) {
+    return acronym.toLowerCase()
+  }
+  return slugifyBoardName(value)
+}
+
+export function deriveBoardCodeFromName(value: string): string {
+  return deriveBoardAcronymFromName(value)
+}
+
 export function slugifyBoardName(value: string): string {
   return value
     .trim()

@@ -5,6 +5,7 @@ import {
   formatBoardKindLabel,
   formatSchoolDisplayCode,
   formatSubscriptionLabel,
+  deriveSchoolSyllabusStatus,
   formatSyllabusLabel,
   mapPrismaBoardKind,
   mapPrismaSubscriptionStatus,
@@ -12,7 +13,6 @@ import {
   parseSchoolRouteCode,
   type SchoolInput,
   type SchoolListItem,
-  type SchoolSyllabusStatus,
 } from "../model/school-list-item"
 
 export class SchoolRepository {
@@ -54,10 +54,9 @@ export class SchoolRepository {
           ),
         0
       )
-      const hasSubjects = row.classes.some((cls) => cls._count.subjects > 0)
-      const syllabusStatus: SchoolSyllabusStatus = hasSubjects
-        ? "assigned"
-        : "not_assigned"
+      const syllabusStatus = deriveSchoolSyllabusStatus(
+        row.classes.map((cls) => ({ subjectCount: cls._count.subjects }))
+      )
       const subscriptionStatus = mapPrismaSubscriptionStatus(row.subscriptionStatus)
 
       return {

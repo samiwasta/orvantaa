@@ -15,9 +15,11 @@ export function ResetPasswordView({
   toggleShowPassword,
   toggleShowConfirmPassword,
   fieldErrors,
+  formError,
   clearFieldError,
   onSubmit,
   isResettingPassword,
+  canSubmit,
 }: ResetPasswordViewProps) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F3F3FF] p-4 lg:p-6 xl:p-8">
@@ -138,9 +140,18 @@ export function ResetPasswordView({
                 </div>
               </div>
 
+              {formError ? (
+                <p
+                  className="text-sm font-medium text-destructive"
+                  role="alert"
+                >
+                  {formError}
+                </p>
+              ) : null}
+
               <Button
                 type="submit"
-                disabled={isResettingPassword}
+                disabled={isResettingPassword || !canSubmit}
                 aria-busy={isResettingPassword}
                 className="h-11 w-full rounded-lg bg-[#ff8c42] text-sm font-semibold text-white shadow-sm hover:bg-[#ff8c42]/92 disabled:opacity-90 lg:h-14 lg:text-base"
               >

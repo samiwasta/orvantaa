@@ -1,5 +1,6 @@
 "use client"
 
+import { RichTextContent } from "@workspace/rich-text"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import { ArrowLeft, ChevronLeft } from "lucide-react"
@@ -131,9 +132,17 @@ export function QuizView({ subjectSlug, chapter, session }: QuizViewProps) {
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-border/80 bg-card p-5 shadow-sm sm:p-6">
-            <h2 className="text-base leading-snug font-semibold text-foreground sm:text-lg">
-              {questionNumber}. {question.question}
-            </h2>
+            <div className="note-student-preview font-heading">
+              <p className="mb-1 text-xs font-semibold text-muted-foreground">
+                Question {questionNumber}
+              </p>
+              <RichTextContent
+                html={question.question}
+                structured
+                studentPreview
+                previewBlock="heading"
+              />
+            </div>
 
             <div
               className="mt-5 space-y-3"

@@ -1,6 +1,6 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import * as React from "react"
 
 import {
@@ -13,16 +13,23 @@ export type ResetPasswordFieldName = "newPassword" | "confirmNewPassword"
 
 export function useResetPasswordController() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const token = searchParams.get("token")?.trim() ?? ""
+
   const [isResettingPassword, setIsResettingPassword] = React.useState(false)
   const [showPassword, setShowPassword] = React.useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
   const [fieldErrors, setFieldErrors] = React.useState<
     Partial<Record<ResetPasswordFieldName, string>>
   >({})
+  const [formError, setFormError] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     clearResetPasswordSuccess()
-  }, [])
+    if (!token) {
+      setFormError("This reset link is invalid or has expired.")
+    }
+  }, [token])
 
   const toggleShowPassword = React.useCallback(() => {
     setShowPassword((v) => !v)
@@ -39,7 +46,7 @@ export function useResetPasswordController() {
   const onSubmit = React.useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault()
-      if (isResettingPassword) return
+      if (isResettingPassword || !token) return
 
       const form = e.currentTarget
       const fd = new FormData(form)
@@ -58,18 +65,39 @@ export function useResetPasswordController() {
       }
 
       setFieldErrors({})
+      setFormError(null)
       setIsResettingPassword(true)
       void (async () => {
         try {
-          await new Promise((r) => setTimeout(r, 1500))
+          const response = await fetch("/api/auth/reset-password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              token,
+              newPassword: parsed.data.newPassword,
+            }),
+          })
+
+          const payload = (await response.json()) as { message?: string }
+
+          if (!response.ok) {
+            setFormError(
+              payload.message ??
+                "Could not reset your password. Please try again."
+            )
+            return
+          }
+
           markResetPasswordSuccess()
           router.push("/reset-password/success")
+        } catch {
+          setFormError("Could not reset your password. Please try again.")
         } finally {
           setIsResettingPassword(false)
         }
       })()
     },
-    [isResettingPassword, router]
+    [isResettingPassword, router, token]
   )
 
   return {
@@ -78,9 +106,11 @@ export function useResetPasswordController() {
     toggleShowPassword,
     toggleShowConfirmPassword,
     fieldErrors,
+    formError,
     clearFieldError,
     onSubmit,
     isResettingPassword,
+    canSubmit: Boolean(token),
   }
 }
 

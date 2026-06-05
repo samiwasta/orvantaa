@@ -4,8 +4,7 @@ import { NextResponse } from "next/server"
 import { forgotPasswordSchema } from "@/features/auth/model/schemas"
 import { authService } from "@/features/auth/service/auth.service"
 import { authEmailService } from "@/features/auth/service/email.service"
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+import { buildAdminPasswordResetUrl } from "@/lib/auth/password-reset-url"
 
 export async function POST(request: Request) {
   let body: unknown
@@ -40,7 +39,7 @@ export async function POST(request: Request) {
 
       await authService.createPasswordResetToken(user.id, tokenHash)
 
-      const resetUrl = `${APP_URL}/reset-password?token=${rawToken}`
+      const resetUrl = buildAdminPasswordResetUrl(rawToken)
 
       await authEmailService.sendPasswordResetEmail(
         user.email,

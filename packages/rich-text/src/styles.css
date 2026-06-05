@@ -1,0 +1,308 @@
+@import "katex/dist/katex.min.css";
+
+/* Student note preview (Poppins, matches dashboard note view) */
+.note-student-preview {
+  font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+}
+
+.note-student-preview .rich-text-content .tiptap {
+  font-family: inherit;
+}
+
+.note-preview-prose-body {
+  font-size: 0.875rem;
+  line-height: 1.625;
+  font-weight: 400;
+  color: color-mix(in oklab, var(--foreground, #1c1c1e) 90%, transparent);
+}
+
+@media (min-width: 640px) {
+  .note-preview-prose-body {
+    font-size: 15px;
+    line-height: 1.75rem;
+  }
+}
+
+.note-preview-prose-heading {
+  font-size: 1.125rem;
+  line-height: 1.375;
+  font-weight: 600;
+  color: var(--foreground, #1c1c1e);
+}
+
+@media (min-width: 640px) {
+  .note-preview-prose-heading {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+}
+
+.note-preview-prose-label {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  font-weight: 600;
+  color: inherit;
+}
+
+.note-preview-prose-quote {
+  font-size: 0.875rem;
+  line-height: 1.625;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--muted-foreground, #71717a);
+}
+
+@media (min-width: 640px) {
+  .note-preview-prose-quote {
+    font-size: 15px;
+    line-height: 1.75rem;
+  }
+}
+
+.rich-text-editor .tiptap {
+  outline: none;
+  min-height: inherit;
+}
+
+.rich-text-editor .tiptap p.is-editor-empty:first-child::before {
+  color: var(--muted-foreground, #71717a);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.rich-text-content .tiptap {
+  outline: none;
+}
+
+.rich-text-content .tiptap > *:first-child {
+  margin-top: 0;
+}
+
+.rich-text-content .tiptap > *:last-child {
+  margin-bottom: 0;
+}
+
+.rich-text-content .tiptap p,
+.rich-text-editor .tiptap p {
+  margin: 0.35em 0;
+}
+
+.rich-text-content .tiptap ul,
+.rich-text-editor .tiptap ul,
+.rich-text-content .tiptap ol,
+.rich-text-editor .tiptap ol {
+  margin: 0.35em 0;
+  padding-left: 1.5rem;
+  list-style-position: outside;
+}
+
+.rich-text-content .tiptap ul,
+.rich-text-editor .tiptap ul {
+  list-style-type: disc;
+}
+
+.rich-text-content .tiptap ol,
+.rich-text-editor .tiptap ol {
+  list-style-type: decimal;
+}
+
+.rich-text-content .tiptap li,
+.rich-text-editor .tiptap li {
+  display: list-item;
+}
+
+.rich-text-content .tiptap li > p,
+.rich-text-editor .tiptap li > p {
+  margin: 0;
+}
+
+.rich-text-content .tiptap ul ul,
+.rich-text-editor .tiptap ul ul {
+  list-style-type: circle;
+}
+
+.rich-text-content .tiptap ul ul ul,
+.rich-text-editor .tiptap ul ul ul {
+  list-style-type: square;
+}
+
+.rich-text-content .tiptap ul ul,
+.rich-text-content .tiptap ul ol,
+.rich-text-content .tiptap ol ul,
+.rich-text-content .tiptap ol ol,
+.rich-text-editor .tiptap ul ul,
+.rich-text-editor .tiptap ul ol,
+.rich-text-editor .tiptap ol ul,
+.rich-text-editor .tiptap ol ol {
+  margin: 0.2em 0;
+  padding-left: 1.25rem;
+}
+
+.rich-text-content .tiptap ol ol,
+.rich-text-editor .tiptap ol ol {
+  list-style-type: lower-alpha;
+}
+
+.rich-text-content .tiptap blockquote,
+.rich-text-editor .tiptap blockquote {
+  border-left: 3px solid #c4b5fd;
+  margin: 0.5em 0;
+  padding-left: 0.75rem;
+  color: #52525b;
+}
+
+.rich-text-content .tiptap [data-type="block-math"],
+.rich-text-editor .tiptap [data-type="block-math"] {
+  display: block;
+  margin: 0.75em 0;
+  overflow-x: auto;
+  text-align: center;
+}
+
+/* Student preview: custom bullets & numbers only (no item boxes) */
+.rich-text-content[data-preview-tone] .tiptap > p {
+  margin: 0.4rem 0;
+  line-height: 1.65;
+}
+
+.rich-text-content[data-preview-tone] .tiptap ul,
+.rich-text-content[data-preview-tone] .tiptap ol {
+  list-style: none;
+  margin: 0.4rem 0;
+  padding-left: 0;
+}
+
+.rich-text-content[data-preview-tone] .tiptap li {
+  position: relative;
+  margin: 0.2rem 0;
+  padding: 0.1rem 0 0.1rem 1.5rem;
+  line-height: 1.6;
+}
+
+.rich-text-content[data-preview-tone] .tiptap li > p {
+  margin: 0;
+}
+
+.rich-text-content[data-preview-tone] .tiptap ul ul,
+.rich-text-content[data-preview-tone] .tiptap ol ul,
+.rich-text-content[data-preview-tone] .tiptap ul ol,
+.rich-text-content[data-preview-tone] .tiptap ol ol {
+  margin: 0.15rem 0;
+  padding-left: 0;
+}
+
+.rich-text-content[data-preview-tone] .tiptap li li {
+  padding-left: 1.35rem;
+}
+
+/* Sky — example block */
+.rich-text-content[data-preview-tone="sky"] .tiptap ul > li::before {
+  content: "";
+  position: absolute;
+  left: 0.4rem;
+  top: 0.72em;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 9999px;
+  background: #0ea5e9;
+}
+
+.rich-text-content[data-preview-tone="sky"] .tiptap ul ul > li::before {
+  width: 0.3rem;
+  height: 0.3rem;
+  background: #38bdf8;
+}
+
+.rich-text-content[data-preview-tone="sky"] .tiptap ol {
+  counter-reset: note-ol;
+}
+
+.rich-text-content[data-preview-tone="sky"] .tiptap ol > li {
+  counter-increment: note-ol;
+  padding-left: 1.85rem;
+}
+
+.rich-text-content[data-preview-tone="sky"] .tiptap ol > li::before {
+  content: counter(note-ol);
+  position: absolute;
+  left: 0.15rem;
+  top: 0.35em;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #0369a1;
+  background: #e0f2fe;
+}
+
+.rich-text-content[data-preview-tone="sky"] .tiptap ol ol {
+  counter-reset: note-ol;
+}
+
+.rich-text-content[data-preview-tone="sky"] .tiptap ol ol > li::before {
+  min-width: 1rem;
+  height: 1rem;
+  font-size: 0.6rem;
+}
+
+/* Emerald — list block */
+.rich-text-content[data-preview-tone="emerald"] .tiptap ul > li::before {
+  content: "";
+  position: absolute;
+  left: 0.4rem;
+  top: 0.72em;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 9999px;
+  background: #10b981;
+}
+
+.rich-text-content[data-preview-tone="emerald"] .tiptap ul ul > li::before {
+  width: 0.3rem;
+  height: 0.3rem;
+  background: #34d399;
+}
+
+.rich-text-content[data-preview-tone="emerald"] .tiptap ol {
+  counter-reset: note-ol;
+}
+
+.rich-text-content[data-preview-tone="emerald"] .tiptap ol > li {
+  counter-increment: note-ol;
+  padding-left: 1.85rem;
+}
+
+.rich-text-content[data-preview-tone="emerald"] .tiptap ol > li::before {
+  content: counter(note-ol);
+  position: absolute;
+  left: 0.15rem;
+  top: 0.35em;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #047857;
+  background: #d1fae5;
+}
+
+.rich-text-content[data-preview-tone="emerald"] .tiptap ol ol {
+  counter-reset: note-ol;
+}
+
+.rich-text-content[data-preview-tone="emerald"] .tiptap ol ol > li::before {
+  min-width: 1rem;
+  height: 1rem;
+  font-size: 0.6rem;
+}

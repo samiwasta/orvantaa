@@ -4,3 +4,10 @@ export class InvalidCredentialsError extends Error {
     this.name = "InvalidCredentialsError"
   }
 }
+
+export class InvalidResetTokenError extends Error {
+  constructor() {
+    super("This reset link is invalid or has expired.")
+    this.name = "InvalidResetTokenError"
+  }
+}

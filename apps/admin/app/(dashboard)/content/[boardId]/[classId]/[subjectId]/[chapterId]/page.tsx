@@ -1,11 +1,11 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { Suspense } from "react"
 
 import { contentHref } from "@/features/content/model/content-nav"
 import { loadContentTopics } from "@/features/content/server/load-content-topics"
 import { ContentBreadcrumbs } from "@/features/content/view/content-breadcrumbs"
-import { ContentChapterQuizzesView } from "@/features/content/view/content-chapter-quizzes-view"
-import { ContentTopicsView } from "@/features/content/view/content-topics-view"
+import { ContentChapterDetailView } from "@/features/content/view/content-chapter-detail-view"
 
 type PageProps = {
   params: Promise<{
@@ -14,14 +14,21 @@ type PageProps = {
     subjectId: string
     chapterId: string
   }>
+  searchParams: Promise<{ tab?: string }>
 }
 
 export const metadata: Metadata = {
   title: "Content - Orvantaa Admin",
 }
 
-export default async function ContentChapterPage({ params }: PageProps) {
+export default async function ContentChapterPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { boardId, classId, subjectId, chapterId } = await params
+  const { tab } = await searchParams
+  const activeTab = tab === "quizzes" ? "quizzes" : "topics"
+
   const data = await loadContentTopics(chapterId)
 
   if (
@@ -60,8 +67,18 @@ export default async function ContentChapterPage({ params }: PageProps) {
           },
         ]}
       />
-      <ContentTopicsView chapterRef={chapterRef} topics={topics} />
-      <ContentChapterQuizzesView chapterRef={chapterRef} quizzes={quizzes} />
+      <Suspense>
+        <ContentChapterDetailView
+          chapterRef={chapterRef}
+          topics={topics}
+          quizzes={quizzes}
+          boardId={boardId}
+          classId={classId}
+          subjectId={subjectId}
+          chapterId={chapterId}
+          initialTab={activeTab}
+        />
+      </Suspense>
     </div>
   )
 }

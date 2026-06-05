@@ -18,10 +18,9 @@ export type ContentBoardRef = {
 export type ContentClassItem = {
   id: string
   boardId: string
-  schoolId: string
-  schoolName: string
   name: string
   displayName: string
+  schoolCount: number
   sectionCount: number
   subjectCount: number
 }

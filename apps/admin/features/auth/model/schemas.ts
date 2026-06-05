@@ -40,6 +40,16 @@ export const resetPasswordSchema = z
 
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>
 
+export const resetPasswordApiSchema = z.object({
+  token: z.string().trim().min(1, "Reset link is invalid or expired."),
+  newPassword: z
+    .string()
+    .min(8, "Password must be at least 8 characters.")
+    .max(128, "Password must be at most 128 characters."),
+})
+
+export type ResetPasswordApiValues = z.infer<typeof resetPasswordApiSchema>
+
 export function fieldErrorsFromZod(
   error: z.ZodError
 ): Partial<Record<string, string>> {

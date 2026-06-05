@@ -5,7 +5,7 @@ import {
   Landmark,
   LayoutDashboard,
   School,
-  Settings,
+  UsersRound,
 } from "lucide-react"
 
 export type DashboardNavItemDefinition = {
@@ -20,7 +20,7 @@ export const dashboardNavItems: DashboardNavItemDefinition[] = [
   { title: "Schools", href: "/schools", icon: School },
   { title: "Classes", href: "/classes", icon: GraduationCap },
   { title: "Boards", href: "/boards", icon: Landmark },
-  { title: "Settings", href: "/settings", icon: Settings },
+  { title: "Team", href: "/team", icon: UsersRound },
 ]
 
 const PAGE_TITLES: Record<string, string> = {
@@ -29,7 +29,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/classes": "Classes",
   "/content": "Content",
   "/boards": "Boards",
-  "/settings": "Settings",
+  "/team": "Team",
   "/profile": "My Profile",
 }
 

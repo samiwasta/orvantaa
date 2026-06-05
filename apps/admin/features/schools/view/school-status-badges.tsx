@@ -9,6 +9,7 @@ import type { StudentMailStatus } from "../model/school-student-list-item"
 
 const syllabusStyles: Record<SchoolSyllabusStatus, string> = {
   assigned: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  partially_assigned: "border-amber-200 bg-amber-50 text-amber-800",
   not_assigned: "border-red-200 bg-red-50 text-red-700",
 }
 
@@ -32,12 +33,19 @@ function StatusChip({ label, className }: { label: string; className: string }) 
   )
 }
 
+export function SyllabusStatusChip({
+  status,
+  label,
+}: {
+  status: SchoolSyllabusStatus
+  label: string
+}) {
+  return <StatusChip label={label} className={syllabusStyles[status]} />
+}
+
 export function SyllabusStatusBadge({ school }: { school: SchoolListItem }) {
   return (
-    <StatusChip
-      label={school.syllabusLabel}
-      className={syllabusStyles[school.syllabusStatus]}
-    />
+    <SyllabusStatusChip status={school.syllabusStatus} label={school.syllabusLabel} />
   )
 }
 

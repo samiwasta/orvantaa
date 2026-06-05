@@ -10,8 +10,14 @@ import {
   parseInput,
 } from "@/lib/actions/action-result"
 
+import { z } from "zod"
+
 import { chapterInputSchema } from "../model/content-models"
 import { contentService } from "../service/content.service"
+
+const reorderChaptersSchema = z
+  .array(z.string().trim().min(1))
+  .min(1, "Chapter order is required")
 
 function isUniqueError(error: unknown): boolean {
   return (
@@ -59,6 +65,28 @@ export async function updateChapterAction(
       return actionError("This subject already has a chapter with that slug.")
     }
     return actionError("Could not update the chapter. Please try again.")
+  }
+}
+
+export async function reorderChaptersAction(
+  subjectId: string,
+  orderedIds: unknown
+): Promise<ActionResult<undefined>> {
+  if (!subjectId) return actionError("Missing subject id.")
+
+  const parsed = parseInput(reorderChaptersSchema, orderedIds)
+  if (!parsed.success) return parsed.result
+
+  try {
+    await contentService.reorderChapters(subjectId, parsed.data)
+    revalidatePath("/content")
+    return actionOk(undefined, "Chapter order updated")
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Could not update chapter order. Please try again."
+    return actionError(message)
   }
 }
 

@@ -9,14 +9,18 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 import { ChevronRight, Layers, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
+import { DraggableSortableList } from "@/features/shared/view/draggable-sortable-card"
 import { useActionRunner } from "@/lib/actions/use-action-runner"
 import { ConfirmDialog } from "@/features/shared/view/confirm-dialog"
 
 import { contentHref } from "../model/content-nav"
 import type { ContentChapterItem, ContentSubjectRef } from "../model/content-models"
-import { deleteChapterAction } from "../server/chapter-actions"
+import {
+  deleteChapterAction,
+  reorderChaptersAction,
+} from "../server/chapter-actions"
 import { ChapterFormDialog } from "./chapter-form-dialog"
 
 type ContentChaptersViewProps = {
@@ -28,13 +32,27 @@ export function ContentChaptersView({
   subjectRef,
   chapters,
 }: ContentChaptersViewProps) {
+  const [orderedChapters, setOrderedChapters] = useState(chapters)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<ContentChapterItem | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ContentChapterItem | null>(null)
+  const reorderSnapshotRef = useRef(chapters)
+
+  useEffect(() => {
+    setOrderedChapters(chapters)
+  }, [chapters])
 
   const { run: runDelete, pending: deletePending } = useActionRunner(
     deleteChapterAction,
     { successMessage: "Chapter deleted", onSuccess: () => setDeleteTarget(null) }
+  )
+
+  const { run: runReorder, pending: reorderPending } = useActionRunner(
+    (ids: string[]) => reorderChaptersAction(subjectRef.id, ids),
+    {
+      successMessage: "Chapter order updated",
+      onError: () => setOrderedChapters(reorderSnapshotRef.current),
+    }
   )
 
   function openCreate() {
@@ -45,6 +63,12 @@ export function ContentChaptersView({
   function openEdit(chapter: ContentChapterItem) {
     setEditing(chapter)
     setFormOpen(true)
+  }
+
+  function handleReorder(next: ContentChapterItem[]) {
+    reorderSnapshotRef.current = orderedChapters
+    setOrderedChapters(next)
+    runReorder(next.map((chapter) => chapter.id))
   }
 
   return (
@@ -64,7 +88,7 @@ export function ContentChaptersView({
         </Button>
       </div>
 
-      {chapters.length === 0 ? (
+      {orderedChapters.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/80 bg-muted/20 px-6 py-16 text-center">
           <Layers className="size-10 text-muted-foreground/40" aria-hidden />
           <p className="mt-4 text-sm font-medium text-foreground">No chapters yet</p>
@@ -73,12 +97,13 @@ export function ContentChaptersView({
           </p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {chapters.map((chapter, index) => (
-            <li
-              key={chapter.id}
-              className="group flex items-center gap-3 rounded-2xl border border-border/60 bg-white p-3 shadow-sm ring-1 ring-black/[0.04] transition-all hover:border-[#6C5CE7]/35 hover:shadow-md"
-            >
+        <DraggableSortableList
+          items={orderedChapters}
+          onReorder={handleReorder}
+          disabled={reorderPending}
+          getDragHandleLabel={(chapter) => `Reorder ${chapter.title}`}
+          renderItem={(chapter, index) => (
+            <>
               <Link
                 href={contentHref.chapter(
                   subjectRef.boardId,
@@ -108,6 +133,7 @@ export function ContentChaptersView({
                     size="icon"
                     className="size-8 rounded-lg text-muted-foreground hover:bg-muted"
                     aria-label={`Actions for ${chapter.title}`}
+                    onClick={(event) => event.stopPropagation()}
                   >
                     <MoreHorizontal className="size-4" />
                   </Button>
@@ -130,9 +156,9 @@ export function ContentChaptersView({
                 className="size-4 shrink-0 text-muted-foreground/30"
                 aria-hidden
               />
-            </li>
-          ))}
-        </ul>
+            </>
+          )}
+        />
       )}
 
       <ChapterFormDialog

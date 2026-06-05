@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
 
 import {
   type ActionResult,
@@ -14,6 +15,10 @@ import {
   quizSaveSchema,
 } from "../model/quiz-models"
 import { contentService } from "../service/content.service"
+
+const reorderItemsSchema = z
+  .array(z.string().trim().min(1))
+  .min(1, "Order is required")
 
 export async function createQuizAction(
   chapterId: string,
@@ -48,6 +53,28 @@ export async function saveQuizAction(
     return actionOk(undefined, "Quiz saved")
   } catch {
     return actionError("Could not save the quiz. Please try again.")
+  }
+}
+
+export async function reorderQuizzesAction(
+  chapterId: string,
+  orderedIds: unknown
+): Promise<ActionResult<undefined>> {
+  if (!chapterId) return actionError("Missing chapter id.")
+
+  const parsed = parseInput(reorderItemsSchema, orderedIds)
+  if (!parsed.success) return parsed.result
+
+  try {
+    await contentService.reorderQuizzes(chapterId, parsed.data)
+    revalidatePath("/content")
+    return actionOk(undefined, "Quiz order updated")
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Could not update quiz order. Please try again."
+    return actionError(message)
   }
 }
 

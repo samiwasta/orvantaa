@@ -8,12 +8,18 @@ import { useSearchParams } from "next/navigation"
 import { schoolDetailHref, type SchoolListItem } from "../model/school-list-item"
 import type { BoardClassOption } from "../model/board-class-option"
 import type {
+  SubscriptionPaymentListItem,
+  SubscriptionPaymentsConfig,
+} from "../model/subscription-payment"
+import type {
   SchoolClassTab,
   SchoolSectionOption,
   SchoolStudentListItem,
   SchoolSyllabusClassRow,
 } from "../model/school-student-list-item"
 import { SubscriptionStatusBadge, SyllabusStatusBadge } from "./school-status-badges"
+import type { SchoolContactListItem } from "../model/school-contact"
+import { SchoolManagementTab } from "./school-management-tab"
 import { SchoolStudentsTable } from "./school-students-table"
 import { SchoolSubscriptionTab } from "./school-subscription-tab"
 import { SchoolSyllabusAddClassButton, SchoolSyllabusTab } from "./school-syllabus-tab"
@@ -25,6 +31,10 @@ type SchoolDetailViewProps = {
   sectionOptions: SchoolSectionOption[]
   syllabusRows: SchoolSyllabusClassRow[]
   boardClassOptions: BoardClassOption[]
+  subscriptionPayments: SubscriptionPaymentListItem[]
+  subscriptionPaymentsConfig: SubscriptionPaymentsConfig
+  managementContacts: SchoolContactListItem[]
+  billingEmail: string | null
   initialTab: string
   initialClassId: string
 }
@@ -33,6 +43,7 @@ const MAIN_TABS = [
   { id: "students", label: "Students" },
   { id: "syllabus", label: "Syllabus" },
   { id: "subscription", label: "Subscription" },
+  { id: "management", label: "Management" },
 ] as const
 
 type MainTabId = (typeof MAIN_TABS)[number]["id"]
@@ -52,6 +63,10 @@ export function SchoolDetailView({
   sectionOptions,
   syllabusRows,
   boardClassOptions,
+  subscriptionPayments,
+  subscriptionPaymentsConfig,
+  managementContacts,
+  billingEmail,
   initialTab,
   initialClassId,
 }: SchoolDetailViewProps) {
@@ -59,9 +74,14 @@ export function SchoolDetailView({
 
   const tabParam = searchParams.get("tab")
   const tab: MainTabId =
-    tabParam === "syllabus" || tabParam === "subscription" || tabParam === "students"
+    tabParam === "syllabus" ||
+    tabParam === "subscription" ||
+    tabParam === "management" ||
+    tabParam === "students"
       ? tabParam
-      : initialTab === "syllabus" || initialTab === "subscription"
+      : initialTab === "syllabus" ||
+          initialTab === "subscription" ||
+          initialTab === "management"
         ? (initialTab as MainTabId)
         : "students"
 
@@ -146,10 +166,26 @@ export function SchoolDetailView({
             />
           ) : null}
           {tab === "syllabus" ? (
-            <SchoolSyllabusTab schoolCode={school.schoolCode} rows={syllabusRows} />
+            <SchoolSyllabusTab
+              boardId={school.boardId}
+              schoolCode={school.schoolCode}
+              rows={syllabusRows}
+            />
           ) : null}
           {tab === "subscription" ? (
-            <SchoolSubscriptionTab school={school} />
+            <SchoolSubscriptionTab
+              school={school}
+              payments={subscriptionPayments}
+              paymentsConfig={subscriptionPaymentsConfig}
+            />
+          ) : null}
+          {tab === "management" ? (
+            <SchoolManagementTab
+              schoolId={school.id}
+              schoolCode={school.schoolCode}
+              contacts={managementContacts}
+              billingEmail={billingEmail}
+            />
           ) : null}
         </div>
       </div>

@@ -48,11 +48,14 @@ export function ContentClassesView({ board, classes }: ContentClassesViewProps) 
               <p className="mt-3 font-heading text-lg font-semibold text-foreground">
                 {classItem.displayName}
               </p>
-              <p className="mt-1 flex items-center gap-1 truncate text-xs text-muted-foreground">
-                <School className="size-3.5 shrink-0" aria-hidden />
-                {classItem.schoolName}
-              </p>
               <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/50 pt-3">
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <School className="size-3.5" aria-hidden />
+                  <span className="font-medium text-foreground">
+                    {classItem.schoolCount}
+                  </span>{" "}
+                  {classItem.schoolCount === 1 ? "school" : "schools"}
+                </span>
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                   <BookOpen className="size-3.5" aria-hidden />
                   <span className="font-medium text-foreground">

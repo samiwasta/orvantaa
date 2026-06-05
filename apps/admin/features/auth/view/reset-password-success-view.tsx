@@ -27,8 +27,8 @@ export function ResetPasswordSuccessView() {
                   Password updated
                 </h1>
                 <p className="text-sm leading-relaxed text-muted-foreground lg:text-base">
-                  Your password was changed successfully. You can sign in with
-                  your new password whenever you are ready.
+                  Your admin password was changed successfully. Sign in to the
+                  admin portal with your new password.
                 </p>
               </div>
             </div>
@@ -36,9 +36,9 @@ export function ResetPasswordSuccessView() {
             <Button
               type="button"
               asChild
-              className="h-11 w-full rounded-lg bg-[#ff8c42] text-sm font-semibold text-white shadow-sm hover:bg-[#ff8c42]/92 lg:h-14 lg:text-base"
+              className="h-11 w-full rounded-lg bg-[#6C5CE7] text-sm font-semibold text-white shadow-sm hover:bg-[#6C5CE7]/90 lg:h-14 lg:text-base"
             >
-              <Link href="/auth">Continue to login</Link>
+              <Link href="/auth">Continue to admin login</Link>
             </Button>
           </div>
         </section>

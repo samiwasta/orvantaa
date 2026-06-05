@@ -9,7 +9,10 @@ export type SchoolSubscriptionStatus =
   | "hold"
   | "blocked"
 
-export type SchoolSyllabusStatus = "assigned" | "not_assigned"
+export type SchoolSyllabusStatus =
+  | "assigned"
+  | "not_assigned"
+  | "partially_assigned"
 
 export type SchoolListItem = {
   id: string
@@ -114,6 +117,24 @@ export function formatSubscriptionLabel(status: SchoolSubscriptionStatus): strin
   }
 }
 
+export function deriveSchoolSyllabusStatus(
+  classRows: ReadonlyArray<{ subjectCount: number }>
+): SchoolSyllabusStatus {
+  if (classRows.length === 0) return "not_assigned"
+
+  const assignedCount = classRows.filter((row) => row.subjectCount > 0).length
+  if (assignedCount === 0) return "not_assigned"
+  if (assignedCount === classRows.length) return "assigned"
+  return "partially_assigned"
+}
+
 export function formatSyllabusLabel(status: SchoolSyllabusStatus): string {
-  return status === "assigned" ? "Assigned" : "Not Assigned"
+  switch (status) {
+    case "assigned":
+      return "Assigned"
+    case "partially_assigned":
+      return "Partially Assigned"
+    default:
+      return "Not Assigned"
+  }
 }

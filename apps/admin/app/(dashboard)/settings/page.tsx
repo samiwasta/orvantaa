@@ -1,17 +1,5 @@
-import type { Metadata } from "next"
-
-import { AdminSectionPlaceholder } from "@/features/admin/view/admin-section-placeholder"
-
-export const metadata: Metadata = {
-  title: "Settings - Orvantaa Admin",
-  description: "Admin portal settings",
-}
+import { redirect } from "next/navigation"
 
 export default function SettingsPage() {
-  return (
-    <AdminSectionPlaceholder
-      title="Settings"
-      description="Configure organization preferences, email delivery, and other platform options."
-    />
-  )
+  redirect("/team")
 }

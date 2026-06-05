@@ -15,9 +15,11 @@ export function ResetPasswordView({
   toggleShowPassword,
   toggleShowConfirmPassword,
   fieldErrors,
+  formError,
   clearFieldError,
   onSubmit,
   isResettingPassword,
+  canSubmit,
 }: ResetPasswordViewProps) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F3F3FF] p-4 lg:p-6 xl:p-8">
@@ -28,10 +30,10 @@ export function ResetPasswordView({
           <div className="mx-auto w-full max-w-md space-y-6 sm:space-y-8 md:space-y-8 lg:space-y-12">
             <div className="space-y-1 text-center sm:space-y-1.5">
               <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-[1.35rem] lg:text-2xl">
-                Set a new password
+                Set your password
               </h1>
               <p className="text-sm text-muted-foreground lg:text-base">
-                Enter your new password
+                Choose a new password for your admin account.
               </p>
             </div>
 
@@ -138,11 +140,17 @@ export function ResetPasswordView({
                 </div>
               </div>
 
+              {formError ? (
+                <p className="text-sm font-medium text-destructive" role="alert">
+                  {formError}
+                </p>
+              ) : null}
+
               <Button
                 type="submit"
-                disabled={isResettingPassword}
+                disabled={isResettingPassword || !canSubmit}
                 aria-busy={isResettingPassword}
-                className="h-11 w-full rounded-lg bg-[#ff8c42] text-sm font-semibold text-white shadow-sm hover:bg-[#ff8c42]/92 disabled:opacity-90 lg:h-14 lg:text-base"
+                className="h-11 w-full rounded-lg bg-[#6C5CE7] text-sm font-semibold text-white shadow-sm hover:bg-[#6C5CE7]/90 disabled:opacity-90 lg:h-14 lg:text-base"
               >
                 {isResettingPassword ? (
                   <span className="inline-flex items-center justify-center gap-2">
@@ -153,7 +161,7 @@ export function ResetPasswordView({
                     Resetting password...
                   </span>
                 ) : (
-                  "Reset Password"
+                  "Set password"
                 )}
               </Button>
             </form>

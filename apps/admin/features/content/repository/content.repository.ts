@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client"
+import { isRichContentEmpty } from "@workspace/rich-text"
 
 import { prisma } from "@/lib/db"
 
@@ -27,6 +28,8 @@ import { type NoteBlock, parseNoteBlocks } from "../model/note-blocks"
 import {
   mapPrismaQuizDifficulty,
   mapQuizDifficultyToPrisma,
+  mapPrismaQuizTimedMode,
+  mapQuizTimedModeToPrisma,
   QUIZ_DIFFICULTY_LABELS,
   type ContentQuizListItem,
   type QuizCreateInput,
@@ -81,28 +84,66 @@ export class ContentRepository {
   async findClassesForBoard(boardId: string): Promise<ContentClassItem[]> {
     const rows = await prisma.class.findMany({
       where: { school: { boardId } },
-      orderBy: [{ school: { name: "asc" } }, { name: "asc" }],
+      orderBy: [{ name: "asc" }, { school: { name: "asc" } }],
       select: {
         id: true,
         name: true,
         schoolId: true,
         school: {
-          select: { id: true, name: true, boardId: true },
+          select: { boardId: true },
         },
         _count: { select: { sections: true, subjects: true } },
       },
     })
 
-    return rows.map((row) => ({
-      id: row.id,
-      boardId: row.school.boardId,
-      schoolId: row.schoolId,
-      schoolName: row.school.name,
-      name: row.name,
-      displayName: formatClassDisplay(row.name),
-      sectionCount: row._count.sections,
-      subjectCount: row._count.subjects,
-    }))
+    const grouped = new Map<
+      string,
+      {
+        id: string
+        boardId: string
+        name: string
+        schoolIds: Set<string>
+        sectionCount: number
+        subjectCount: number
+        topSubjectCount: number
+      }
+    >()
+
+    for (const row of rows) {
+      const existing = grouped.get(row.name)
+      if (!existing) {
+        grouped.set(row.name, {
+          id: row.id,
+          boardId: row.school.boardId,
+          name: row.name,
+          schoolIds: new Set([row.schoolId]),
+          sectionCount: row._count.sections,
+          subjectCount: row._count.subjects,
+          topSubjectCount: row._count.subjects,
+        })
+        continue
+      }
+
+      existing.schoolIds.add(row.schoolId)
+      existing.sectionCount += row._count.sections
+      existing.subjectCount += row._count.subjects
+      if (row._count.subjects > existing.topSubjectCount) {
+        existing.topSubjectCount = row._count.subjects
+        existing.id = row.id
+      }
+    }
+
+    return [...grouped.values()]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((entry) => ({
+        id: entry.id,
+        boardId: entry.boardId,
+        name: entry.name,
+        displayName: formatClassDisplay(entry.name),
+        schoolCount: entry.schoolIds.size,
+        sectionCount: entry.sectionCount,
+        subjectCount: entry.subjectCount,
+      }))
   }
 
   async classBelongsToBoard(
@@ -288,6 +329,41 @@ export class ContentRepository {
     })
   }
 
+  async reorderChapters(
+    subjectId: string,
+    orderedIds: string[]
+  ): Promise<void> {
+    if (orderedIds.length === 0) return
+
+    const existing = await prisma.chapter.findMany({
+      where: { subjectId },
+      select: { id: true },
+    })
+
+    const existingIds = new Set(existing.map((row) => row.id))
+    if (
+      orderedIds.length !== existing.length ||
+      orderedIds.some((id) => !existingIds.has(id))
+    ) {
+      throw new Error("Invalid chapter order.")
+    }
+
+    await prisma.$transaction(async (tx) => {
+      for (let i = 0; i < orderedIds.length; i++) {
+        await tx.chapter.update({
+          where: { id: orderedIds[i] },
+          data: { number: -(i + 1) },
+        })
+      }
+      for (let i = 0; i < orderedIds.length; i++) {
+        await tx.chapter.update({
+          where: { id: orderedIds[i] },
+          data: { number: i + 1 },
+        })
+      }
+    })
+  }
+
   async deleteChapter(id: string): Promise<void> {
     await prisma.chapter.delete({ where: { id } })
   }
@@ -383,6 +459,38 @@ export class ContentRepository {
     await prisma.topic.update({
       where: { id },
       data: { title: input.title, slug: input.slug },
+    })
+  }
+
+  async reorderTopics(chapterId: string, orderedIds: string[]): Promise<void> {
+    if (orderedIds.length === 0) return
+
+    const existing = await prisma.topic.findMany({
+      where: { chapterId },
+      select: { id: true },
+    })
+
+    const existingIds = new Set(existing.map((row) => row.id))
+    if (
+      orderedIds.length !== existing.length ||
+      orderedIds.some((id) => !existingIds.has(id))
+    ) {
+      throw new Error("Invalid topic order.")
+    }
+
+    await prisma.$transaction(async (tx) => {
+      for (let i = 0; i < orderedIds.length; i++) {
+        await tx.topic.update({
+          where: { id: orderedIds[i] },
+          data: { orderIndex: -(i + 1) },
+        })
+      }
+      for (let i = 0; i < orderedIds.length; i++) {
+        await tx.topic.update({
+          where: { id: orderedIds[i] },
+          data: { orderIndex: i },
+        })
+      }
     })
   }
 
@@ -546,6 +654,8 @@ export class ContentRepository {
         chapterId: true,
         title: true,
         difficulty: true,
+        timedMode: true,
+        timeLimitSeconds: true,
         orderIndex: true,
         _count: { select: { questions: true } },
       },
@@ -559,6 +669,8 @@ export class ContentRepository {
         title: row.title,
         difficulty,
         difficultyLabel: QUIZ_DIFFICULTY_LABELS[difficulty],
+        timedMode: mapPrismaQuizTimedMode(row.timedMode),
+        timeLimitSeconds: row.timeLimitSeconds,
         orderIndex: row.orderIndex,
         questionCount: row._count.questions,
       }
@@ -573,6 +685,8 @@ export class ContentRepository {
         chapterId: true,
         title: true,
         difficulty: true,
+        timedMode: true,
+        timeLimitSeconds: true,
         questions: {
           orderBy: [{ orderIndex: "asc" }],
           select: {
@@ -593,6 +707,8 @@ export class ContentRepository {
       chapterId: row.chapterId,
       title: row.title,
       difficulty: mapPrismaQuizDifficulty(row.difficulty),
+      timedMode: mapPrismaQuizTimedMode(row.timedMode),
+      timeLimitSeconds: row.timeLimitSeconds,
       questions: row.questions.map((question) => ({
         prompt: question.prompt,
         explanation: question.explanation ?? "",
@@ -629,6 +745,9 @@ export class ContentRepository {
         data: {
           title: input.title,
           difficulty: mapQuizDifficultyToPrisma(input.difficulty),
+          timedMode: mapQuizTimedModeToPrisma(input.timedMode),
+          timeLimitSeconds:
+            input.timedMode === "untimed" ? null : input.timeLimitSeconds ?? null,
         },
       })
 
@@ -640,7 +759,11 @@ export class ContentRepository {
           data: {
             quizId: id,
             prompt: question.prompt,
-            explanation: question.explanation?.trim() || null,
+            explanation:
+              question.explanation &&
+              !isRichContentEmpty(question.explanation)
+                ? question.explanation
+                : null,
             orderIndex: q,
           },
         })
@@ -656,6 +779,38 @@ export class ContentRepository {
             },
           })
         }
+      }
+    })
+  }
+
+  async reorderQuizzes(chapterId: string, orderedIds: string[]): Promise<void> {
+    if (orderedIds.length === 0) return
+
+    const existing = await prisma.quiz.findMany({
+      where: { chapterId },
+      select: { id: true },
+    })
+
+    const existingIds = new Set(existing.map((row) => row.id))
+    if (
+      orderedIds.length !== existing.length ||
+      orderedIds.some((id) => !existingIds.has(id))
+    ) {
+      throw new Error("Invalid quiz order.")
+    }
+
+    await prisma.$transaction(async (tx) => {
+      for (let i = 0; i < orderedIds.length; i++) {
+        await tx.quiz.update({
+          where: { id: orderedIds[i] },
+          data: { orderIndex: -(i + 1) },
+        })
+      }
+      for (let i = 0; i < orderedIds.length; i++) {
+        await tx.quiz.update({
+          where: { id: orderedIds[i] },
+          data: { orderIndex: i },
+        })
       }
     })
   }

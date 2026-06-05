@@ -95,6 +95,10 @@ export class ContentService {
     await this.repository.updateChapter(id, input)
   }
 
+  async reorderChapters(subjectId: string, orderedIds: string[]): Promise<void> {
+    await this.repository.reorderChapters(subjectId, orderedIds)
+  }
+
   async deleteChapter(id: string): Promise<void> {
     const topicCount = await this.repository.countChapterTopics(id)
     if (topicCount > 0) {
@@ -119,6 +123,10 @@ export class ContentService {
 
   async updateTopic(id: string, input: TopicInput): Promise<void> {
     await this.repository.updateTopic(id, input)
+  }
+
+  async reorderTopics(chapterId: string, orderedIds: string[]): Promise<void> {
+    await this.repository.reorderTopics(chapterId, orderedIds)
   }
 
   async deleteTopic(id: string): Promise<void> {
@@ -171,6 +179,10 @@ export class ContentService {
 
   async saveQuiz(id: string, input: QuizSaveInput): Promise<void> {
     await this.repository.saveQuizFull(id, input)
+  }
+
+  async reorderQuizzes(chapterId: string, orderedIds: string[]): Promise<void> {
+    await this.repository.reorderQuizzes(chapterId, orderedIds)
   }
 
   async deleteQuiz(id: string): Promise<void> {

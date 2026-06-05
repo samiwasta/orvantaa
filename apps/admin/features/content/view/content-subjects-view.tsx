@@ -61,9 +61,8 @@ export function ContentSubjectsView({
           Subjects for{" "}
           <span className="font-medium text-foreground">
             {classRef.displayName}
-          </span>{" "}
-          ({classRef.schoolName}). Open a subject to add chapters, notes, and
-          quizzes.
+          </span>
+          . Open a subject to add chapters, notes, and quizzes.
         </p>
         <Button
           type="button"

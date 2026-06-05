@@ -1,12 +1,12 @@
 "use client"
 
+import { isRichContentEmpty, RichTextContent } from "@workspace/rich-text"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import {
   ArrowLeft,
   ArrowRight,
   BookMarked,
-  Check,
   ChevronLeft,
   ChevronRight,
   Lightbulb,
@@ -27,14 +27,6 @@ import type { buildNoteNavigation } from "../model/note-navigation"
 import { NoteAiTutorCard } from "./note-ai-tutor-card"
 import { NoteAiTutorFab } from "./note-ai-tutor-fab"
 
-const stepColors = [
-  "bg-violet-100 text-[#6C5CE7] ring-violet-200/80",
-  "bg-sky-100 text-sky-700 ring-sky-200/80",
-  "bg-emerald-100 text-emerald-700 ring-emerald-200/80",
-  "bg-amber-100 text-amber-700 ring-amber-200/80",
-  "bg-rose-100 text-rose-700 ring-rose-200/80",
-]
-
 function DefinitionBox({ title, content }: { title: string; content: string }) {
   return (
     <div className="overflow-hidden rounded-2xl border-2 border-violet-200/70 bg-linear-to-br from-violet-50 via-white to-indigo-50/80 shadow-sm">
@@ -42,27 +34,29 @@ function DefinitionBox({ title, content }: { title: string; content: string }) {
         <span className="flex size-7 items-center justify-center rounded-lg bg-[#6C5CE7] text-white shadow-sm">
           <BookMarked className="size-3.5" strokeWidth={2.5} aria-hidden />
         </span>
-        <p className="text-sm font-semibold text-[#6C5CE7]">{title}</p>
+        <div className="min-w-0 flex-1 text-sm font-semibold text-[#6C5CE7]">
+          <RichTextContent html={title} studentPreview previewBlock="label" />
+        </div>
         <Sparkles
           className="ml-auto size-4 text-violet-400"
           strokeWidth={2}
           aria-hidden
         />
       </div>
-      <p className="px-4 py-4 text-sm leading-relaxed text-foreground/90 sm:px-5 sm:text-[15px] sm:leading-7">
-        {content}
-      </p>
+      <div className="px-4 py-4 sm:px-5">
+        <RichTextContent html={content} studentPreview previewBlock="body" />
+      </div>
     </div>
   )
 }
 
 function ExampleBox({
   title,
-  steps,
+  body,
   tip,
 }: {
   title: string
-  steps: string[]
+  body: string
   tip?: string
 }) {
   return (
@@ -71,35 +65,31 @@ function ExampleBox({
         <span className="flex size-7 items-center justify-center rounded-lg bg-sky-500 text-white shadow-sm">
           <Pencil className="size-3.5" strokeWidth={2.5} aria-hidden />
         </span>
-        <p className="text-sm font-semibold text-sky-800">{title}</p>
+        <div className="min-w-0 flex-1 text-sm font-semibold text-sky-800">
+          <RichTextContent html={title} studentPreview previewBlock="label" />
+        </div>
       </div>
-      <ol className="space-y-3 px-4 py-4 sm:px-5">
-        {steps.map((step, i) => (
-          <li key={step} className="flex gap-3">
-            <span
-              className={cn(
-                "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ring-2",
-                stepColors[i % stepColors.length]
-              )}
-            >
-              {i + 1}
-            </span>
-            <span className="pt-0.5 text-sm leading-relaxed text-foreground/90 sm:text-[15px]">
-              {step}
-            </span>
-          </li>
-        ))}
-      </ol>
-      {tip ? (
+      {!isRichContentEmpty(body) ? (
+        <div className="px-4 py-4 sm:px-5">
+          <RichTextContent
+            html={body}
+            structured
+            previewTone="sky"
+            studentPreview
+            previewBlock="body"
+          />
+        </div>
+      ) : null}
+      {tip && !isRichContentEmpty(tip) ? (
         <div className="mx-4 mb-4 flex gap-3 rounded-xl border-2 border-amber-200/80 bg-linear-to-r from-amber-50 to-yellow-50 px-3.5 py-3 sm:mx-5">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-400 text-white shadow-sm">
             <Lightbulb className="size-4" strokeWidth={2.5} aria-hidden />
           </span>
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold text-amber-900">Pro tip</p>
-            <p className="mt-0.5 text-sm leading-relaxed text-amber-950/85">
-              {tip}
-            </p>
+            <div className="mt-0.5 text-sm leading-relaxed text-amber-950/85">
+              <RichTextContent html={tip} studentPreview previewBlock="body" />
+            </div>
           </div>
         </div>
       ) : null}
@@ -107,20 +97,19 @@ function ExampleBox({
   )
 }
 
-function FunList({ items }: { items: string[] }) {
+function ListBlockContent({ content }: { content: string }) {
+  if (isRichContentEmpty(content)) return null
+
   return (
-    <ul className="space-y-2.5 rounded-2xl border border-emerald-200/60 bg-emerald-50/50 p-4 sm:p-5">
-      {items.map((item) => (
-        <li key={item} className="flex gap-3">
-          <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
-            <Check className="size-3.5" strokeWidth={3} aria-hidden />
-          </span>
-          <span className="text-sm leading-relaxed text-foreground/90 sm:text-[15px]">
-            {item}
-          </span>
-        </li>
-      ))}
-    </ul>
+    <div className="rounded-2xl border border-emerald-200/60 bg-emerald-50/50 p-4 sm:p-5">
+      <RichTextContent
+        html={content}
+        structured
+        previewTone="emerald"
+        studentPreview
+        previewBlock="body"
+      />
+    </div>
   )
 }
 
@@ -128,38 +117,55 @@ function NoteBlockRenderer({ block }: { block: NoteBlock }) {
   switch (block.type) {
     case "paragraph":
       return (
-        <p className="rounded-xl bg-muted/30 px-4 py-3.5 text-sm leading-relaxed text-foreground/90 sm:text-[15px] sm:leading-7">
-          {block.text}
-        </p>
+        <div className="rounded-xl bg-muted/30 px-4 py-3.5">
+          <RichTextContent
+            html={block.text}
+            studentPreview
+            previewBlock="body"
+          />
+        </div>
       )
     case "heading":
       return (
-        <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground sm:text-xl">
+        <div className="flex items-start gap-2 text-lg font-semibold text-foreground sm:text-xl">
           <Star
-            className="size-5 shrink-0 fill-amber-400 text-amber-400"
+            className="mt-1 size-5 shrink-0 fill-amber-400 text-amber-400"
             aria-hidden
           />
-          {block.text}
-        </h3>
+          <RichTextContent
+            html={block.text}
+            className="min-w-0 flex-1"
+            studentPreview
+            previewBlock="heading"
+          />
+        </div>
       )
     case "definition":
       return <DefinitionBox title={block.title} content={block.content} />
     case "example":
       return (
-        <ExampleBox title={block.title} steps={block.steps} tip={block.tip} />
+        <ExampleBox title={block.title} body={block.body} tip={block.tip} />
       )
     case "list":
-      return <FunList items={block.items} />
+      return <ListBlockContent content={block.content} />
     case "callout":
       return (
-        <div className="rounded-xl border-l-4 border-[#6C5CE7] bg-violet-50 px-4 py-3.5 text-sm leading-relaxed text-foreground/90">
-          {block.text}
+        <div className="rounded-xl border-l-4 border-[#6C5CE7] bg-violet-50 px-4 py-3.5">
+          <RichTextContent
+            html={block.text}
+            studentPreview
+            previewBlock="body"
+          />
         </div>
       )
     case "quote":
       return (
-        <blockquote className="border-l-2 border-violet-200 pl-4 text-sm text-muted-foreground italic sm:text-[15px]">
-          {block.text}
+        <blockquote className="border-l-2 border-violet-200 pl-4 text-muted-foreground italic">
+          <RichTextContent
+            html={block.text}
+            studentPreview
+            previewBlock="quote"
+          />
         </blockquote>
       )
     case "image":
@@ -257,7 +263,7 @@ export function NoteView({
         )}
       >
         <div className="min-w-0">
-          <article className="overflow-hidden rounded-2xl border-2 border-violet-100 bg-card shadow-lg shadow-violet-200/25">
+          <article className="note-student-preview overflow-hidden rounded-2xl border-2 border-violet-100 bg-card font-heading shadow-lg shadow-violet-200/25">
             {/* Colorful lesson header */}
             <div className="relative overflow-hidden bg-linear-to-br from-[#6C5CE7] via-[#7c6ff0] to-[#9b8cf5] px-4 py-5 sm:px-6 sm:py-6">
               <div
@@ -292,7 +298,7 @@ export function NoteView({
                       </span>
                     ) : null}
                   </div>
-                  <h2 className="mt-2 text-lg leading-snug font-semibold text-white sm:text-xl">
+                  <h2 className="mt-2 font-heading text-lg leading-snug font-semibold text-white sm:text-xl">
                     {note.title}
                   </h2>
                   <p className="mt-1.5 text-sm text-white/75">

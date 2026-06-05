@@ -11,8 +11,10 @@ import {
 } from "@workspace/ui/components/dialog"
 import { Field, FieldError, FieldHint, FieldLabel } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
+import { cn } from "@workspace/ui/lib/utils"
+import { ImageIcon, Loader2, Trash2, Upload } from "lucide-react"
 import Image from "next/image"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { useActionRunner } from "@/lib/actions/use-action-runner"
 
@@ -44,6 +46,8 @@ export function SubjectFormDialog({
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [dragOver, setDragOver] = useState(false)
+  const thumbnailInputRef = useRef<HTMLInputElement>(null)
 
   const { run, pending, fieldErrors, formError, reset } = useActionRunner<
     [string, SubjectInput],
@@ -63,6 +67,7 @@ export function SubjectFormDialog({
     if (!open) return
     reset()
     setUploadError(null)
+    setDragOver(false)
     setTitle(subject?.title ?? "")
     setSlug(subject?.slug ?? "")
     setSlugEdited(Boolean(subject))
@@ -73,6 +78,23 @@ export function SubjectFormDialog({
   function handleTitleChange(value: string) {
     setTitle(value)
     if (!slugEdited) setSlug(slugify(value))
+  }
+
+  function openThumbnailPicker() {
+    if (uploading || pending) return
+    thumbnailInputRef.current?.click()
+  }
+
+  function handleThumbnailDrop(event: React.DragEvent) {
+    event.preventDefault()
+    setDragOver(false)
+    if (uploading || pending) return
+    const file = event.dataTransfer.files?.[0]
+    if (file?.type.startsWith("image/")) {
+      void handleThumbnailChange(file)
+    } else {
+      setUploadError("Choose a JPEG, PNG, WebP, or GIF image.")
+    }
   }
 
   async function handleThumbnailChange(file: File | null) {
@@ -115,7 +137,7 @@ export function SubjectFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit subject" : "Add subject"}</DialogTitle>
           <DialogDescription>
@@ -158,34 +180,139 @@ export function SubjectFormDialog({
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="subject-thumbnail">Thumbnail</FieldLabel>
-            {imageUrl ? (
-              <div className="relative h-32 w-full overflow-hidden rounded-xl border border-border/60 bg-muted">
-                <Image
-                  src={imageUrl}
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="400px"
-                />
+            <FieldLabel htmlFor="subject-thumbnail-input">Thumbnail</FieldLabel>
+            <div className="flex flex-col gap-2">
+              <div
+                role="button"
+                tabIndex={uploading || pending ? -1 : 0}
+                aria-label={
+                  imageUrl ? "Replace subject thumbnail" : "Upload subject thumbnail"
+                }
+                aria-disabled={uploading || pending}
+                onKeyDown={(event) => {
+                  if (uploading || pending) return
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault()
+                    openThumbnailPicker()
+                  }
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault()
+                  if (!uploading && !pending) setDragOver(true)
+                }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleThumbnailDrop}
+                onClick={openThumbnailPicker}
+                className={cn(
+                  "group relative overflow-hidden rounded-xl border-2 border-dashed transition-colors",
+                  imageUrl ? "h-40 border-border/60" : "h-36",
+                  dragOver
+                    ? "border-[#6C5CE7] bg-[#6C5CE7]/5"
+                    : "border-border/80 bg-muted/15 hover:border-[#6C5CE7]/40 hover:bg-muted/25",
+                  (uploading || pending) && "pointer-events-none opacity-80"
+                )}
+              >
+                {imageUrl ? (
+                  <>
+                    <Image
+                      src={imageUrl}
+                      alt={title ? `${title} thumbnail` : "Subject thumbnail"}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 512px) 100vw"
+                    />
+                    <div
+                      className={cn(
+                        "absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/50 px-4 text-center transition-opacity",
+                        dragOver
+                          ? "opacity-100"
+                          : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
+                      )}
+                    >
+                      <Upload className="size-5 text-white" aria-hidden />
+                      <p className="text-sm font-medium text-white">
+                        Drop a new image or click to replace
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex h-full flex-col items-center justify-center gap-2 px-4 py-6 text-center">
+                    <span className="flex size-11 items-center justify-center rounded-xl bg-[#6C5CE7]/10 text-[#6C5CE7]">
+                      <ImageIcon className="size-5" aria-hidden />
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        Drop image here or click to browse
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        JPEG, PNG, WebP, or GIF · max 2 MB
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {uploading ? (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/80 backdrop-blur-[2px]">
+                    <Loader2
+                      className="size-6 animate-spin text-[#6C5CE7]"
+                      aria-hidden
+                    />
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Uploading…
+                    </p>
+                  </div>
+                ) : null}
               </div>
-            ) : (
-              <div className="flex h-32 items-center justify-center rounded-xl border border-dashed border-border/80 bg-muted/30 text-xs text-muted-foreground">
-                No thumbnail yet
-              </div>
-            )}
-            <Input
-              id="subject-thumbnail"
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              disabled={uploading || pending}
-              onChange={(e) => {
-                const file = e.target.files?.[0] ?? null
-                void handleThumbnailChange(file)
-                e.target.value = ""
-              }}
-            />
-            <FieldHint>JPEG, PNG, WebP, or GIF up to 2 MB.</FieldHint>
+
+              {imageUrl ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 rounded-lg text-xs"
+                    disabled={uploading || pending}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      openThumbnailPicker()
+                    }}
+                  >
+                    <Upload className="size-3.5" aria-hidden />
+                    Replace image
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 rounded-lg text-xs text-muted-foreground hover:text-destructive"
+                    disabled={uploading || pending}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setImageUrl(null)
+                      setUploadError(null)
+                    }}
+                  >
+                    <Trash2 className="size-3.5" aria-hidden />
+                    Remove
+                  </Button>
+                </div>
+              ) : null}
+
+              <input
+                ref={thumbnailInputRef}
+                id="subject-thumbnail-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="sr-only"
+                disabled={uploading || pending}
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null
+                  void handleThumbnailChange(file)
+                  event.target.value = ""
+                }}
+              />
+            </div>
+            <FieldHint>Optional. Shown on subject cards in the student app.</FieldHint>
             {uploadError ? (
               <p className="text-sm font-medium text-destructive">{uploadError}</p>
             ) : null}

@@ -1,7 +1,12 @@
-import type { QuizDifficulty as PrismaQuizDifficulty } from "@prisma/client"
+import type {
+  QuizDifficulty as PrismaQuizDifficulty,
+  QuizTimedMode as PrismaQuizTimedMode,
+} from "@prisma/client"
+import { isRichContentEmpty } from "@workspace/rich-text"
 import { z } from "zod"
 
 export type QuizDifficulty = "easy" | "medium" | "hard"
+export type QuizTimedMode = "untimed" | "per_question" | "whole_quiz"
 
 export type ContentQuizListItem = {
   id: string
@@ -9,6 +14,8 @@ export type ContentQuizListItem = {
   title: string
   difficulty: QuizDifficulty
   difficultyLabel: string
+  timedMode: QuizTimedMode
+  timeLimitSeconds: number | null
   orderIndex: number
   questionCount: number
 }
@@ -29,6 +36,8 @@ export type QuizEditorData = {
   chapterId: string
   title: string
   difficulty: QuizDifficulty
+  timedMode: QuizTimedMode
+  timeLimitSeconds: number | null
   questions: QuizQuestionDraft[]
 }
 
@@ -38,6 +47,18 @@ export const QUIZ_DIFFICULTY_LABELS: Record<QuizDifficulty, string> = {
   easy: "Easy",
   medium: "Medium",
   hard: "Hard",
+}
+
+export const QUIZ_TIMED_MODES = [
+  "untimed",
+  "per_question",
+  "whole_quiz",
+] as const
+
+export const QUIZ_TIMED_MODE_LABELS: Record<QuizTimedMode, string> = {
+  untimed: "Untimed",
+  per_question: "Per question",
+  whole_quiz: "Whole quiz",
 }
 
 export function mapPrismaQuizDifficulty(
@@ -54,6 +75,31 @@ export function mapQuizDifficultyToPrisma(
   if (value === "easy") return "EASY"
   if (value === "hard") return "HARD"
   return "MEDIUM"
+}
+
+export function mapPrismaQuizTimedMode(
+  value: PrismaQuizTimedMode
+): QuizTimedMode {
+  if (value === "PER_QUESTION") return "per_question"
+  if (value === "WHOLE_QUIZ") return "whole_quiz"
+  return "untimed"
+}
+
+export function mapQuizTimedModeToPrisma(
+  value: QuizTimedMode
+): PrismaQuizTimedMode {
+  if (value === "per_question") return "PER_QUESTION"
+  if (value === "whole_quiz") return "WHOLE_QUIZ"
+  return "UNTIMED"
+}
+
+export function secondsToMinutes(seconds: number | null): number {
+  if (!seconds || seconds <= 0) return 1
+  return Math.max(1, Math.round(seconds / 60))
+}
+
+export function minutesToSeconds(minutes: number): number {
+  return Math.round(minutes * 60)
 }
 
 export const quizCreateSchema = z.object({
@@ -74,9 +120,18 @@ const quizOptionSchema = z.object({
 
 const quizQuestionSchema = z
   .object({
-    prompt: z.string().trim().min(1, "Question is required"),
-    explanation: z.string().trim().optional().default(""),
+    prompt: z.string(),
+    explanation: z.string().optional().default(""),
     options: z.array(quizOptionSchema).min(2, "At least two options required"),
+  })
+  .superRefine((question, ctx) => {
+    if (isRichContentEmpty(question.prompt)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Question is required",
+        path: ["prompt"],
+      })
+    }
   })
   .superRefine((question, ctx) => {
     const correctCount = question.options.filter((o) => o.isCorrect).length
@@ -89,11 +144,28 @@ const quizQuestionSchema = z
     }
   })
 
-export const quizSaveSchema = quizCreateSchema.extend({
-  questions: z
-    .array(quizQuestionSchema)
-    .min(1, "Add at least one question"),
-})
+export const quizSaveSchema = quizCreateSchema
+  .extend({
+    timedMode: z.enum(["untimed", "per_question", "whole_quiz"]),
+    timeLimitSeconds: z
+      .number()
+      .int()
+      .min(1, "Time must be at least 1 second")
+      .max(86400, "Time cannot exceed 24 hours")
+      .nullable()
+      .optional(),
+    questions: z.array(quizQuestionSchema).min(1, "Add at least one question"),
+  })
+  .superRefine((data, ctx) => {
+    if (data.timedMode === "untimed") return
+    if (!data.timeLimitSeconds || data.timeLimitSeconds <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Set a time limit for timed quizzes",
+        path: ["timeLimitSeconds"],
+      })
+    }
+  })
 
 export type QuizSaveInput = z.infer<typeof quizSaveSchema>
 

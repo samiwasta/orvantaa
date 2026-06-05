@@ -23,6 +23,7 @@
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "@react-email/render": "^2.0.8",
+    "@workspace/rich-text": "workspace:*",
     "@workspace/transactional": "workspace:*",
     "@workspace/ui": "workspace:*",
     "bcryptjs": "^3.0.3",

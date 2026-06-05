@@ -22,7 +22,10 @@ export default async function SchoolDetailPage({ params, searchParams }: PagePro
   const { tab, class: classFilter } = await searchParams
 
   const activeTab =
-    tab === "syllabus" || tab === "subscription" || tab === "students"
+    tab === "syllabus" ||
+    tab === "subscription" ||
+    tab === "management" ||
+    tab === "students"
       ? tab
       : "students"
   const activeClassId = classFilter ?? "all"
@@ -39,6 +42,10 @@ export default async function SchoolDetailPage({ params, searchParams }: PagePro
         sectionOptions={data.sectionOptions}
         syllabusRows={data.syllabusRows}
         boardClassOptions={data.boardClassOptions}
+        subscriptionPayments={data.subscriptionPayments}
+        subscriptionPaymentsConfig={data.subscriptionPaymentsConfig}
+        managementContacts={data.managementContacts}
+        billingEmail={data.billingEmail}
         initialTab={activeTab}
         initialClassId={activeClassId}
       />

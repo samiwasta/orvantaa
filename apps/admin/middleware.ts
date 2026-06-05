@@ -64,6 +64,13 @@ export async function middleware(request: NextRequest) {
   }
 
   if (session && isPublicPath(pathname)) {
+    if (
+      pathname.startsWith("/reset-password") &&
+      request.nextUrl.searchParams.has("token")
+    ) {
+      return NextResponse.next()
+    }
+
     if (!isAdminSession(session)) {
       return forbiddenAuthResponse(request, { clearCookie: true, token })
     }

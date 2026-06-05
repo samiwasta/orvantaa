@@ -1,16 +1,5 @@
 import { cn } from "@workspace/ui/lib/utils"
-import {
-  BookOpen,
-  GraduationCap,
-  Landmark,
-  School,
-  TrendingDown,
-  TrendingUp,
-  UserCheck,
-  UserX,
-  Users,
-} from "lucide-react"
-import type { LucideIcon } from "lucide-react"
+import { Landmark, type LucideIcon, School, UserCheck, Users } from "lucide-react"
 import Link from "next/link"
 
 import type { DashboardCounts } from "../model/admin-dashboard-stats"
@@ -67,33 +56,15 @@ function StatCard({ label, value, sub, icon: Icon, color, href, highlight }: Sta
 type Props = { counts: DashboardCounts }
 
 export function AdminStatCards({ counts }: Props) {
-  const {
-    totalStudents,
-    totalSchools,
-    totalClasses,
-    totalSubjects,
-    totalChapters,
-    totalBoards,
-    unassignedStudents,
-    signupsThisWeek,
-    signupsPriorWeek,
-  } = counts
+  const { totalStudents, totalSchools, totalBoards, unassignedStudents } = counts
 
   const assignedStudents = totalStudents - unassignedStudents
-  const weekDelta = signupsThisWeek - signupsPriorWeek
-  const weekDeltaLabel =
-    weekDelta === 0
-      ? "same as last week"
-      : weekDelta > 0
-        ? `+${weekDelta} vs last week`
-        : `${weekDelta} vs last week`
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
         label="Total students"
         value={totalStudents.toLocaleString()}
-        sub={unassignedStudents > 0 ? `${unassignedStudents} unassigned` : "all assigned"}
         icon={Users}
         color="#6C5CE7"
         highlight
@@ -106,45 +77,11 @@ export function AdminStatCards({ counts }: Props) {
         href="/schools"
       />
       <StatCard
-        label="Classes"
-        value={totalClasses.toLocaleString()}
-        icon={GraduationCap}
-        color="#10b981"
-        href="/classes"
-      />
-      <StatCard
-        label="Content items"
-        value={(totalSubjects + totalChapters).toLocaleString()}
-        sub={`${totalSubjects} subjects · ${totalChapters} chapters`}
-        icon={BookOpen}
-        color="#f59e0b"
-        href="/content"
-      />
-
-      <StatCard
         label="Boards"
         value={totalBoards.toLocaleString()}
         icon={Landmark}
         color="#ec4899"
         href="/boards"
-      />
-      <StatCard
-        label="Unassigned students"
-        value={unassignedStudents.toLocaleString()}
-        sub={
-          totalStudents > 0
-            ? `${Math.round((unassignedStudents / totalStudents) * 100)}% of students`
-            : undefined
-        }
-        icon={UserX}
-        color="#f43f5e"
-      />
-      <StatCard
-        label="New this week"
-        value={signupsThisWeek.toLocaleString()}
-        sub={weekDeltaLabel}
-        icon={weekDelta >= 0 ? TrendingUp : TrendingDown}
-        color={weekDelta >= 0 ? "#10b981" : "#f43f5e"}
       />
       <StatCard
         label="Student engagement"

@@ -56,6 +56,13 @@ async function seedAdminFromEnv() {
 }
 
 async function main() {
+  const deleted = await prisma.user.deleteMany({
+    where: { role: UserRole.ADMIN },
+  })
+  if (deleted.count > 0) {
+    console.log(`Removed ${deleted.count} existing admin user(s).`)
+  }
+
   await seedAdminFromEnv()
 }
 

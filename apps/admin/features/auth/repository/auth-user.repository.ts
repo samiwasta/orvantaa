@@ -35,6 +35,13 @@ export class AuthUserRepository {
     })
     return row ? mapRow(row) : null
   }
+
+  async updatePasswordHash(userId: string, passwordHash: string): Promise<void> {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    })
+  }
 }
 
 export const authUserRepository = new AuthUserRepository()

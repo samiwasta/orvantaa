@@ -13,4 +13,5 @@ export const PUBLIC_PATH_PREFIXES = [
 export const AUTH_API_PUBLIC_PATHS = [
   "/api/auth/login",
   "/api/auth/forgot-password",
+  "/api/auth/reset-password",
 ] as const

@@ -29,6 +29,12 @@ enum QuizDifficulty {
   HARD
 }
 
+enum QuizTimedMode {
+  UNTIMED
+  PER_QUESTION
+  WHOLE_QUIZ
+}
+
 enum SchoolSubscriptionStatus {
   ACTIVE
   INACTIVE
@@ -39,6 +45,14 @@ enum SchoolSubscriptionStatus {
 enum StudentMailStatus {
   NOT_SENT
   SENT
+}
+
+enum SubscriptionPaymentStatus {
+  DUE
+  SUCCESS
+  FAILED
+  LATE
+  PENDING
 }
 
 // ─── Board / University ───────────────────────────────────────────────────────
@@ -66,13 +80,53 @@ model School {
   boardId            String
   board              Board                    @relation(fields: [boardId], references: [id], onDelete: Restrict)
   subscriptionStatus SchoolSubscriptionStatus @default(ACTIVE)
-  createdAt          DateTime                 @default(now())
-  updatedAt          DateTime                 @updatedAt
+  billingEmail         String?
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
 
-  classes Class[]
+  classes                 Class[]
+  subscriptionPayments    SchoolSubscriptionPayment[]
+  contacts                SchoolContact[]
 
   @@index([boardId])
   @@map("schools")
+}
+
+model SchoolContact {
+  id          String   @id @default(cuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  fullName    String
+  designation String
+  email       String
+  phone       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([schoolId])
+  @@map("school_contacts")
+}
+
+model SchoolSubscriptionPayment {
+  id                String                    @id @default(cuid())
+  schoolId          String
+  school            School                    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  transactionId     String                    @unique
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  transactionDate   DateTime
+  serviceName       String
+  paymentMethod     String?
+  amountPaise       Int?
+  currency          String                    @default("INR")
+  status            SubscriptionPaymentStatus @default(PENDING)
+  invoiceUrl        String?
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+
+  @@index([schoolId])
+  @@index([transactionDate])
+  @@map("school_subscription_payments")
 }
 
 // ─── Class (a grade offered at a school) ────────────────────────────────────────
@@ -189,14 +243,16 @@ model Note {
 // ─── Quiz ──────────────────────────────────────────────────────────────────
 
 model Quiz {
-  id         String         @id @default(cuid())
-  title      String
-  difficulty QuizDifficulty @default(MEDIUM)
-  orderIndex Int            @default(0)
-  chapterId  String
-  chapter    Chapter        @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
+  id               String         @id @default(cuid())
+  title            String
+  difficulty       QuizDifficulty @default(MEDIUM)
+  timedMode        QuizTimedMode  @default(UNTIMED)
+  timeLimitSeconds Int?
+  orderIndex       Int            @default(0)
+  chapterId        String
+  chapter          Chapter        @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
   questions Question[]
 
@@ -236,6 +292,28 @@ model Option {
 
   @@index([questionId])
   @@map("options")
+}
+
+// ─── Platform settings (singleton) ───────────────────────────────────────────
+
+model PlatformSettings {
+  id                          String   @id @default("platform")
+  platformName                String   @default("Orvantaa")
+  supportEmail                String   @default("")
+  billingEmail                String   @default("")
+  emailFromName               String   @default("Orvantaa")
+  emailFromAddress            String   @default("")
+  studentAppUrl               String   @default("")
+  adminAppUrl                 String   @default("")
+  timezone                    String   @default("Asia/Kolkata")
+  sendStudentCredentialEmails Boolean  @default(true)
+  sendSubscriptionEmails      Boolean  @default(true)
+  maintenanceMode             Boolean  @default(false)
+  maintenanceMessage          String   @default("")
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  @@map("platform_settings")
 }
 
 // ─── User ─────────────────────────────────────────────────────────────────────

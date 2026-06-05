@@ -26,7 +26,8 @@ import {
   type BoardInput,
   type BoardKind,
   type BoardListItem,
-  slugifyBoardName,
+  deriveBoardCodeFromName,
+  deriveBoardSlugFromName,
 } from "../model/board-list-item"
 import { createBoardAction, updateBoardAction } from "../server/actions"
 
@@ -46,6 +47,7 @@ export function BoardFormDialog({
   const [name, setName] = useState("")
   const [slug, setSlug] = useState("")
   const [slugEdited, setSlugEdited] = useState(false)
+  const [codeEdited, setCodeEdited] = useState(false)
   const [kind, setKind] = useState<BoardKind>("board")
   const [code, setCode] = useState("")
 
@@ -76,7 +78,8 @@ export function BoardFormDialog({
 
   function handleNameChange(value: string) {
     setName(value)
-    if (!slugEdited) setSlug(slugifyBoardName(value))
+    if (!slugEdited) setSlug(deriveBoardSlugFromName(value))
+    if (!codeEdited) setCode(deriveBoardCodeFromName(value))
   }
 
   function handleSubmit(event: React.FormEvent) {
@@ -134,7 +137,9 @@ export function BoardFormDialog({
               }}
               placeholder="e.g. cbse"
             />
-            <FieldHint>Used in URLs. Lowercase letters, numbers, hyphens.</FieldHint>
+            <FieldHint>
+              Auto-filled from the name (e.g. CBSE → cbse). You can edit if needed.
+            </FieldHint>
             <FieldError>{fieldErrors.slug?.[0]}</FieldError>
           </Field>
 
@@ -157,9 +162,13 @@ export function BoardFormDialog({
             <Input
               id="board-code"
               value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="Optional, e.g. CBSE"
+              onChange={(e) => {
+                setCode(e.target.value)
+                setCodeEdited(true)
+              }}
+              placeholder="e.g. CBSE"
             />
+            <FieldHint>Auto-filled as an acronym from the name (e.g. CBSE).</FieldHint>
             <FieldError>{fieldErrors.code?.[0]}</FieldError>
           </Field>
 

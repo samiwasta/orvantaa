@@ -24,6 +24,7 @@ type SchoolSyllabusSchoolProps = {
 }
 
 type SchoolSyllabusTabProps = {
+  boardId: string
   schoolCode: string
   rows: SchoolSyllabusClassRow[]
 }
@@ -62,7 +63,11 @@ export function SchoolSyllabusAddClassButton({
   )
 }
 
-export function SchoolSyllabusTab({ schoolCode, rows }: SchoolSyllabusTabProps) {
+export function SchoolSyllabusTab({
+  boardId,
+  schoolCode,
+  rows,
+}: SchoolSyllabusTabProps) {
   const [deleteTarget, setDeleteTarget] = useState<SchoolSyllabusClassRow | null>(null)
 
   const { run: runDelete, pending: deletePending } = useActionRunner(
@@ -105,10 +110,7 @@ export function SchoolSyllabusTab({ schoolCode, rows }: SchoolSyllabusTabProps) 
                 rows.map((row) => {
                   const assigned = row.subjectCount > 0
                   return (
-                    <tr
-                      key={row.classId}
-                      className="transition-colors hover:bg-[#6C5CE7]/[0.03]"
-                    >
+                    <tr key={row.classId}>
                       <td className="px-4 py-3 font-medium text-foreground">
                         {row.classDisplayName}
                       </td>
@@ -127,7 +129,21 @@ export function SchoolSyllabusTab({ schoolCode, rows }: SchoolSyllabusTabProps) 
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center justify-end">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 rounded-lg border-border/60 px-3 text-xs font-medium transition-colors hover:border-[#6C5CE7] hover:bg-[#6C5CE7] hover:text-white"
+                            asChild
+                          >
+                            <Link
+                              href={contentHref.class(boardId, row.classId)}
+                              aria-label={`Manage syllabus for ${row.classDisplayName}`}
+                            >
+                              Manage
+                            </Link>
+                          </Button>
                           <Button
                             type="button"
                             variant="ghost"

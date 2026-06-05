@@ -5,10 +5,10 @@ export type NoteBlock =
   | {
       type: "example"
       title: string
-      steps: string[]
+      body: string
       tip?: string
     }
-  | { type: "list"; items: string[] }
+  | { type: "list"; content: string }
   | { type: "callout"; text: string }
   | { type: "quote"; text: string }
   | { type: "image"; url: string; alt?: string }

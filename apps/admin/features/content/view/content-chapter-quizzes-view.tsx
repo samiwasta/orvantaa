@@ -35,8 +35,9 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
+import { DraggableSortableList } from "@/features/shared/view/draggable-sortable-card"
 import { useActionRunner } from "@/lib/actions/use-action-runner"
 import { ConfirmDialog } from "@/features/shared/view/confirm-dialog"
 
@@ -49,7 +50,11 @@ import {
   type QuizCreateInput,
   type QuizDifficulty,
 } from "../model/quiz-models"
-import { createQuizAction, deleteQuizAction } from "../server/quiz-actions"
+import {
+  createQuizAction,
+  deleteQuizAction,
+  reorderQuizzesAction,
+} from "../server/quiz-actions"
 
 type ContentChapterQuizzesViewProps = {
   chapterRef: ContentChapterRef
@@ -61,12 +66,18 @@ export function ContentChapterQuizzesView({
   quizzes,
 }: ContentChapterQuizzesViewProps) {
   const router = useRouter()
+  const [orderedQuizzes, setOrderedQuizzes] = useState(quizzes)
   const [createOpen, setCreateOpen] = useState(false)
   const [title, setTitle] = useState("")
   const [difficulty, setDifficulty] = useState<QuizDifficulty>("medium")
   const [deleteTarget, setDeleteTarget] = useState<ContentQuizListItem | null>(
     null
   )
+  const reorderSnapshotRef = useRef(quizzes)
+
+  useEffect(() => {
+    setOrderedQuizzes(quizzes)
+  }, [quizzes])
 
   const { run: runCreate, pending: creating, fieldErrors, formError, reset } =
     useActionRunner(createQuizAction, {
@@ -90,6 +101,14 @@ export function ContentChapterQuizzesView({
     { successMessage: "Quiz deleted", onSuccess: () => setDeleteTarget(null) }
   )
 
+  const { run: runReorder, pending: reorderPending } = useActionRunner(
+    (ids: string[]) => reorderQuizzesAction(chapterRef.id, ids),
+    {
+      successMessage: "Quiz order updated",
+      onError: () => setOrderedQuizzes(reorderSnapshotRef.current),
+    }
+  )
+
   function openCreate() {
     reset()
     setTitle("")
@@ -103,17 +122,19 @@ export function ContentChapterQuizzesView({
     runCreate(chapterRef.id, input)
   }
 
+  function handleReorder(next: ContentQuizListItem[]) {
+    reorderSnapshotRef.current = orderedQuizzes
+    setOrderedQuizzes(next)
+    runReorder(next.map((quiz) => quiz.id))
+  }
+
   return (
-    <div className="flex flex-col gap-4 border-t border-border/60 pt-8">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="font-heading text-base font-semibold text-foreground">
-            Quizzes
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            MCQ quizzes for this chapter. Students take them after reading notes.
-          </p>
-        </div>
+        <p className="text-sm text-muted-foreground">
+          MCQ quizzes for{" "}
+          <span className="font-medium text-foreground">{chapterRef.title}</span>.
+        </p>
         <Button
           type="button"
           onClick={openCreate}
@@ -124,7 +145,7 @@ export function ContentChapterQuizzesView({
         </Button>
       </div>
 
-      {quizzes.length === 0 ? (
+      {orderedQuizzes.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/80 bg-muted/20 px-6 py-12 text-center">
           <ClipboardList className="size-10 text-muted-foreground/40" aria-hidden />
           <p className="mt-4 text-sm font-medium text-foreground">No quizzes yet</p>
@@ -133,12 +154,13 @@ export function ContentChapterQuizzesView({
           </p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {quizzes.map((quiz) => (
-            <li
-              key={quiz.id}
-              className="group flex items-center gap-3 rounded-2xl border border-border/60 bg-white p-3 shadow-sm ring-1 ring-black/[0.04] transition-all hover:border-[#6C5CE7]/35 hover:shadow-md"
-            >
+        <DraggableSortableList
+          items={orderedQuizzes}
+          onReorder={handleReorder}
+          disabled={reorderPending}
+          getDragHandleLabel={(quiz) => `Reorder ${quiz.title}`}
+          renderItem={(quiz, index) => (
+            <>
               <Link
                 href={contentHref.quiz(
                   chapterRef.boardId,
@@ -149,10 +171,10 @@ export function ContentChapterQuizzesView({
                 )}
                 className="flex min-w-0 flex-1 items-center gap-3"
               >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#f59e0b]/10 text-[#b4720a]">
-                  <ClipboardList className="size-5" aria-hidden />
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#f59e0b]/10 text-[11px] font-semibold text-[#b4720a]">
+                  {index + 1}
                 </span>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="truncate font-medium text-foreground">
                     {quiz.title}
                   </p>
@@ -180,6 +202,7 @@ export function ContentChapterQuizzesView({
                     size="icon"
                     className="size-8 rounded-lg text-muted-foreground hover:bg-muted"
                     aria-label={`Actions for ${quiz.title}`}
+                    onClick={(event) => event.stopPropagation()}
                   >
                     <MoreHorizontal className="size-4" />
                   </Button>
@@ -212,9 +235,9 @@ export function ContentChapterQuizzesView({
                 className="size-4 shrink-0 text-muted-foreground/30"
                 aria-hidden
               />
-            </li>
-          ))}
-        </ul>
+            </>
+          )}
+        />
       )}
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>

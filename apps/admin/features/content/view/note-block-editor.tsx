@@ -2,8 +2,9 @@
 
 import { useState } from "react"
 
+import { isRichContentEmpty, RichTextEditor } from "@workspace/rich-text"
 import { Button } from "@workspace/ui/components/button"
-import { Field, FieldLabel } from "@workspace/ui/components/field"
+import { Field, FieldHint, FieldLabel } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
 import {
   Select,
@@ -12,25 +13,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
-import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 import {
   ArrowDown,
   ArrowUp,
-  GripVertical,
+  Layers,
   Plus,
   Trash2,
 } from "lucide-react"
 
+import { ImageUploadField } from "@/features/shared/view/image-upload-field"
+
 import {
   createEmptyBlock,
-  linesToList,
-  listToLines,
   NOTE_BLOCK_LABELS,
   NOTE_BLOCK_TYPES,
   type NoteBlock,
   type NoteBlockType,
 } from "../model/note-blocks"
+
+const NOTE_IMAGE_UPLOAD_ENDPOINT = "/api/uploads/note-image"
 
 type NoteBlockEditorProps = {
   blocks: NoteBlock[]
@@ -51,216 +53,341 @@ function moveBlock(blocks: NoteBlock[], index: number, direction: -1 | 1): NoteB
   return copy
 }
 
+function RichTextField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  variant = "full",
+  minHeight,
+  hint,
+}: {
+  label: string
+  value: string
+  onChange: (html: string) => void
+  placeholder?: string
+  variant?: "full" | "compact" | "structured"
+  minHeight?: string
+  hint?: string
+}) {
+  return (
+    <Field>
+      <FieldLabel>{label}</FieldLabel>
+      <RichTextEditor
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        variant={variant}
+        minHeight={minHeight}
+      />
+      <FieldHint>
+        {hint ??
+          "Click ∑ or the flask for equations. Use Tab to indent nested list items."}
+      </FieldHint>
+    </Field>
+  )
+}
+
 function BlockFields({
   block,
+  blockIndex,
   onChange,
 }: {
   block: NoteBlock
+  blockIndex: number
   onChange: (block: NoteBlock) => void
 }) {
   switch (block.type) {
     case "paragraph":
+      return (
+        <RichTextField
+          label="Text"
+          value={block.text}
+          onChange={(text) => onChange({ ...block, text })}
+          placeholder="Write lesson content…"
+          minHeight="9rem"
+        />
+      )
     case "heading":
+      return (
+        <RichTextField
+          label="Text"
+          value={block.text}
+          onChange={(text) => onChange({ ...block, text })}
+          placeholder="Section heading…"
+          variant="compact"
+          minHeight="4.5rem"
+        />
+      )
     case "callout":
     case "quote":
       return (
-        <Field>
-          <FieldLabel>Text</FieldLabel>
-          <Textarea
-            value={block.text}
-            onChange={(e) => onChange({ ...block, text: e.target.value })}
-            rows={block.type === "paragraph" ? 4 : 2}
-            className="min-h-0"
-          />
-        </Field>
+        <RichTextField
+          label="Text"
+          value={block.text}
+          onChange={(text) => onChange({ ...block, text })}
+          placeholder="Write content…"
+          minHeight="7rem"
+        />
       )
     case "definition":
       return (
-        <>
-          <Field>
-            <FieldLabel>Title</FieldLabel>
-            <Input
-              value={block.title}
-              onChange={(e) => onChange({ ...block, title: e.target.value })}
-            />
-          </Field>
-          <Field>
-            <FieldLabel>Content</FieldLabel>
-            <Textarea
-              value={block.content}
-              onChange={(e) => onChange({ ...block, content: e.target.value })}
-              rows={3}
-            />
-          </Field>
-        </>
+        <div className="grid gap-3">
+          <RichTextField
+            label="Title"
+            value={block.title}
+            onChange={(title) => onChange({ ...block, title })}
+            placeholder="e.g. Linear equation"
+            variant="compact"
+            minHeight="4rem"
+          />
+          <RichTextField
+            label="Content"
+            value={block.content}
+            onChange={(content) => onChange({ ...block, content })}
+            placeholder="Definition body…"
+            minHeight="8rem"
+          />
+        </div>
       )
     case "example":
       return (
-        <>
-          <Field>
-            <FieldLabel>Title</FieldLabel>
-            <Input
-              value={block.title}
-              onChange={(e) => onChange({ ...block, title: e.target.value })}
-            />
-          </Field>
-          <Field>
-            <FieldLabel>Steps (one per line)</FieldLabel>
-            <Textarea
-              value={listToLines(block.steps)}
-              onChange={(e) =>
-                onChange({ ...block, steps: linesToList(e.target.value) })
-              }
-              rows={4}
-            />
-          </Field>
-          <Field>
-            <FieldLabel>Pro tip (optional)</FieldLabel>
-            <Input
-              value={block.tip ?? ""}
-              onChange={(e) =>
-                onChange({
-                  ...block,
-                  tip: e.target.value.trim() || undefined,
-                })
-              }
-            />
-          </Field>
-        </>
+        <div className="grid gap-3">
+          <RichTextField
+            label="Title"
+            value={block.title}
+            onChange={(title) => onChange({ ...block, title })}
+            variant="compact"
+            minHeight="4rem"
+          />
+          <RichTextField
+            label="Content"
+            value={block.body}
+            onChange={(body) => onChange({ ...block, body })}
+            variant="structured"
+            minHeight="10rem"
+            placeholder="Paragraph text, numbered steps, or nested lists…"
+            hint="Write freely or use bullet/numbered list buttons. Tab indents nested items."
+          />
+          <RichTextField
+            label="Pro tip (optional)"
+            value={block.tip ?? ""}
+            onChange={(tip) =>
+              onChange({
+                ...block,
+                tip: isRichContentEmpty(tip) ? undefined : tip,
+              })
+            }
+            variant="compact"
+            minHeight="4.5rem"
+          />
+        </div>
       )
     case "list":
       return (
-        <Field>
-          <FieldLabel>Items (one per line)</FieldLabel>
-          <Textarea
-            value={listToLines(block.items)}
-            onChange={(e) =>
-              onChange({ ...block, items: linesToList(e.target.value) })
-            }
-            rows={4}
-          />
-        </Field>
+        <RichTextField
+          label="List content"
+          value={block.content}
+          onChange={(content) => onChange({ ...block, content })}
+          variant="structured"
+          minHeight="10rem"
+          placeholder="Bullet or numbered lists; Tab for nested levels…"
+          hint="Use list toolbar buttons. Press Tab on a list item to nest, Shift+Tab to outdent."
+        />
       )
     case "image":
       return (
-        <>
+        <div className="grid gap-3">
           <Field>
-            <FieldLabel>Image URL</FieldLabel>
-            <Input
+            <FieldLabel>Image</FieldLabel>
+            <ImageUploadField
               value={block.url}
-              onChange={(e) => onChange({ ...block, url: e.target.value })}
-              placeholder="https://..."
+              onChange={(url) => onChange({ ...block, url })}
+              uploadEndpoint={NOTE_IMAGE_UPLOAD_ENDPOINT}
+              inputId={`note-image-upload-${blockIndex}`}
+              previewAlt={block.alt?.trim() || "Note image"}
+              compact
             />
+            <FieldHint>Stored in R2 when uploaded.</FieldHint>
           </Field>
           <Field>
             <FieldLabel>Alt text (optional)</FieldLabel>
             <Input
               value={block.alt ?? ""}
               onChange={(e) => onChange({ ...block, alt: e.target.value })}
+              className="bg-white"
             />
           </Field>
-        </>
+        </div>
       )
   }
+}
+
+function AddBlockToolbar({
+  addType,
+  onTypeChange,
+  onAdd,
+}: {
+  addType: NoteBlockType
+  onTypeChange: (type: NoteBlockType) => void
+  onAdd: () => void
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Select value={addType} onValueChange={(v) => onTypeChange(v as NoteBlockType)}>
+        <SelectTrigger
+          className="h-9 w-[9.5rem] rounded-lg border-border/60 bg-white"
+          aria-label="Block type"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {NOTE_BLOCK_TYPES.map((type) => (
+            <SelectItem key={type} value={type}>
+              {NOTE_BLOCK_LABELS[type]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button
+        type="button"
+        size="sm"
+        className="h-9 rounded-lg bg-[#6C5CE7] px-3 font-semibold text-white hover:bg-[#6C5CE7]/90"
+        onClick={onAdd}
+      >
+        <Plus className="size-3.5" aria-hidden />
+        Add block
+      </Button>
+    </div>
+  )
 }
 
 export function NoteBlockEditor({ blocks, onChange }: NoteBlockEditorProps) {
   const [addType, setAddType] = useState<NoteBlockType>("paragraph")
 
+  function handleAddBlock() {
+    onChange([...blocks, createEmptyBlock(addType)])
+  }
+
   return (
-    <div className="flex flex-col gap-3">
-      {blocks.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border/80 bg-muted/20 px-4 py-8 text-center text-sm text-muted-foreground">
-          No blocks yet. Add a block below to start writing.
-        </p>
-      ) : (
-        blocks.map((block, index) => (
-          <div
-            key={index}
-            className="rounded-2xl border border-border/60 bg-white p-4 shadow-sm ring-1 ring-black/[0.04]"
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-center gap-2">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+            <Layers className="size-4" aria-hidden />
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-foreground">Content blocks</p>
+            <p className="text-xs text-muted-foreground">
+              {blocks.length === 0
+                ? "Pick a type and add your first block"
+                : `${blocks.length} block${blocks.length === 1 ? "" : "s"} · use arrows to reorder`}
+            </p>
+          </div>
+        </div>
+        <AddBlockToolbar
+          addType={addType}
+          onTypeChange={setAddType}
+          onAdd={handleAddBlock}
+        />
+      </div>
+
+      <div className="space-y-3">
+        {blocks.length === 0 ? (
+          <button
+            type="button"
+            onClick={handleAddBlock}
+            className={cn(
+              "flex w-full flex-col items-center justify-center rounded-2xl border border-dashed border-border/80",
+              "bg-muted/10 px-6 py-12 text-center transition-colors",
+              "hover:border-[#6C5CE7]/40 hover:bg-[#6C5CE7]/[0.04]"
+            )}
           >
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <GripVertical
-                  className="size-4 text-muted-foreground/50"
-                  aria-hidden
-                />
-                <span className="rounded-full bg-[#6C5CE7]/10 px-2.5 py-0.5 text-xs font-semibold text-[#6C5CE7]">
-                  {NOTE_BLOCK_LABELS[block.type]}
-                </span>
+            <Layers className="size-9 text-muted-foreground/40" aria-hidden />
+            <p className="mt-3 text-sm font-medium text-foreground">
+              Add your first block
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {NOTE_BLOCK_LABELS[addType]} · click here or use Add block above
+            </p>
+          </button>
+        ) : (
+          blocks.map((block, index) => (
+            <div
+              key={index}
+              className="overflow-hidden rounded-2xl border border-border/60 bg-white shadow-sm ring-1 ring-black/[0.04]"
+            >
+              <div className="flex items-center justify-between gap-2 border-b border-border/50 bg-muted/20 px-3 py-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="flex size-6 items-center justify-center rounded-md bg-[#6C5CE7]/10 text-[10px] font-bold text-[#6C5CE7]">
+                    {index + 1}
+                  </span>
+                  <span className="text-xs font-semibold text-foreground">
+                    {NOTE_BLOCK_LABELS[block.type]}
+                  </span>
+                </div>
+                <div className="flex items-center gap-0.5">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-7 rounded-lg"
+                    disabled={index === 0}
+                    onClick={() => onChange(moveBlock(blocks, index, -1))}
+                    aria-label="Move block up"
+                  >
+                    <ArrowUp className="size-3.5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-7 rounded-lg"
+                    disabled={index === blocks.length - 1}
+                    onClick={() => onChange(moveBlock(blocks, index, 1))}
+                    aria-label="Move block down"
+                  >
+                    <ArrowDown className="size-3.5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-7 rounded-lg text-muted-foreground hover:text-destructive"
+                    onClick={() =>
+                      onChange(blocks.filter((_, i) => i !== index))
+                    }
+                    aria-label="Remove block"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center gap-0.5">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  disabled={index === 0}
-                  onClick={() => onChange(moveBlock(blocks, index, -1))}
-                  aria-label="Move block up"
-                >
-                  <ArrowUp className="size-3.5" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  disabled={index === blocks.length - 1}
-                  onClick={() => onChange(moveBlock(blocks, index, 1))}
-                  aria-label="Move block down"
-                >
-                  <ArrowDown className="size-3.5" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  className="text-muted-foreground hover:text-destructive"
-                  onClick={() =>
-                    onChange(blocks.filter((_, i) => i !== index))
-                  }
-                  aria-label="Remove block"
-                >
-                  <Trash2 className="size-3.5" />
-                </Button>
+              <div className="p-4">
+                <BlockFields
+                  block={block}
+                  blockIndex={index}
+                  onChange={(next) => onChange(updateAt(blocks, index, next))}
+                />
               </div>
             </div>
-            <BlockFields
-              block={block}
-              onChange={(next) => onChange(updateAt(blocks, index, next))}
-            />
-          </div>
-        ))
-      )}
-
-      <div
-        className={cn(
-          "flex flex-col gap-2 rounded-2xl border border-border/60 bg-muted/15 p-3 sm:flex-row sm:items-center"
+          ))
         )}
-      >
-        <Select
-          value={addType}
-          onValueChange={(v) => setAddType(v as NoteBlockType)}
-        >
-          <SelectTrigger className="w-full bg-white sm:w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {NOTE_BLOCK_TYPES.map((type) => (
-              <SelectItem key={type} value={type}>
-                {NOTE_BLOCK_LABELS[type]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          type="button"
-          variant="outline"
-          className="rounded-xl"
-          onClick={() => onChange([...blocks, createEmptyBlock(addType)])}
-        >
-          <Plus className="size-4" aria-hidden />
-          Add block
-        </Button>
+
+        {blocks.length > 0 ? (
+          <button
+            type="button"
+            onClick={handleAddBlock}
+            className={cn(
+              "flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border/70",
+              "py-3 text-sm font-medium text-muted-foreground transition-colors",
+              "hover:border-[#6C5CE7]/35 hover:bg-[#6C5CE7]/[0.03] hover:text-[#6C5CE7]"
+            )}
+          >
+            <Plus className="size-4" aria-hidden />
+            Add {NOTE_BLOCK_LABELS[addType].toLowerCase()}
+          </button>
+        ) : null}
       </div>
     </div>
   )

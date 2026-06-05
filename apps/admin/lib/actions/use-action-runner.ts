@@ -1,7 +1,7 @@
 "use client"
 
 import { toast } from "@workspace/ui/components/sonner"
-import { useState, useTransition } from "react"
+import { useCallback, useState, useTransition } from "react"
 
 import type { ActionResult, FieldErrors } from "./action-result"
 
@@ -36,10 +36,10 @@ export function useActionRunner<Args extends unknown[], T>(
     })
   }
 
-  function reset() {
+  const reset = useCallback(() => {
     setFieldErrors({})
     setFormError(null)
-  }
+  }, [])
 
   return { run, pending, fieldErrors, formError, reset }
 }

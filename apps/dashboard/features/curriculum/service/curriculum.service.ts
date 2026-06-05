@@ -4,14 +4,12 @@ import type {
   TopicItem,
 } from "@/features/subjects/model/chapter-data"
 import { getLearningObjectives } from "@/features/subjects/model/chapter-data"
-import type {
-  NoteBlock,
-  NoteContent,
-} from "@/features/subjects/model/note-data"
+import type { NoteContent } from "@/features/subjects/model/note-data"
 import {
   buildNoteNavigation,
   type NoteNavItem,
 } from "@/features/subjects/model/note-navigation"
+import { parseNoteBlocks } from "@/features/subjects/model/parse-note-blocks"
 import type {
   McqQuestion,
   QuizSession,
@@ -29,11 +27,6 @@ const OPTION_IDS = ["a", "b", "c", "d"] as const
 function estimateTopicDuration(noteCount: number): string {
   const minutes = Math.max(5, noteCount * 5)
   return `${minutes} min`
-}
-
-function parseNoteBlocks(value: unknown): NoteBlock[] {
-  if (!Array.isArray(value)) return []
-  return value as NoteBlock[]
 }
 
 function mapChapterItem(
