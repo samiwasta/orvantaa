@@ -1,6 +1,7 @@
 import { render } from "@react-email/render"
 import _SubscriptionPaymentEmail from "@workspace/transactional/emails/subscription-payment"
 
+import { getAdminAppUrl } from "@/lib/app-urls"
 import { type EmailProvider, emailProvider } from "@/lib/email"
 
 import type { SubscriptionPaymentEmailKind } from "../model/subscription-payment"
@@ -12,8 +13,7 @@ const SubscriptionPaymentEmail: typeof _SubscriptionPaymentEmail =
         .default
 
 function portalUrl(): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
-  return base.replace(/\/$/, "")
+  return getAdminAppUrl()
 }
 
 const subjects: Record<SubscriptionPaymentEmailKind, string> = {

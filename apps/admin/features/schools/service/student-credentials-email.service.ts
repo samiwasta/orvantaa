@@ -1,6 +1,7 @@
 import { render } from "@react-email/render"
 import _StudentCredentialsEmail from "@workspace/transactional/emails/student-credentials"
 
+import { studentLoginUrl } from "@/lib/app-urls"
 import { type EmailProvider, emailProvider } from "@/lib/email"
 
 import { formatStudentDisplayCode } from "../model/school-student-list-item"
@@ -10,15 +11,6 @@ const StudentCredentialsEmail: typeof _StudentCredentialsEmail =
     ? _StudentCredentialsEmail
     : (_StudentCredentialsEmail as { default: typeof _StudentCredentialsEmail })
         .default
-
-function studentLoginUrl(): string {
-  const base =
-    process.env.STUDENT_APP_URL ??
-    process.env.NEXT_PUBLIC_STUDENT_APP_URL ??
-    process.env.NEXT_PUBLIC_APP_URL ??
-    "http://localhost:3000"
-  return `${base.replace(/\/$/, "")}/auth`
-}
 
 export type StudentCredentialEmailPayload = {
   to: string

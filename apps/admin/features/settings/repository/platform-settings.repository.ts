@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db"
+import { getAdminAppUrl, getStudentAppUrl } from "@/lib/app-urls"
 
 import {
   PLATFORM_SETTINGS_ID,
@@ -22,9 +23,8 @@ function parseEmailFromEnv(value: string | undefined): {
 
 function buildDefaults(): PlatformSettingsData {
   const emailFrom = parseEmailFromEnv(process.env.EMAIL_FROM)
-  const adminAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() ?? ""
-  const studentAppUrl =
-    process.env.STUDENT_APP_URL?.trim() || adminAppUrl
+  const adminAppUrl = getAdminAppUrl()
+  const studentAppUrl = getStudentAppUrl()
 
   return {
     platformName: "Orvantaa",
@@ -45,7 +45,7 @@ function buildDefaults(): PlatformSettingsData {
 function mapRow(row: {
   platformName: string
   supportEmail: string
-  billingEmail: string
+  billingEmail?: string
   emailFromName: string
   emailFromAddress: string
   studentAppUrl: string
@@ -59,7 +59,7 @@ function mapRow(row: {
   return {
     platformName: row.platformName,
     supportEmail: row.supportEmail,
-    billingEmail: row.billingEmail,
+    billingEmail: row.billingEmail ?? "",
     emailFromName: row.emailFromName,
     emailFromAddress: row.emailFromAddress,
     studentAppUrl: row.studentAppUrl,
