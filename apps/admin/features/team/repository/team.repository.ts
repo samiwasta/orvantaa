@@ -1,6 +1,10 @@
-import { Gender, UserRole } from "@prisma/client"
+import { UserRole } from "@prisma/client"
 
-import { mapPrismaRoleToAppRole } from "@/features/user/model/user"
+import { isSuperAdminUsername } from "@/lib/auth/super-admin"
+import {
+  mapPrismaRoleToAppRole,
+  mapUserGenderToPrismaGender,
+} from "@/features/user/model/user"
 import { prisma } from "@/lib/db"
 
 import type { TeamMember } from "../model/team-member"
@@ -28,6 +32,7 @@ export class TeamRepository {
       username: row.username,
       email: row.email,
       role: mapPrismaRoleToAppRole(row.role),
+      isSuperAdmin: isSuperAdminUsername(row.username),
       createdAt: row.createdAt.toISOString(),
     }))
   }
@@ -52,10 +57,17 @@ export class TeamRepository {
     return prisma.user.count({ where: { role: UserRole.ADMIN } })
   }
 
-  async findAdminById(id: string): Promise<{ id: string } | null> {
+  async findAdminById(
+    id: string
+  ): Promise<{
+    id: string
+    username: string
+    firstName: string
+    lastName: string
+  } | null> {
     return prisma.user.findFirst({
       where: { id, role: UserRole.ADMIN },
-      select: { id: true },
+      select: { id: true, username: true, firstName: true, lastName: true },
     })
   }
 
@@ -74,7 +86,7 @@ export class TeamRepository {
         firstName: input.firstName.trim(),
         lastName: input.lastName?.trim() ?? "",
         passwordHash,
-        gender: Gender.FEMALE,
+        gender: mapUserGenderToPrismaGender(input.gender),
         role: UserRole.ADMIN,
         sectionId: null,
         studentCode: null,
@@ -96,6 +108,7 @@ export class TeamRepository {
       username: row.username,
       email: row.email,
       role: mapPrismaRoleToAppRole(row.role),
+      isSuperAdmin: isSuperAdminUsername(row.username),
       createdAt: row.createdAt.toISOString(),
     }
   }

@@ -15,6 +15,7 @@ import {
   schoolStudentInputSchema,
 } from "../model/school-student-list-item"
 import { schoolStudentsRepository } from "../repository/school-students.repository"
+import { schoolRecurringSubscriptionService } from "./school-recurring-subscription.service"
 
 function normalizeClassKey(value: string): string {
   return value.trim().toLowerCase().replace(/^class\s+/i, "")
@@ -43,6 +44,19 @@ function resolveSectionId(
 
 export class SchoolStudentsService {
   private readonly repository = schoolStudentsRepository
+
+  private async afterStudentCountMayHaveChanged(schoolId: string): Promise<void> {
+    try {
+      await schoolRecurringSubscriptionService.syncSubscriptionQuantityForSchool(
+        schoolId
+      )
+    } catch (error) {
+      console.error(
+        `[subscription] Quantity sync failed for school ${schoolId}:`,
+        error instanceof Error ? error.message : error
+      )
+    }
+  }
 
   async getSectionOptions(schoolId: string) {
     return this.repository.findSectionOptions(schoolId)
@@ -77,6 +91,7 @@ export class SchoolStudentsService {
       passwordHash,
       username
     )
+    await this.afterStudentCountMayHaveChanged(schoolId)
   }
 
   async updateStudent(
@@ -123,6 +138,7 @@ export class SchoolStudentsService {
       throw new Error("Student not found for this school.")
     }
     await this.repository.deleteStudent(studentId)
+    await this.afterStudentCountMayHaveChanged(schoolId)
   }
 
   async importStudentsFromCsv(
@@ -215,6 +231,7 @@ export class SchoolStudentsService {
     }
 
     await this.repository.createStudentsBulk(entries)
+    await this.afterStudentCountMayHaveChanged(schoolId)
     return { imported: entries.length }
   }
 

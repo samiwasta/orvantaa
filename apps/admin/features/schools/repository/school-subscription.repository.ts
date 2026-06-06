@@ -1,6 +1,12 @@
+import type { SchoolSubscriptionStatus as PrismaSchoolSubscriptionStatus } from "@prisma/client"
+
 import { prisma } from "@/lib/db"
 import type { RazorpayPaymentRecord } from "@/lib/payments/razorpay"
 
+import {
+  mapSubscriptionStatusToPrisma,
+  type SchoolSubscriptionStatus,
+} from "../model/school-list-item"
 import {
   formatAmountLabel,
   formatPaymentStatusLabel,
@@ -8,6 +14,7 @@ import {
   mapPaymentStatusToPrisma,
   mapPrismaPaymentStatus,
   type SubscriptionPaymentListItem,
+  type SubscriptionPaymentStatus,
 } from "../model/subscription-payment"
 
 function mapRow(row: {
@@ -20,6 +27,7 @@ function mapRow(row: {
   currency: string
   status: "DUE" | "SUCCESS" | "FAILED" | "LATE" | "PENDING"
   invoiceUrl: string | null
+  paymentUrl: string | null
 }): SubscriptionPaymentListItem {
   const status = mapPrismaPaymentStatus(row.status)
   return {
@@ -33,7 +41,16 @@ function mapRow(row: {
     status,
     statusLabel: formatPaymentStatusLabel(status),
     invoiceUrl: row.invoiceUrl,
+    paymentUrl: row.paymentUrl,
   }
+}
+
+export type UpsertPaymentResult = {
+  id: string
+  status: SubscriptionPaymentStatus
+  previousStatus: SubscriptionPaymentStatus | null
+  emailSentAt: Date | null
+  paymentUrl: string | null
 }
 
 export class SchoolSubscriptionRepository {
@@ -53,6 +70,7 @@ export class SchoolSubscriptionRepository {
         currency: true,
         status: true,
         invoiceUrl: true,
+        paymentUrl: true,
       },
     })
 
@@ -71,11 +89,26 @@ export class SchoolSubscriptionRepository {
     return { schoolName: row.name, billingEmail: row.billingEmail }
   }
 
+  async countStudentsForSchool(schoolId: string): Promise<number> {
+    return prisma.user.count({
+      where: {
+        role: "STUDENT",
+        section: {
+          class: { schoolId },
+        },
+      },
+    })
+  }
+
   async upsertPaymentFromRazorpay(
     schoolId: string,
     record: RazorpayPaymentRecord
-  ): Promise<{ id: string; status: SubscriptionPaymentListItem["status"] }> {
+  ): Promise<UpsertPaymentResult> {
     const status = mapPaymentStatusToPrisma(record.status)
+    const existing = await prisma.schoolSubscriptionPayment.findUnique({
+      where: { transactionId: record.transactionId },
+      select: { status: true, emailSentAt: true, paymentUrl: true },
+    })
 
     const row = await prisma.schoolSubscriptionPayment.upsert({
       where: { transactionId: record.transactionId },
@@ -91,6 +124,7 @@ export class SchoolSubscriptionRepository {
         currency: record.currency,
         status,
         invoiceUrl: record.invoiceUrl,
+        paymentUrl: record.paymentUrl ?? null,
       },
       update: {
         razorpayOrderId: record.razorpayOrderId,
@@ -102,14 +136,69 @@ export class SchoolSubscriptionRepository {
         currency: record.currency,
         status,
         invoiceUrl: record.invoiceUrl,
+        paymentUrl: record.paymentUrl ?? undefined,
       },
-      select: { id: true, status: true },
+      select: {
+        id: true,
+        status: true,
+        emailSentAt: true,
+        paymentUrl: true,
+      },
     })
 
     return {
       id: row.id,
       status: mapPrismaPaymentStatus(row.status),
+      previousStatus: existing
+        ? mapPrismaPaymentStatus(existing.status)
+        : null,
+      emailSentAt: row.emailSentAt,
+      paymentUrl: row.paymentUrl,
     }
+  }
+
+  async createDuePaymentLink(input: {
+    schoolId: string
+    transactionId: string
+    serviceName: string
+    amountPaise: number
+    currency: string
+    paymentUrl: string
+  }): Promise<{ id: string }> {
+    return prisma.schoolSubscriptionPayment.create({
+      data: {
+        schoolId: input.schoolId,
+        transactionId: input.transactionId,
+        transactionDate: new Date(),
+        serviceName: input.serviceName,
+        amountPaise: input.amountPaise,
+        currency: input.currency,
+        status: "DUE",
+        paymentUrl: input.paymentUrl,
+      },
+      select: { id: true },
+    })
+  }
+
+  async markEmailSent(paymentId: string): Promise<void> {
+    await prisma.schoolSubscriptionPayment.update({
+      where: { id: paymentId },
+      data: { emailSentAt: new Date() },
+    })
+  }
+
+  async updateSchoolSubscriptionStatus(
+    schoolId: string,
+    status: SchoolSubscriptionStatus
+  ): Promise<void> {
+    await prisma.school.update({
+      where: { id: schoolId },
+      data: {
+        subscriptionStatus: mapSubscriptionStatusToPrisma(
+          status
+        ) as PrismaSchoolSubscriptionStatus,
+      },
+    })
   }
 }
 

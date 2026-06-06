@@ -18,6 +18,7 @@ export type SubscriptionPaymentEmailKind =
   | "success"
   | "failed"
   | "late"
+  | "setup"
 
 type SubscriptionPaymentEmailProps = {
   schoolName: string
@@ -28,6 +29,7 @@ type SubscriptionPaymentEmailProps = {
   transactionDate: string
   paymentMethod: string | null
   invoiceUrl: string | null
+  paymentUrl: string | null
   portalUrl: string
 }
 
@@ -59,6 +61,12 @@ const copyByKind: Record<
     body: "Your subscription payment is overdue. Please pay as soon as possible to avoid interruption of service.",
     cta: "Pay now",
   },
+  setup: {
+    preview: "Set up your Orvantaa monthly subscription",
+    heading: "Complete subscription setup",
+    body: "Your school has been enrolled in automatic monthly billing. Complete the one-time authorization so Razorpay can charge your subscription each month.",
+    cta: "Complete setup",
+  },
 }
 
 export default function SubscriptionPaymentEmail({
@@ -70,11 +78,12 @@ export default function SubscriptionPaymentEmail({
   transactionDate = "—",
   paymentMethod = null,
   invoiceUrl = null,
+  paymentUrl = null,
   portalUrl = "https://app.orvantaa.com",
 }: SubscriptionPaymentEmailProps) {
   const copy = copyByKind[kind]
   const logoBaseUrl = "https://app.orvantaa.com"
-  const actionUrl = invoiceUrl ?? portalUrl
+  const actionUrl = paymentUrl ?? invoiceUrl ?? portalUrl
 
   return (
     <Html>

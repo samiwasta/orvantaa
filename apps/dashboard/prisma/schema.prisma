@@ -55,6 +55,38 @@ enum SubscriptionPaymentStatus {
   PENDING
 }
 
+enum RecurringSubscriptionStatus {
+  CREATED
+  AUTHENTICATED
+  ACTIVE
+  PENDING
+  HALTED
+  CANCELLED
+  COMPLETED
+  EXPIRED
+}
+
+enum AdminNotificationKind {
+  TEAM_MEMBER_ADDED
+  TEAM_MEMBER_REMOVED
+  SUBSCRIPTION_PAYMENT_FAILED
+  SUBSCRIPTION_PAYMENT_DUE
+  SUBSCRIPTION_PAYMENT_LATE
+  SCHOOL_SUBSCRIPTION_INACTIVE
+  SCHOOL_SUBSCRIPTION_HOLD
+  SCHOOL_SUBSCRIPTION_BLOCKED
+  STUDENTS_UNASSIGNED
+  MAINTENANCE_MODE
+  SYSTEM
+}
+
+enum AdminNotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
 // ─── Board / University ───────────────────────────────────────────────────────
 
 model Board {
@@ -86,6 +118,7 @@ model School {
 
   classes                 Class[]
   subscriptionPayments    SchoolSubscriptionPayment[]
+  recurringSubscription   SchoolRecurringSubscription?
   contacts                SchoolContact[]
 
   @@index([boardId])
@@ -121,12 +154,39 @@ model SchoolSubscriptionPayment {
   currency          String                    @default("INR")
   status            SubscriptionPaymentStatus @default(PENDING)
   invoiceUrl        String?
+  paymentUrl        String?
+  emailSentAt       DateTime?
   createdAt         DateTime                  @default(now())
   updatedAt         DateTime                  @updatedAt
 
   @@index([schoolId])
   @@index([transactionDate])
   @@map("school_subscription_payments")
+}
+
+model SchoolRecurringSubscription {
+  id                     String                      @id @default(cuid())
+  schoolId               String                      @unique
+  school                 School                      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  razorpaySubscriptionId String                      @unique
+  razorpayPlanId         String
+  razorpayCustomerId     String
+  status                 RecurringSubscriptionStatus @default(CREATED)
+  amountPaise            Int
+  principalAmountPaise   Int                         @default(0)
+  studentCount           Int                         @default(0)
+  currency               String                      @default("INR")
+  planName               String
+  authUrl                String?
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  nextChargeAt           DateTime?
+  cancelledAt            DateTime?
+  createdAt              DateTime                    @default(now())
+  updatedAt              DateTime                    @updatedAt
+
+  @@index([status])
+  @@map("school_recurring_subscriptions")
 }
 
 // ─── Class (a grade offered at a school) ────────────────────────────────────────
@@ -310,10 +370,46 @@ model PlatformSettings {
   sendSubscriptionEmails      Boolean  @default(true)
   maintenanceMode             Boolean  @default(false)
   maintenanceMessage          String   @default("")
+  subscriptionPrincipalAmountPaise Int @default(0)
+  subscriptionPlanName        String   @default("Orvantaa Platform Subscription")
+  razorpayPlanId              String?
+  subscriptionBillingCycles   Int      @default(120)
+  autoStartSchoolSubscriptions Boolean @default(true)
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
 
   @@map("platform_settings")
+}
+
+model AdminNotification {
+  id        String                    @id @default(cuid())
+  dedupeKey String                    @unique
+  kind      AdminNotificationKind
+  priority  AdminNotificationPriority @default(NORMAL)
+  title     String
+  body      String
+  href      String?
+  metadata  Json?
+  createdAt DateTime                  @default(now())
+  updatedAt DateTime                  @updatedAt
+
+  reads AdminNotificationRead[]
+
+  @@index([createdAt(sort: Desc)])
+  @@map("admin_notifications")
+}
+
+model AdminNotificationRead {
+  id             String            @id @default(cuid())
+  notificationId String
+  notification   AdminNotification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt         DateTime          @default(now())
+
+  @@unique([notificationId, userId])
+  @@index([userId])
+  @@map("admin_notification_reads")
 }
 
 // ─── User ─────────────────────────────────────────────────────────────────────
@@ -336,6 +432,7 @@ model User {
   updatedAt    DateTime @updatedAt
 
   passwordResetTokens PasswordResetToken[]
+  notificationReads   AdminNotificationRead[]
 
   @@index([sectionId])
   @@index([role])

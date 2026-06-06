@@ -60,7 +60,11 @@ export function ClassFormDialog({
   >(
     ((...args: unknown[]) =>
       isEdit
-        ? updateClassAction(args[0] as string, args[1] as string)
+        ? updateClassAction(
+            args[0] as string,
+            args[1] as string,
+            revalidateSchoolCode
+          )
         : createClassAction(args[0] as ClassInput, revalidateSchoolCode)) as never,
     {
       successMessage: isEdit ? "Class updated" : "Class created",

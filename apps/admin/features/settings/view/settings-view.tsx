@@ -13,7 +13,7 @@ import {
 } from "@workspace/ui/components/select"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
-import { Globe, Mail, Save, Settings2, Shield } from "lucide-react"
+import { CreditCard, Globe, Mail, Save, Settings2, Shield } from "lucide-react"
 import { type ReactNode,useState } from "react"
 
 import { useActionRunner } from "@/lib/actions/use-action-runner"
@@ -236,6 +236,88 @@ export function SettingsView({
               <FieldError>{fieldErrors.adminAppUrl?.[0]}</FieldError>
             </Field>
           </div>
+        </SettingsSection>
+
+        <SettingsSection
+          icon={CreditCard}
+          title="Subscription billing"
+          description="Per-student principal amount multiplied by each school's student count."
+        >
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field>
+              <FieldLabel htmlFor="subscription-principal-amount" required>
+                Principal amount per student (INR)
+              </FieldLabel>
+              <Input
+                id="subscription-principal-amount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={settings.subscriptionPrincipalAmountRupees || ""}
+                onChange={(e) =>
+                  update(
+                    "subscriptionPrincipalAmountRupees",
+                    e.target.value === "" ? 0 : Number(e.target.value)
+                  )
+                }
+                placeholder="e.g. 50"
+                className="h-10 rounded-xl"
+              />
+              <FieldHint>
+                Monthly charge per school = principal amount × number of
+                students in that school.
+              </FieldHint>
+              <FieldError>
+                {fieldErrors.subscriptionPrincipalAmountRupees?.[0]}
+              </FieldError>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="subscription-plan-name" required>
+                Plan name
+              </FieldLabel>
+              <Input
+                id="subscription-plan-name"
+                value={settings.subscriptionPlanName}
+                onChange={(e) => update("subscriptionPlanName", e.target.value)}
+                className="h-10 rounded-xl"
+              />
+              <FieldError>{fieldErrors.subscriptionPlanName?.[0]}</FieldError>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="subscription-billing-cycles" required>
+                Billing cycles
+              </FieldLabel>
+              <Input
+                id="subscription-billing-cycles"
+                type="number"
+                min="1"
+                max="999"
+                value={settings.subscriptionBillingCycles}
+                onChange={(e) =>
+                  update(
+                    "subscriptionBillingCycles",
+                    e.target.value === "" ? 120 : Number(e.target.value)
+                  )
+                }
+                className="h-10 rounded-xl"
+              />
+              <FieldHint>
+                Number of monthly charges per subscription (120 ≈ 10 years).
+              </FieldHint>
+              <FieldError>
+                {fieldErrors.subscriptionBillingCycles?.[0]}
+              </FieldError>
+            </Field>
+          </div>
+          <ToggleRow
+            id="auto-start-subscriptions"
+            label="Auto-start subscriptions for new schools"
+            description="When a school is created with a billing email, start a Razorpay subscription and email the setup link automatically."
+            checked={settings.autoStartSchoolSubscriptions}
+            onCheckedChange={(checked) =>
+              update("autoStartSchoolSubscriptions", checked)
+            }
+          />
         </SettingsSection>
 
         <SettingsSection

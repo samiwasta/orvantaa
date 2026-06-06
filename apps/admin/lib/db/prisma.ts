@@ -4,7 +4,10 @@ import { getPrismaDatabaseUrl } from "./connection-url"
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
+  prismaRevision: string | undefined
 }
+
+const PRISMA_CLIENT_REVISION = "20260606180000_subscription_principal_per_student"
 
 function createPrismaClient(): PrismaClient {
   return new PrismaClient({
@@ -15,9 +18,17 @@ function createPrismaClient(): PrismaClient {
   })
 }
 
-const REQUIRED_PRISMA_DELEGATES = ["schoolContact", "platformSettings"] as const
+const REQUIRED_PRISMA_DELEGATES = [
+  "schoolContact",
+  "schoolRecurringSubscription",
+  "platformSettings",
+  "adminNotification",
+] as const
 
 function prismaClientIsCurrent(client: PrismaClient): boolean {
+  if (globalForPrisma.prismaRevision !== PRISMA_CLIENT_REVISION) {
+    return false
+  }
   return REQUIRED_PRISMA_DELEGATES.every((key) => key in client)
 }
 
@@ -34,6 +45,7 @@ function getPrismaClient(): PrismaClient {
   const client = createPrismaClient()
   if (process.env.NODE_ENV !== "production") {
     globalForPrisma.prisma = client
+    globalForPrisma.prismaRevision = PRISMA_CLIENT_REVISION
   }
   return client
 }

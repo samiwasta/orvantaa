@@ -1,48 +1,50 @@
 "use client"
 
 import { Button } from "@workspace/ui/components/button"
-import { CheckCircle2 } from "lucide-react"
+import { CheckCircle2, ShieldCheck } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
-
-import { AuthMarketingColumn } from "./auth-marketing-column"
 
 export function ResetPasswordSuccessView() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F3F3FF] p-4 lg:p-6 xl:p-8">
-      <div className="flex w-full max-w-[960px] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] ring-1 ring-black/5 md:flex-row md:rounded-3xl">
-        <AuthMarketingColumn imageAlt="" />
-
-        <section className="flex w-full flex-col justify-center bg-white px-4 py-6 sm:px-5 sm:py-8 md:w-1/2 md:px-5 md:py-8 lg:px-10 lg:py-10 xl:px-12">
-          <div className="mx-auto w-full max-w-md space-y-6 sm:space-y-8 md:space-y-8 lg:space-y-10">
-            <div className="flex flex-col items-center space-y-4 text-center sm:space-y-5">
-              <div className="flex size-14 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/25 lg:size-16">
-                <CheckCircle2
-                  className="size-8 lg:size-9"
-                  strokeWidth={2}
-                  aria-hidden
-                />
-              </div>
-              <div className="space-y-2 sm:space-y-2.5">
-                <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-[1.35rem] lg:text-2xl">
-                  Password updated
-                </h1>
-                <p className="text-sm leading-relaxed text-muted-foreground lg:text-base">
-                  Your admin password was changed successfully. Sign in to the
-                  admin portal with your new password.
-                </p>
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              asChild
-              className="h-11 w-full rounded-lg bg-[#6C5CE7] text-sm font-semibold text-white shadow-sm hover:bg-[#6C5CE7]/90 lg:h-14 lg:text-base"
-            >
-              <Link href="/auth">Continue to admin login</Link>
-            </Button>
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-[#f4f4f8] px-4 py-10">
+      <div className="w-full max-w-[400px] rounded-2xl border border-border/60 bg-white p-8 shadow-[0_8px_30px_rgba(15,23,42,0.06)] sm:p-10">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <Image
+            src="/orvantaa-logo.png"
+            alt="Orvantaa"
+            width={140}
+            height={36}
+            className="h-8 w-auto object-contain"
+            priority
+          />
+          <div className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-[#6366f1]/20 bg-[#6366f1]/5 px-3 py-1 text-xs font-medium text-[#6366f1]">
+            <ShieldCheck className="size-3.5" aria-hidden />
+            Admin portal
           </div>
-        </section>
+          <div className="mt-5 flex size-14 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
+            <CheckCircle2 className="size-7" strokeWidth={2} aria-hidden />
+          </div>
+          <h1 className="mt-4 text-xl font-semibold tracking-tight text-foreground">
+            Password updated
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Sign in with your new password to continue.
+          </p>
+        </div>
+
+        <Button
+          type="button"
+          asChild
+          className="h-11 w-full bg-[#6366f1] text-sm font-semibold text-white hover:bg-[#6366f1]/90"
+        >
+          <Link href="/auth">Continue to sign in</Link>
+        </Button>
       </div>
+
+      <p className="mt-6 text-center text-xs text-muted-foreground">
+        Authorized personnel only
+      </p>
     </div>
   )
 }

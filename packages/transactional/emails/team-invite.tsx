@@ -16,7 +16,6 @@ import {
 type TeamInviteEmailProps = {
   firstName: string
   roleLabel: string
-  loginUrl: string
   resetUrl: string
   username: string
   password: string
@@ -25,7 +24,6 @@ type TeamInviteEmailProps = {
 export default function TeamInviteEmail({
   firstName = "there",
   roleLabel = "Admin",
-  loginUrl = "https://admin.orvantaa.com/auth",
   resetUrl = "https://admin.orvantaa.com/reset-password?token=example",
   username = "user",
   password = "example-password",
@@ -52,7 +50,8 @@ export default function TeamInviteEmail({
             <Text style={text}>Hi {firstName},</Text>
             <Text style={text}>
               An {roleLabel.toLowerCase()} account has been created for you. Use
-              the credentials below to sign in, then set your own password.
+              the button below to set your password, then sign in with your
+              username and new password.
             </Text>
             <Section style={credentialsBox}>
               <Text style={credentialLine}>
@@ -64,18 +63,13 @@ export default function TeamInviteEmail({
             </Section>
             <Section style={buttonSection}>
               <Button href={resetUrl} style={button}>
-                Set your password
-              </Button>
-            </Section>
-            <Section style={buttonSection}>
-              <Button href={loginUrl} style={secondaryButton}>
-                Sign in to Orvantaa
+                Login to Orvantaa
               </Button>
             </Section>
             <Text style={text}>
-              For your security, use <strong>Set your password</strong> to choose
-              a new password before your first sign-in. The reset link expires in{" "}
-              <strong>1 hour</strong>.
+              This link takes you to the admin portal to set your password
+              first. After that, you can sign in with your new password. The
+              link expires in <strong>1 hour</strong>.
             </Text>
             <Hr style={hr} />
             <Text style={footer}>© {new Date().getFullYear()} Orvantaa</Text>
@@ -149,7 +143,7 @@ const credentialLine = {
 
 const buttonSection = {
   textAlign: "center" as const,
-  margin: "16px 0",
+  margin: "24px 0",
 }
 
 const button = {
@@ -164,13 +158,6 @@ const button = {
   padding: "12px 20px",
   textDecoration: "none",
   display: "inline-block",
-}
-
-const secondaryButton = {
-  ...button,
-  backgroundColor: "#ffffff",
-  color: "#6C5CE7",
-  border: "1px solid #6C5CE7",
 }
 
 const hr = {

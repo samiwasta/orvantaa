@@ -24,6 +24,7 @@ import { useActionRunner } from "@/lib/actions/use-action-runner"
 
 import type {
   BoardOption,
+  SchoolCreateInput,
   SchoolInput,
   SchoolListItem,
 } from "../model/school-list-item"
@@ -35,6 +36,7 @@ type SchoolFormDialogProps = {
   school?: SchoolListItem | null
   boardOptions: BoardOption[]
 }
+
 
 export function SchoolFormDialog({
   open,
@@ -50,15 +52,20 @@ export function SchoolFormDialog({
   const [subscriptionStatus, setSubscriptionStatus] = useState<
     SchoolListItem["subscriptionStatus"]
   >("active")
+  const [billingEmail, setBillingEmail] = useState("")
+  const [contactFullName, setContactFullName] = useState("")
+  const [contactDesignation, setContactDesignation] = useState("")
+  const [contactEmail, setContactEmail] = useState("")
+  const [contactPhone, setContactPhone] = useState("")
 
   const { run, pending, fieldErrors, formError, reset } = useActionRunner<
-    [SchoolInput] | [string, SchoolInput],
+    [SchoolInput | SchoolCreateInput] | [string, SchoolInput],
     undefined
   >(
     ((...args: unknown[]) =>
       isEdit
         ? updateSchoolAction(args[0] as string, args[1] as SchoolInput)
-        : createSchoolAction(args[0] as SchoolInput)) as never,
+        : createSchoolAction(args[0] as SchoolCreateInput)) as never,
     {
       successMessage: isEdit ? "School updated" : "School created",
       onSuccess: () => onOpenChange(false),
@@ -72,33 +79,53 @@ export function SchoolFormDialog({
     setCode(school?.code ?? "")
     setBoardId(school?.boardId ?? "")
     setSubscriptionStatus(school?.subscriptionStatus ?? "active")
+    setBillingEmail("")
+    setContactFullName("")
+    setContactDesignation("")
+    setContactEmail("")
+    setContactPhone("")
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, school])
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
-    const input: SchoolInput = {
+
+    if (isEdit && school) {
+      const input: SchoolInput = {
+        name,
+        code: code.trim() === "" ? null : code.trim(),
+        boardId,
+        subscriptionStatus,
+      }
+      run(school.id, input)
+      return
+    }
+
+    const input: SchoolCreateInput = {
       name,
       code: code.trim() === "" ? null : code.trim(),
       boardId,
       subscriptionStatus,
+      billingEmail: billingEmail.trim() === "" ? null : billingEmail.trim(),
+      contact: {
+        fullName: contactFullName,
+        designation: contactDesignation,
+        email: contactEmail,
+        phone: contactPhone.trim() === "" ? null : contactPhone.trim(),
+      },
     }
-    if (isEdit && school) {
-      run(school.id, input)
-    } else {
-      run(input)
-    }
+    run(input)
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit school" : "Add school"}</DialogTitle>
           <DialogDescription>
             {isEdit
               ? "Update this school's details."
-              : "Create a school and assign it to a board."}
+              : "Create a school, assign a board, and add billing and management details."}
           </DialogDescription>
         </DialogHeader>
 
@@ -167,6 +194,98 @@ export function SchoolFormDialog({
             </Select>
             <FieldError>{fieldErrors.subscriptionStatus?.[0]}</FieldError>
           </Field>
+
+          {!isEdit ? (
+            <>
+              <div className="border-t border-border/60 pt-2">
+                <h3 className="text-sm font-semibold text-foreground">
+                  Billing email
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Used for subscription invoices and payment links.
+                </p>
+              </div>
+
+              <Field>
+                <FieldLabel htmlFor="school-billing-email">
+                  Billing email
+                </FieldLabel>
+                <Input
+                  id="school-billing-email"
+                  type="email"
+                  value={billingEmail}
+                  onChange={(e) => setBillingEmail(e.target.value)}
+                  placeholder="billing@school.edu"
+                  autoComplete="email"
+                />
+                <FieldHint>Optional. Can be updated later on the Management tab.</FieldHint>
+                <FieldError>{fieldErrors.billingEmail?.[0]}</FieldError>
+              </Field>
+
+              <div className="border-t border-border/60 pt-2">
+                <h3 className="text-sm font-semibold text-foreground">
+                  Management contact
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Primary contact for billing and administration.
+                </p>
+              </div>
+
+              <Field>
+                <FieldLabel htmlFor="contact-full-name" required>
+                  Full name
+                </FieldLabel>
+                <Input
+                  id="contact-full-name"
+                  value={contactFullName}
+                  onChange={(e) => setContactFullName(e.target.value)}
+                  placeholder="e.g. Priya Sharma"
+                />
+                <FieldError>{fieldErrors["contact.fullName"]?.[0]}</FieldError>
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="contact-designation" required>
+                  Designation
+                </FieldLabel>
+                <Input
+                  id="contact-designation"
+                  value={contactDesignation}
+                  onChange={(e) => setContactDesignation(e.target.value)}
+                  placeholder="e.g. Principal"
+                />
+                <FieldError>{fieldErrors["contact.designation"]?.[0]}</FieldError>
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="contact-email" required>
+                  Email
+                </FieldLabel>
+                <Input
+                  id="contact-email"
+                  type="email"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  placeholder="admin@school.edu"
+                  autoComplete="email"
+                />
+                <FieldError>{fieldErrors["contact.email"]?.[0]}</FieldError>
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="contact-phone">Phone number</FieldLabel>
+                <Input
+                  id="contact-phone"
+                  type="tel"
+                  value={contactPhone}
+                  onChange={(e) => setContactPhone(e.target.value)}
+                  placeholder="Optional"
+                  autoComplete="tel"
+                />
+                <FieldError>{fieldErrors["contact.phone"]?.[0]}</FieldError>
+              </Field>
+            </>
+          ) : null}
 
           {formError ? (
             <p className="text-sm font-medium text-destructive">{formError}</p>

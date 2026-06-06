@@ -9,6 +9,7 @@ import {
   mapPrismaUserToUser,
   mapUserGenderToPrismaGender,
   type User,
+  type UserGender,
 } from "../model/user"
 
 export class UserRepository {
@@ -72,6 +73,76 @@ export class UserRepository {
       },
     })
     return mapPrismaUserToUser(row)
+  }
+
+  async findProfilePageDataById(id: string): Promise<
+    | (User & {
+        phone: string | null
+      })
+    | null
+  > {
+    const row = await prisma.user.findUnique({ where: { id } })
+    if (!row) return null
+
+    return {
+      ...mapPrismaUserToUser(row),
+      phone: row.phone,
+    }
+  }
+
+  async isUsernameTakenByOtherUser(
+    username: string,
+    excludeUserId: string
+  ): Promise<boolean> {
+    const row = await prisma.user.findUnique({
+      where: { username: username.trim().toLowerCase() },
+      select: { id: true },
+    })
+    return Boolean(row && row.id !== excludeUserId)
+  }
+
+  async isEmailTakenByOtherUser(
+    email: string,
+    excludeUserId: string
+  ): Promise<boolean> {
+    const row = await prisma.user.findUnique({
+      where: { email: email.trim().toLowerCase() },
+      select: { id: true },
+    })
+    return Boolean(row && row.id !== excludeUserId)
+  }
+
+  async updateProfile(
+    userId: string,
+    input: {
+      firstName: string
+      lastName: string
+      username: string
+      email: string
+      phone: string | null
+      gender: UserGender
+    }
+  ): Promise<User> {
+    const row = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        firstName: input.firstName.trim(),
+        lastName: input.lastName.trim(),
+        username: input.username.trim().toLowerCase(),
+        email: input.email.trim().toLowerCase(),
+        phone: input.phone,
+        gender: mapUserGenderToPrismaGender(input.gender),
+      },
+    })
+    return mapPrismaUserToUser(row)
+  }
+
+  async getPasswordHash(userId: string): Promise<string | null> {
+    const row = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true },
+    })
+    return row?.passwordHash ?? null
   }
 }
 

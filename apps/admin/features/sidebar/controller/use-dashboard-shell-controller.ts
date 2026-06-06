@@ -12,6 +12,7 @@ import {
 
 export type DashboardNavItemVM = {
   title: string
+  mobileTitle: string
   href: string
   icon: LucideIcon
   isActive: boolean
@@ -23,6 +24,7 @@ export function useDashboardShellController() {
   const navItems = React.useMemo<DashboardNavItemVM[]>(() => {
     return dashboardNavItems.map((item) => ({
       ...item,
+      mobileTitle: item.mobileTitle ?? item.title,
       isActive: isDashboardNavPathActive(pathname, item.href),
     }))
   }, [pathname])

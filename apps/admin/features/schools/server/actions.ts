@@ -10,7 +10,7 @@ import {
   parseInput,
 } from "@/lib/actions/action-result"
 
-import { schoolInputSchema } from "../model/school-list-item"
+import { schoolCreateInputSchema, schoolInputSchema } from "../model/school-list-item"
 import { schoolService } from "../service/school.service"
 
 function isUniqueError(error: unknown): boolean {
@@ -23,7 +23,7 @@ function isUniqueError(error: unknown): boolean {
 export async function createSchoolAction(
   raw: unknown
 ): Promise<ActionResult<undefined>> {
-  const parsed = parseInput(schoolInputSchema, raw)
+  const parsed = parseInput(schoolCreateInputSchema, raw)
   if (!parsed.success) return parsed.result
 
   try {

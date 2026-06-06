@@ -10,17 +10,18 @@ import {
 
 export type DashboardNavItemDefinition = {
   title: string
+  mobileTitle?: string
   href: string
   icon: LucideIcon
 }
 
 export const dashboardNavItems: DashboardNavItemDefinition[] = [
-  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { title: "Dashboard", mobileTitle: "Home", href: "/dashboard", icon: LayoutDashboard },
   { title: "Content", href: "/content", icon: BookOpen },
   { title: "Schools", href: "/schools", icon: School },
   { title: "Classes", href: "/classes", icon: GraduationCap },
   { title: "Boards", href: "/boards", icon: Landmark },
-  { title: "Team", href: "/team", icon: UsersRound },
+  { title: "Management", mobileTitle: "Manage", href: "/management", icon: UsersRound },
 ]
 
 const PAGE_TITLES: Record<string, string> = {
@@ -29,7 +30,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/classes": "Classes",
   "/content": "Content",
   "/boards": "Boards",
-  "/team": "Team",
+  "/management": "Management",
   "/profile": "My Profile",
 }
 

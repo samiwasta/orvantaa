@@ -18,6 +18,10 @@ export class ClassService {
     return this.repository.findAllClasses()
   }
 
+  async listClassesBySchoolId(schoolId: string): Promise<ClassListItem[]> {
+    return this.repository.findClassesBySchoolId(schoolId)
+  }
+
   async listSchoolOptions(): Promise<SchoolOption[]> {
     return this.repository.findSchoolOptions()
   }

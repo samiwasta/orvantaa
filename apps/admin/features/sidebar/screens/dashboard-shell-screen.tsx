@@ -1,5 +1,6 @@
 "use client"
 
+import type { AdminNotificationSummary } from "@/features/notifications/model/notification"
 import type { DashboardUserProfile } from "@/features/user/model/user"
 
 import { useDashboardShellController } from "../controller/use-dashboard-shell-controller"
@@ -9,12 +10,14 @@ type DashboardShellScreenProps = {
   children: React.ReactNode
   defaultSidebarOpen?: boolean
   userProfile: DashboardUserProfile
+  notifications: AdminNotificationSummary
 }
 
 export function DashboardShellScreen({
   children,
   defaultSidebarOpen = true,
   userProfile,
+  notifications,
 }: DashboardShellScreenProps) {
   const controller = useDashboardShellController()
 
@@ -23,6 +26,7 @@ export function DashboardShellScreen({
       {...controller}
       defaultSidebarOpen={defaultSidebarOpen}
       userProfile={userProfile}
+      notifications={notifications}
     >
       {children}
     </DashboardShellView>

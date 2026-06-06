@@ -5,6 +5,7 @@ import {
   AUTH_API_PUBLIC_PATHS,
   AUTH_COOKIE_NAME,
   PUBLIC_PATH_PREFIXES,
+  SUBSCRIPTION_UNAVAILABLE_PATH,
 } from "@/lib/auth/constants"
 import { verifyAccessToken } from "@/lib/auth/jwt"
 import {
@@ -50,6 +51,12 @@ export async function middleware(request: NextRequest) {
   if (session && isPublicPath(pathname)) {
     if (!isStudentSession(session)) {
       return forbiddenAuthResponse(request, { clearCookie: true, token })
+    }
+    if (
+      pathname === SUBSCRIPTION_UNAVAILABLE_PATH ||
+      pathname.startsWith(`${SUBSCRIPTION_UNAVAILABLE_PATH}/`)
+    ) {
+      return NextResponse.next()
     }
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }

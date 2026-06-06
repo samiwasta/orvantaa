@@ -1,5 +1,6 @@
 import type {
   BoardOption,
+  SchoolCreateInput,
   SchoolInput,
   SchoolListItem,
 } from "../model/school-list-item"
@@ -7,6 +8,7 @@ import {
   type SchoolRepository,
   schoolRepository,
 } from "../repository/school.repository"
+import { schoolRecurringSubscriptionService } from "./school-recurring-subscription.service"
 
 export class SchoolService {
   constructor(
@@ -21,8 +23,9 @@ export class SchoolService {
     return this.repository.findBoardOptions()
   }
 
-  async createSchool(input: SchoolInput): Promise<void> {
-    await this.repository.createSchool(input)
+  async createSchool(input: SchoolCreateInput): Promise<void> {
+    const schoolId = await this.repository.createSchool(input)
+    await schoolRecurringSubscriptionService.tryAutoStartForSchool(schoolId)
   }
 
   async updateSchool(id: string, input: SchoolInput): Promise<void> {

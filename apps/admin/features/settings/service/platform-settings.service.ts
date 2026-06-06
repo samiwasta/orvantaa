@@ -6,6 +6,7 @@ import type {
   PlatformSettingsInput,
 } from "../model/platform-settings"
 import { platformSettingsRepository } from "../repository/platform-settings.repository"
+import { subscriptionPlanService } from "./subscription-plan.service"
 
 export class PlatformSettingsService {
   async getSettings(): Promise<PlatformSettingsData> {
@@ -13,7 +14,15 @@ export class PlatformSettingsService {
   }
 
   async saveSettings(input: PlatformSettingsInput): Promise<PlatformSettingsData> {
-    return platformSettingsRepository.save(input)
+    const { settings, previousAmountPaise } =
+      await platformSettingsRepository.save(input)
+
+    await subscriptionPlanService.refreshPlatformPlanIfNeeded({
+      amountPaise: Math.round(input.subscriptionPrincipalAmountRupees * 100),
+      previousAmountPaise,
+    })
+
+    return settings
   }
 
   getIntegrationStatus(): IntegrationStatus {

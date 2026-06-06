@@ -24,6 +24,14 @@ function isUniqueError(error: unknown): boolean {
   )
 }
 
+function revalidateClassPaths(schoolCode?: string) {
+  revalidatePath("/classes")
+  if (schoolCode) {
+    revalidatePath(schoolDetailHref(schoolCode))
+    revalidatePath("/schools")
+  }
+}
+
 export async function createClassAction(
   raw: unknown,
   schoolCode?: string
@@ -33,11 +41,7 @@ export async function createClassAction(
 
   try {
     await classService.createClass(parsed.data)
-    revalidatePath("/classes")
-    if (schoolCode) {
-      revalidatePath(schoolDetailHref(schoolCode))
-      revalidatePath("/schools")
-    }
+    revalidateClassPaths(schoolCode)
     return actionOk(undefined, "Class created")
   } catch (error) {
     if (isUniqueError(error)) {
@@ -49,7 +53,8 @@ export async function createClassAction(
 
 export async function updateClassAction(
   id: string,
-  name: string
+  name: string,
+  schoolCode?: string
 ): Promise<ActionResult<undefined>> {
   if (!id) return actionError("Missing class id.")
   const trimmed = name.trim()
@@ -57,7 +62,7 @@ export async function updateClassAction(
 
   try {
     await classService.updateClass(id, trimmed)
-    revalidatePath("/classes")
+    revalidateClassPaths(schoolCode)
     return actionOk(undefined, "Class updated")
   } catch (error) {
     if (isUniqueError(error)) {
@@ -75,11 +80,7 @@ export async function deleteClassAction(
 
   try {
     await classService.deleteClass(id)
-    revalidatePath("/classes")
-    if (schoolCode) {
-      revalidatePath(schoolDetailHref(schoolCode))
-      revalidatePath("/schools")
-    }
+    revalidateClassPaths(schoolCode)
     return actionOk({ id }, "Class deleted")
   } catch (error) {
     const message =
@@ -91,14 +92,15 @@ export async function deleteClassAction(
 }
 
 export async function createSectionAction(
-  raw: unknown
+  raw: unknown,
+  schoolCode?: string
 ): Promise<ActionResult<undefined>> {
   const parsed = parseInput(sectionInputSchema, raw)
   if (!parsed.success) return parsed.result
 
   try {
     await classService.createSection(parsed.data)
-    revalidatePath("/classes")
+    revalidateClassPaths(schoolCode)
     return actionOk(undefined, "Section added")
   } catch (error) {
     if (isUniqueError(error)) {
@@ -110,7 +112,8 @@ export async function createSectionAction(
 
 export async function updateSectionAction(
   id: string,
-  name: string
+  name: string,
+  schoolCode?: string
 ): Promise<ActionResult<undefined>> {
   if (!id) return actionError("Missing section id.")
   const trimmed = name.trim()
@@ -118,7 +121,7 @@ export async function updateSectionAction(
 
   try {
     await classService.updateSection(id, trimmed)
-    revalidatePath("/classes")
+    revalidateClassPaths(schoolCode)
     return actionOk(undefined, "Section updated")
   } catch (error) {
     if (isUniqueError(error)) {
@@ -129,13 +132,14 @@ export async function updateSectionAction(
 }
 
 export async function deleteSectionAction(
-  id: string
+  id: string,
+  schoolCode?: string
 ): Promise<ActionResult<{ id: string }>> {
   if (!id) return actionError("Missing section id.")
 
   try {
     await classService.deleteSection(id)
-    revalidatePath("/classes")
+    revalidateClassPaths(schoolCode)
     return actionOk({ id }, "Section removed")
   } catch (error) {
     const message =

@@ -36,8 +36,8 @@ export const loadAdminDashboardStats = cache(
         where: { role: "STUDENT", createdAt: { gte: start } },
         select: { createdAt: true },
       }),
-      prisma.user.count({ where: { gender: "MALE" } }),
-      prisma.user.count({ where: { gender: "FEMALE" } }),
+      prisma.user.count({ where: { role: "STUDENT", gender: "MALE" } }),
+      prisma.user.count({ where: { role: "STUDENT", gender: "FEMALE" } }),
       prisma.user.findMany({
         take: 6,
         where: { role: "STUDENT" },

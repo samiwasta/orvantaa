@@ -11,9 +11,17 @@ import {
 } from "@workspace/ui/components/dialog"
 import { Field, FieldError, FieldHint, FieldLabel } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select"
 import { RefreshCw } from "lucide-react"
 import { useEffect, useState } from "react"
 
+import type { UserGender } from "@/features/user/model/user"
 import { useActionRunner } from "@/lib/actions/use-action-runner"
 
 import {
@@ -34,6 +42,7 @@ export function TeamMemberFormDialog({
   const [lastName, setLastName] = useState("")
   const [username, setUsername] = useState("")
   const [email, setEmail] = useState("")
+  const [gender, setGender] = useState<UserGender>("female")
   const [password, setPassword] = useState("")
   const [regenerating, setRegenerating] = useState(false)
 
@@ -52,6 +61,7 @@ export function TeamMemberFormDialog({
     setLastName("")
     setUsername("")
     setEmail("")
+    setGender("female")
     void loadPassword()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
@@ -72,6 +82,7 @@ export function TeamMemberFormDialog({
       lastName,
       username,
       email,
+      gender,
       password,
     })
   }
@@ -136,6 +147,23 @@ export function TeamMemberFormDialog({
               onChange={(e) => setEmail(e.target.value)}
             />
             <FieldError>{fieldErrors.email?.[0]}</FieldError>
+          </Field>
+
+          <Field>
+            <FieldLabel required>Gender</FieldLabel>
+            <Select
+              value={gender}
+              onValueChange={(value) => setGender(value as UserGender)}
+            >
+              <SelectTrigger id="team-gender">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="female">Female</SelectItem>
+                <SelectItem value="male">Male</SelectItem>
+              </SelectContent>
+            </Select>
+            <FieldError>{fieldErrors.gender?.[0]}</FieldError>
           </Field>
 
           <Field>

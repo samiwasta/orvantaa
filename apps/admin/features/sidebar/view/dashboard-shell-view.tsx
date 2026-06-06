@@ -19,6 +19,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import Image from "next/image"
 import Link from "next/link"
 
+import type { AdminNotificationSummary } from "@/features/notifications/model/notification"
 import type { DashboardUserProfile } from "@/features/user/model/user"
 
 import type { DashboardShellController } from "../controller/use-dashboard-shell-controller"
@@ -28,6 +29,7 @@ import { SidebarInsetHeader } from "./sidebar-inset-header"
 export type DashboardShellViewProps = DashboardShellController & {
   defaultSidebarOpen?: boolean
   userProfile: DashboardUserProfile
+  notifications: AdminNotificationSummary
   children: React.ReactNode
 }
 
@@ -61,6 +63,7 @@ export function DashboardShellView({
   pageTitle,
   defaultSidebarOpen = true,
   userProfile,
+  notifications,
   children,
 }: DashboardShellViewProps) {
   const isMobile = useIsMobile()
@@ -136,11 +139,16 @@ export function DashboardShellView({
         ) : null}
 
         <SidebarInset>
-          <SidebarInsetHeader pageTitle={pageTitle} userProfile={userProfile} />
+          <SidebarInsetHeader
+            pageTitle={pageTitle}
+            userProfile={userProfile}
+            notifications={notifications}
+          />
           <div
             className={cn(
-              "flex flex-1 flex-col gap-4 p-4 pt-6 md:p-6",
-              isMobile && "pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))]"
+              "flex min-w-0 flex-1 flex-col gap-4 p-3 pt-4 sm:gap-5 sm:p-4 sm:pt-5 md:gap-6 md:p-6 md:pt-6 lg:p-8",
+              isMobile &&
+                "pb-[calc(6.25rem+env(safe-area-inset-bottom,0px))]"
             )}
           >
             {children}

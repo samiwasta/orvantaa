@@ -7,6 +7,7 @@ export type TeamMember = {
   username: string
   email: string
   role: AppUserRole
+  isSuperAdmin: boolean
   createdAt: string
 }
 
@@ -23,6 +24,7 @@ export const teamMemberCreateSchema = z.object({
       "Username may only contain letters, numbers, dots, hyphens, and underscores"
     ),
   email: z.string().trim().email("Enter a valid email"),
+  gender: z.enum(["male", "female"]),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")

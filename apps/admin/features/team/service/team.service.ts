@@ -3,6 +3,7 @@ import { createHash, randomBytes } from "crypto"
 import bcrypt from "bcryptjs"
 
 import { authService } from "@/features/auth/service/auth.service"
+import { isSuperAdminUsername } from "@/lib/auth/super-admin"
 import { generateRandomPassword } from "@/features/schools/model/school-student-csv"
 
 import type { TeamMember, TeamMemberCreateInput } from "../model/team-member"
@@ -54,7 +55,15 @@ export class TeamService {
     return generateRandomPassword()
   }
 
-  async deleteMember(id: string, currentAdminId: string): Promise<void> {
+  async deleteMember(
+    id: string,
+    currentAdminId: string,
+    currentAdminUsername: string
+  ): Promise<void> {
+    if (!isSuperAdminUsername(currentAdminUsername)) {
+      throw new Error("Only the super admin can remove team members.")
+    }
+
     if (id === currentAdminId) {
       throw new Error("You cannot delete your own account.")
     }
@@ -62,6 +71,10 @@ export class TeamService {
     const admin = await teamRepository.findAdminById(id)
     if (!admin) {
       throw new Error("Admin account not found.")
+    }
+
+    if (isSuperAdminUsername(admin.username)) {
+      throw new Error("The super admin account cannot be removed.")
     }
 
     const adminCount = await teamRepository.countAdmins()

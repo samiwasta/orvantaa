@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server"
 
-import { InvalidCredentialsError } from "@/features/auth/model/auth-errors"
+import {
+  InvalidCredentialsError,
+  SchoolSubscriptionBlockedError,
+} from "@/features/auth/model/auth-errors"
 import { loginSchema } from "@/features/auth/model/schemas"
 import { authService } from "@/features/auth/service/auth.service"
 import { setAuthCookie } from "@/lib/auth/cookies"
@@ -46,6 +49,12 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof InvalidCredentialsError) {
       return NextResponse.json({ message: error.message }, { status: 401 })
+    }
+    if (error instanceof SchoolSubscriptionBlockedError) {
+      return NextResponse.json(
+        { message: error.message, subscriptionStatus: error.status },
+        { status: 403 }
+      )
     }
     console.error("Login failed:", error)
     return NextResponse.json(

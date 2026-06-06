@@ -97,6 +97,7 @@ export function recordFromRazorpayPaymentEntity(
     currency: (entity.currency ?? "INR").toUpperCase(),
     status: mapRazorpayEntityStatus(entity.status),
     invoiceUrl: buildInvoiceUrl(entity.id, entity.invoice_id),
+    paymentUrl: null,
     schoolId,
   }
 }
@@ -134,6 +135,7 @@ export function recordFromRazorpayOrderEntity(
     currency: (entity.currency ?? "INR").toUpperCase(),
     status: mapRazorpayEntityStatus(undefined, entity.status),
     invoiceUrl: buildInvoiceUrl(undefined, null),
+    paymentUrl: null,
     schoolId,
   }
 }

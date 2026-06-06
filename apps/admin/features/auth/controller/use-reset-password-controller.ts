@@ -89,7 +89,7 @@ export function useResetPasswordController() {
           }
 
           markResetPasswordSuccess()
-          router.push("/reset-password/success")
+          router.push("/auth?passwordUpdated=1")
         } catch {
           setFormError("Could not reset your password. Please try again.")
         } finally {

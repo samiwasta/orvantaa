@@ -15,6 +15,10 @@ export type PlatformSettingsData = {
   sendSubscriptionEmails: boolean
   maintenanceMode: boolean
   maintenanceMessage: string
+  subscriptionPrincipalAmountRupees: number
+  subscriptionPlanName: string
+  subscriptionBillingCycles: number
+  autoStartSchoolSubscriptions: boolean
 }
 
 export const TIMEZONE_OPTIONS = [
@@ -68,6 +72,21 @@ export const platformSettingsSchema = z
     sendSubscriptionEmails: z.boolean(),
     maintenanceMode: z.boolean(),
     maintenanceMessage: z.string().trim().max(500, "Message is too long"),
+    subscriptionPrincipalAmountRupees: z.coerce
+      .number({ invalid_type_error: "Enter a valid amount" })
+      .min(0, "Amount cannot be negative")
+      .max(1_000_000, "Amount is too large"),
+    subscriptionPlanName: z
+      .string()
+      .trim()
+      .min(1, "Plan name is required")
+      .max(120, "Plan name is too long"),
+    subscriptionBillingCycles: z.coerce
+      .number({ invalid_type_error: "Enter a valid number of cycles" })
+      .int("Billing cycles must be a whole number")
+      .min(1, "At least one billing cycle is required")
+      .max(999, "Too many billing cycles"),
+    autoStartSchoolSubscriptions: z.boolean(),
   })
   .superRefine((data, ctx) => {
     if (data.maintenanceMode && !data.maintenanceMessage.trim()) {

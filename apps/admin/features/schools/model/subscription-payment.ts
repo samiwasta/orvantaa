@@ -1,4 +1,5 @@
 import type { SubscriptionPaymentStatus as PrismaStatus } from "@prisma/client"
+import { z } from "zod"
 
 export type SubscriptionPaymentStatus =
   | "due"
@@ -18,11 +19,35 @@ export type SubscriptionPaymentListItem = {
   status: SubscriptionPaymentStatus
   statusLabel: string
   invoiceUrl: string | null
+  paymentUrl: string | null
 }
 
 export type SubscriptionPaymentsConfig = {
   razorpayConfigured: boolean
   razorpayEnabled: boolean
+}
+
+export const createSubscriptionPaymentLinkSchema = z.object({
+  amountRupees: z.coerce
+    .number({ invalid_type_error: "Enter a valid amount" })
+    .positive("Amount must be greater than zero")
+    .max(1_000_000, "Amount is too large"),
+  serviceName: z
+    .string()
+    .trim()
+    .min(1, "Service name is required")
+    .max(120, "Service name is too long")
+    .default("Orvantaa Platform Subscription"),
+  sendEmail: z.boolean().optional().default(true),
+})
+
+export type CreateSubscriptionPaymentLinkInput = z.infer<
+  typeof createSubscriptionPaymentLinkSchema
+>
+
+export type CreateSubscriptionPaymentLinkResult = {
+  paymentUrl: string
+  transactionId: string
 }
 
 export function mapPrismaPaymentStatus(
@@ -99,6 +124,7 @@ export type SubscriptionPaymentEmailKind =
   | "success"
   | "failed"
   | "late"
+  | "setup"
 
 export function paymentStatusToEmailKind(
   status: SubscriptionPaymentStatus

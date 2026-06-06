@@ -1,11 +1,20 @@
 import bcrypt from "bcryptjs"
 import { createHash } from "crypto"
 
+import {
+  isSchoolSubscriptionAccessAllowed,
+  subscriptionAccessMessage,
+} from "@/features/schools/model/school-subscription"
+import {
+  type SchoolSubscriptionService,
+  schoolSubscriptionService,
+} from "@/features/schools/service/school-subscription.service"
 import { signAccessToken } from "@/lib/auth/jwt"
 
 import {
   InvalidCredentialsError,
   InvalidResetTokenError,
+  SchoolSubscriptionBlockedError,
 } from "../model/auth-errors"
 import { type LoginResult, toSafeAuthUser } from "../model/auth-session"
 import {
@@ -22,7 +31,8 @@ const RESET_TOKEN_TTL_MS = 60 * 60 * 1000
 export class AuthService {
   constructor(
     private readonly authUsers: AuthUserRepository = authUserRepository,
-    private readonly passwordResets: PasswordResetRepository = passwordResetRepository
+    private readonly passwordResets: PasswordResetRepository = passwordResetRepository,
+    private readonly subscriptions: SchoolSubscriptionService = schoolSubscriptionService
   ) {}
 
   async login(
@@ -42,6 +52,20 @@ export class AuthService {
 
     if (user.role !== "student") {
       throw new InvalidCredentialsError()
+    }
+
+    const access = await this.subscriptions.getStudentSchoolAccess(user.id)
+    if (!isSchoolSubscriptionAccessAllowed(access.status)) {
+      if (
+        access.status === "inactive" ||
+        access.status === "hold" ||
+        access.status === "blocked"
+      ) {
+        throw new SchoolSubscriptionBlockedError(
+          access.status,
+          subscriptionAccessMessage(access.status)
+        )
+      }
     }
 
     const accessToken = await signAccessToken(

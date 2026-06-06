@@ -11,6 +11,7 @@ import {
   mapPrismaSubscriptionStatus,
   mapSubscriptionStatusToPrisma,
   parseSchoolRouteCode,
+  type SchoolCreateInput,
   type SchoolInput,
   type SchoolListItem,
 } from "../model/school-list-item"
@@ -121,14 +122,29 @@ export class SchoolRepository {
     }))
   }
 
-  async createSchool(input: SchoolInput): Promise<void> {
-    await prisma.school.create({
-      data: {
-        name: input.name,
-        code: input.code ?? null,
-        boardId: input.boardId,
-        subscriptionStatus: mapSubscriptionStatusToPrisma(input.subscriptionStatus),
-      },
+  async createSchool(input: SchoolCreateInput): Promise<string> {
+    return prisma.$transaction(async (tx) => {
+      const school = await tx.school.create({
+        data: {
+          name: input.name,
+          code: input.code ?? null,
+          boardId: input.boardId,
+          subscriptionStatus: mapSubscriptionStatusToPrisma(input.subscriptionStatus),
+          billingEmail: input.billingEmail ?? null,
+        },
+      })
+
+      await tx.schoolContact.create({
+        data: {
+          schoolId: school.id,
+          fullName: input.contact.fullName.trim(),
+          designation: input.contact.designation.trim(),
+          email: input.contact.email.trim().toLowerCase(),
+          phone: input.contact.phone ?? null,
+        },
+      })
+
+      return school.id
     })
   }
 

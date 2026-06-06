@@ -22,7 +22,7 @@ export default async function DashboardPage() {
   const serverHour = new Date().getHours()
 
   return (
-    <div className="flex flex-1 flex-col gap-5">
+    <div className="flex flex-1 flex-col gap-4 sm:gap-5 lg:gap-6">
       <DashboardGreeting
         firstName={firstName}
         serverHour={serverHour}

@@ -21,7 +21,7 @@ function parseEmailFromEnv(value: string | undefined): {
   return { name: "Orvantaa", address: trimmed }
 }
 
-function buildDefaults(): PlatformSettingsData {
+function buildDbDefaults() {
   const emailFrom = parseEmailFromEnv(process.env.EMAIL_FROM)
   const adminAppUrl = getAdminAppUrl()
   const studentAppUrl = getStudentAppUrl()
@@ -39,6 +39,10 @@ function buildDefaults(): PlatformSettingsData {
     sendSubscriptionEmails: true,
     maintenanceMode: false,
     maintenanceMessage: "",
+    subscriptionPrincipalAmountPaise: 0,
+    subscriptionPlanName: "Orvantaa Platform Subscription",
+    subscriptionBillingCycles: 120,
+    autoStartSchoolSubscriptions: true,
   }
 }
 
@@ -55,6 +59,10 @@ function mapRow(row: {
   sendSubscriptionEmails: boolean
   maintenanceMode: boolean
   maintenanceMessage: string
+  subscriptionPrincipalAmountPaise: number
+  subscriptionPlanName: string
+  subscriptionBillingCycles: number
+  autoStartSchoolSubscriptions: boolean
 }): PlatformSettingsData {
   return {
     platformName: row.platformName,
@@ -69,12 +77,39 @@ function mapRow(row: {
     sendSubscriptionEmails: row.sendSubscriptionEmails,
     maintenanceMode: row.maintenanceMode,
     maintenanceMessage: row.maintenanceMessage,
+    subscriptionPrincipalAmountRupees: row.subscriptionPrincipalAmountPaise / 100,
+    subscriptionPlanName: row.subscriptionPlanName,
+    subscriptionBillingCycles: row.subscriptionBillingCycles,
+    autoStartSchoolSubscriptions: row.autoStartSchoolSubscriptions,
+  }
+}
+
+function toDbInput(input: PlatformSettingsInput) {
+  return {
+    platformName: input.platformName,
+    supportEmail: input.supportEmail,
+    billingEmail: input.billingEmail,
+    emailFromName: input.emailFromName,
+    emailFromAddress: input.emailFromAddress,
+    studentAppUrl: input.studentAppUrl,
+    adminAppUrl: input.adminAppUrl,
+    timezone: input.timezone,
+    sendStudentCredentialEmails: input.sendStudentCredentialEmails,
+    sendSubscriptionEmails: input.sendSubscriptionEmails,
+    maintenanceMode: input.maintenanceMode,
+    maintenanceMessage: input.maintenanceMessage,
+    subscriptionPrincipalAmountPaise: Math.round(
+      input.subscriptionPrincipalAmountRupees * 100
+    ),
+    subscriptionPlanName: input.subscriptionPlanName,
+    subscriptionBillingCycles: input.subscriptionBillingCycles,
+    autoStartSchoolSubscriptions: input.autoStartSchoolSubscriptions,
   }
 }
 
 export class PlatformSettingsRepository {
   async getOrCreate(): Promise<PlatformSettingsData> {
-    const defaults = buildDefaults()
+    const defaults = buildDbDefaults()
 
     const row = await prisma.platformSettings.upsert({
       where: { id: PLATFORM_SETTINGS_ID },
@@ -85,14 +120,31 @@ export class PlatformSettingsRepository {
     return mapRow(row)
   }
 
-  async save(input: PlatformSettingsInput): Promise<PlatformSettingsData> {
+  async getRawAmountPaise(): Promise<number> {
+    const row = await prisma.platformSettings.findUnique({
+      where: { id: PLATFORM_SETTINGS_ID },
+      select: { subscriptionPrincipalAmountPaise: true },
+    })
+    return row?.subscriptionPrincipalAmountPaise ?? 0
+  }
+
+  async save(input: PlatformSettingsInput): Promise<{
+    settings: PlatformSettingsData
+    previousAmountPaise: number
+  }> {
+    const previousAmountPaise = await this.getRawAmountPaise()
+    const data = toDbInput(input)
+
     const row = await prisma.platformSettings.upsert({
       where: { id: PLATFORM_SETTINGS_ID },
-      create: { id: PLATFORM_SETTINGS_ID, ...input },
-      update: input,
+      create: { id: PLATFORM_SETTINGS_ID, ...data },
+      update: data,
     })
 
-    return mapRow(row)
+    return {
+      settings: mapRow(row),
+      previousAmountPaise,
+    }
   }
 }
 

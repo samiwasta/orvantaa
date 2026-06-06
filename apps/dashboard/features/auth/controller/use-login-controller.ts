@@ -81,6 +81,13 @@ export function useLoginController() {
               setFieldErrors(flat)
               return
             }
+            if (response.status === 403) {
+              setFormError(
+                data.message ??
+                  "Your school's subscription is inactive. Contact your school administration."
+              )
+              return
+            }
             setFormError(data.message ?? "Login failed. Please try again.")
             return
           }

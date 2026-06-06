@@ -30,7 +30,8 @@ export async function savePlatformSettingsAction(
 
   try {
     const settings = await platformSettingsService.saveSettings(parsed.data)
-    revalidatePath("/settings")
+    revalidatePath("/management")
+    revalidatePath("/dashboard", "layout")
     return actionOk(settings, "Settings saved")
   } catch {
     return actionError("Could not save settings. Please try again.")

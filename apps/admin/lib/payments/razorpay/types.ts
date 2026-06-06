@@ -11,6 +11,7 @@ export type RazorpayPaymentRecord = {
   currency: string
   status: RazorpayPaymentStatus
   invoiceUrl: string | null
+  paymentUrl: string | null
   schoolId: string | null
 }
 

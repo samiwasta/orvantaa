@@ -18,7 +18,7 @@ function StatCard({ label, value, sub, icon: Icon, color, href, highlight }: Sta
   const inner = (
     <div
       className={cn(
-        "group relative flex flex-col gap-3 overflow-hidden rounded-2xl border bg-white px-5 py-4 shadow-sm ring-1 ring-black/[0.04] transition-all",
+        "group relative flex flex-col gap-3 overflow-hidden rounded-2xl border bg-white px-4 py-4 shadow-sm ring-1 ring-black/[0.04] transition-all sm:px-5",
         href && "cursor-pointer hover:shadow-md hover:-translate-y-0.5",
         highlight && "border-[#6C5CE7]/20 bg-gradient-to-br from-white to-[#6C5CE7]/[0.03]"
       )}
@@ -61,7 +61,7 @@ export function AdminStatCards({ counts }: Props) {
   const assignedStudents = totalStudents - unassignedStudents
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
       <StatCard
         label="Total students"
         value={totalStudents.toLocaleString()}

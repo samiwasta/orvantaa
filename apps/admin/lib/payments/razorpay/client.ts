@@ -72,9 +72,10 @@ class LiveRazorpayPaymentsClient implements RazorpayPaymentsClient {
 
     const records: RazorpayPaymentRecord[] = []
     for (const item of data.items ?? []) {
-      const record = recordFromRazorpayPaymentEntity(item, schoolId)
+      const record = recordFromRazorpayPaymentEntity(item)
       if (!record) continue
-      if (record.schoolId && record.schoolId !== schoolId) continue
+      if (!record.schoolId) continue
+      if (record.schoolId !== schoolId) continue
       records.push({ ...record, schoolId })
     }
 

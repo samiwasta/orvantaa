@@ -1,10 +1,7 @@
 import { render } from "@react-email/render"
 import _TeamInviteEmail from "@workspace/transactional/emails/team-invite"
 
-import {
-  adminLoginUrl,
-  buildAdminPasswordResetUrl,
-} from "@/lib/auth/password-reset-url"
+import { buildAdminPasswordResetUrl } from "@/lib/auth/password-reset-url"
 import { type EmailProvider, emailProvider } from "@/lib/email"
 
 const TeamInviteEmail: typeof _TeamInviteEmail =
@@ -24,14 +21,12 @@ export class TeamInviteEmailService {
   constructor(private readonly provider: EmailProvider = emailProvider) {}
 
   async sendAdminInvite(payload: TeamAdminInviteEmailPayload): Promise<void> {
-    const loginUrl = adminLoginUrl()
     const resetUrl = buildAdminPasswordResetUrl(payload.resetToken)
 
     const html = await render(
       TeamInviteEmail({
         firstName: payload.firstName,
         roleLabel: "Admin",
-        loginUrl,
         resetUrl,
         username: payload.username,
         password: payload.plainPassword,

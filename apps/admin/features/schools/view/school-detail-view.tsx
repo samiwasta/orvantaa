@@ -1,12 +1,21 @@
 "use client"
 
-import { cn } from "@workspace/ui/lib/utils"
 import { ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 
+import type { ClassListItem } from "@/features/classes/model/class-list-item"
+import {
+  pageSectionBodyClass,
+  pageSectionClass,
+} from "@/features/shared/view/page-layout"
+import { ScrollableTabs } from "@/features/shared/view/scrollable-tabs"
 import { schoolDetailHref, type SchoolListItem } from "../model/school-list-item"
 import type { BoardClassOption } from "../model/board-class-option"
+import type {
+  RecurringSubscriptionConfig,
+  RecurringSubscriptionListItem,
+} from "../model/recurring-subscription"
 import type {
   SubscriptionPaymentListItem,
   SubscriptionPaymentsConfig,
@@ -19,10 +28,11 @@ import type {
 } from "../model/school-student-list-item"
 import { SubscriptionStatusBadge, SyllabusStatusBadge } from "./school-status-badges"
 import type { SchoolContactListItem } from "../model/school-contact"
+import { SchoolClassesAddButton, SchoolClassesTab } from "./school-classes-tab"
 import { SchoolManagementTab } from "./school-management-tab"
 import { SchoolStudentsTable } from "./school-students-table"
 import { SchoolSubscriptionTab } from "./school-subscription-tab"
-import { SchoolSyllabusAddClassButton, SchoolSyllabusTab } from "./school-syllabus-tab"
+import { SchoolSyllabusTab } from "./school-syllabus-tab"
 
 type SchoolDetailViewProps = {
   school: SchoolListItem
@@ -33,14 +43,18 @@ type SchoolDetailViewProps = {
   boardClassOptions: BoardClassOption[]
   subscriptionPayments: SubscriptionPaymentListItem[]
   subscriptionPaymentsConfig: SubscriptionPaymentsConfig
+  recurringSubscription: RecurringSubscriptionListItem | null
+  recurringConfig: RecurringSubscriptionConfig
   managementContacts: SchoolContactListItem[]
   billingEmail: string | null
+  schoolClasses: ClassListItem[]
   initialTab: string
   initialClassId: string
 }
 
 const MAIN_TABS = [
   { id: "students", label: "Students" },
+  { id: "classes", label: "Classes" },
   { id: "syllabus", label: "Syllabus" },
   { id: "subscription", label: "Subscription" },
   { id: "management", label: "Management" },
@@ -65,8 +79,11 @@ export function SchoolDetailView({
   boardClassOptions,
   subscriptionPayments,
   subscriptionPaymentsConfig,
+  recurringSubscription,
+  recurringConfig,
   managementContacts,
   billingEmail,
+  schoolClasses,
   initialTab,
   initialClassId,
 }: SchoolDetailViewProps) {
@@ -74,12 +91,14 @@ export function SchoolDetailView({
 
   const tabParam = searchParams.get("tab")
   const tab: MainTabId =
+    tabParam === "classes" ||
     tabParam === "syllabus" ||
     tabParam === "subscription" ||
     tabParam === "management" ||
     tabParam === "students"
       ? tabParam
-      : initialTab === "syllabus" ||
+      : initialTab === "classes" ||
+          initialTab === "syllabus" ||
           initialTab === "subscription" ||
           initialTab === "management"
         ? (initialTab as MainTabId)
@@ -87,6 +106,12 @@ export function SchoolDetailView({
 
   const activeClassId = searchParams.get("class") ?? initialClassId
   const baseHref = schoolDetailHref(school.schoolCode)
+
+  const tabItems = MAIN_TABS.map(({ id, label }) => ({
+    id,
+    label,
+    href: tabHref(baseHref, id, activeClassId),
+  }))
 
   return (
     <div className="flex flex-1 flex-col gap-4">
@@ -101,11 +126,11 @@ export function SchoolDetailView({
         <span className="font-medium text-foreground">{school.name}</span>
       </nav>
 
-      <div className="overflow-hidden rounded-2xl border border-border/60 bg-white shadow-sm ring-1 ring-black/[0.04]">
-        <div className="px-5 py-5 sm:px-6">
+      <div className={pageSectionClass}>
+        <div className="px-4 py-4 sm:px-5 sm:py-5 lg:px-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
-              <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground">
+              <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
                 {school.name}
               </h1>
               <p className="mt-1.5 text-sm text-muted-foreground">
@@ -123,39 +148,30 @@ export function SchoolDetailView({
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-y border-border/60 bg-muted/20">
-          <nav className="flex min-w-0" aria-label="School sections">
-            {MAIN_TABS.map(({ id, label }) => {
-              const active = tab === id
-              return (
-                <Link
-                  key={id}
-                  href={tabHref(baseHref, id, activeClassId)}
-                  className={cn(
-                    "-mb-px border-b-2 px-4 py-3 text-sm font-medium transition-colors sm:px-5",
-                    active
-                      ? "border-[#6C5CE7] bg-white text-[#6C5CE7]"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {label}
-                </Link>
-              )
-            })}
-          </nav>
-          {tab === "syllabus" ? (
-            <SchoolSyllabusAddClassButton
-              schoolId={school.id}
-              schoolCode={school.schoolCode}
-              schoolName={school.name}
-              boardId={school.boardId}
-              boardName={school.boardName}
-              boardClassOptions={boardClassOptions}
+        <div className="border-y border-border/60 bg-muted/20">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-stretch lg:justify-between">
+            <ScrollableTabs
+              items={tabItems}
+              activeId={tab}
+              ariaLabel="School sections"
+              className="min-w-0 flex-1"
             />
-          ) : null}
+            {tab === "classes" ? (
+              <div className="flex shrink-0 items-center border-t border-border/60 px-3 py-2 lg:border-t-0 lg:px-4 lg:py-0">
+                <SchoolClassesAddButton
+                  schoolId={school.id}
+                  schoolCode={school.schoolCode}
+                  schoolName={school.name}
+                  boardId={school.boardId}
+                  boardName={school.boardName}
+                  boardClassOptions={boardClassOptions}
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
 
-        <div className="p-5 sm:p-6">
+        <div className={pageSectionBodyClass}>
           {tab === "students" ? (
             <SchoolStudentsTable
               school={school}
@@ -163,6 +179,14 @@ export function SchoolDetailView({
               classTabs={classTabs}
               sectionOptions={sectionOptions}
               activeClassId={activeClassId}
+            />
+          ) : null}
+          {tab === "classes" ? (
+            <SchoolClassesTab
+              schoolId={school.id}
+              schoolCode={school.schoolCode}
+              schoolName={school.name}
+              classes={schoolClasses}
             />
           ) : null}
           {tab === "syllabus" ? (
@@ -177,6 +201,8 @@ export function SchoolDetailView({
               school={school}
               payments={subscriptionPayments}
               paymentsConfig={subscriptionPaymentsConfig}
+              recurringSubscription={recurringSubscription}
+              recurringConfig={recurringConfig}
             />
           ) : null}
           {tab === "management" ? (

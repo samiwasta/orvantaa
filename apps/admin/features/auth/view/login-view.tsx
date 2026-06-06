@@ -11,6 +11,7 @@ import type { LoginController } from "../controller/use-login-controller"
 
 export type LoginViewProps = LoginController & {
   initialFormError?: string | null
+  initialSuccessMessage?: string | null
 }
 
 export function LoginView({
@@ -19,6 +20,7 @@ export function LoginView({
   fieldErrors,
   formError,
   initialFormError,
+  initialSuccessMessage,
   clearFieldError,
   onSubmit,
   isLoggingIn,
@@ -49,6 +51,15 @@ export function LoginView({
         </div>
 
         <form className="space-y-5" noValidate onSubmit={onSubmit}>
+          {initialSuccessMessage ? (
+            <p
+              role="status"
+              className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-800"
+            >
+              {initialSuccessMessage}
+            </p>
+          ) : null}
+
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="username" className="text-sm font-medium">

@@ -14,5 +14,16 @@ export function LoginScreen() {
     return "This account cannot access the admin portal. Sign in with an admin account."
   }, [searchParams])
 
-  return <LoginView {...controller} initialFormError={forbiddenMessage} />
+  const passwordUpdatedMessage = React.useMemo(() => {
+    if (searchParams.get("passwordUpdated") !== "1") return null
+    return "Your password was updated. Sign in with your new password."
+  }, [searchParams])
+
+  return (
+    <LoginView
+      {...controller}
+      initialFormError={forbiddenMessage}
+      initialSuccessMessage={passwordUpdatedMessage}
+    />
+  )
 }

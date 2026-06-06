@@ -1,13 +1,16 @@
 import { cache } from "react"
 
+import { classService } from "@/features/classes/service/class.service"
 import { schoolClassRepository } from "../repository/school-class.repository"
 import { schoolRepository } from "../repository/school.repository"
 import { schoolStudentsRepository } from "../repository/school-students.repository"
 import { schoolManagementService } from "../service/school-management.service"
 import { schoolSubscriptionService } from "../service/school-subscription.service"
+import { schoolRecurringSubscriptionService } from "../service/school-recurring-subscription.service"
 
 export type SchoolDetailTab =
   | "students"
+  | "classes"
   | "syllabus"
   | "subscription"
   | "management"
@@ -26,6 +29,9 @@ export const loadSchoolDetail = cache(
       subscriptionPayments,
       managementContacts,
       billingEmail,
+      schoolClasses,
+      recurringSubscription,
+      recurringConfig,
     ] = await Promise.all([
       schoolStudentsRepository.findStudentsBySchoolId(school.id),
       schoolStudentsRepository.findClassTabs(school.id),
@@ -35,6 +41,9 @@ export const loadSchoolDetail = cache(
       schoolSubscriptionService.listPayments(school.id),
       schoolManagementService.listContacts(school.id),
       schoolManagementService.getBillingEmail(school.id),
+      classService.listClassesBySchoolId(school.id),
+      schoolRecurringSubscriptionService.getRecurringSubscription(school.id),
+      schoolRecurringSubscriptionService.getRecurringConfig(),
     ])
 
     const subscriptionPaymentsConfig = schoolSubscriptionService.getPaymentsConfig()
@@ -52,8 +61,11 @@ export const loadSchoolDetail = cache(
       boardClassOptions,
       subscriptionPayments,
       subscriptionPaymentsConfig,
+      recurringSubscription,
+      recurringConfig,
       managementContacts,
       billingEmail,
+      schoolClasses,
       students: filteredStudents,
       allStudents: students,
     }

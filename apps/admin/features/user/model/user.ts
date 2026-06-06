@@ -2,6 +2,8 @@ import type { Gender, User as PrismaUser, UserRole } from "@prisma/client"
 
 import type { UserGender } from "@/features/sidebar/model/user-gender"
 
+export type { UserGender }
+
 export type AppUserRole = "admin" | "student"
 
 export type User = {

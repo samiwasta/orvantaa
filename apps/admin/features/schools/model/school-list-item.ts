@@ -52,6 +52,33 @@ export const schoolInputSchema = z.object({
 
 export type SchoolInput = z.infer<typeof schoolInputSchema>
 
+export const schoolCreateInputSchema = schoolInputSchema.extend({
+  billingEmail: z
+    .string()
+    .trim()
+    .transform((value) => (value === "" ? null : value))
+    .nullable()
+    .optional()
+    .refine(
+      (value) => value === null || value === undefined || z.string().email().safeParse(value).success,
+      "Enter a valid billing email"
+    ),
+  contact: z.object({
+    fullName: z.string().trim().min(1, "Full name is required").max(120),
+    designation: z.string().trim().min(1, "Designation is required").max(120),
+    email: z.string().trim().email("Enter a valid contact email"),
+    phone: z
+      .string()
+      .trim()
+      .max(20, "Phone number is too long")
+      .transform((value) => (value === "" ? null : value))
+      .nullable()
+      .optional(),
+  }),
+})
+
+export type SchoolCreateInput = z.infer<typeof schoolCreateInputSchema>
+
 export function formatSchoolDisplayCode(code: string | null, id: string): string {
   const trimmed = code?.trim()
   if (trimmed) return trimmed.toUpperCase()

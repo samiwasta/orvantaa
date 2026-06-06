@@ -22,6 +22,7 @@ export default async function SchoolDetailPage({ params, searchParams }: PagePro
   const { tab, class: classFilter } = await searchParams
 
   const activeTab =
+    tab === "classes" ||
     tab === "syllabus" ||
     tab === "subscription" ||
     tab === "management" ||
@@ -44,8 +45,11 @@ export default async function SchoolDetailPage({ params, searchParams }: PagePro
         boardClassOptions={data.boardClassOptions}
         subscriptionPayments={data.subscriptionPayments}
         subscriptionPaymentsConfig={data.subscriptionPaymentsConfig}
+        recurringSubscription={data.recurringSubscription}
+        recurringConfig={data.recurringConfig}
         managementContacts={data.managementContacts}
         billingEmail={data.billingEmail}
+        schoolClasses={data.schoolClasses}
         initialTab={activeTab}
         initialClassId={activeClassId}
       />

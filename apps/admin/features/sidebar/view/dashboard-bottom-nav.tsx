@@ -14,32 +14,53 @@ export function DashboardBottomNav({
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 md:hidden">
       <div
         className={cn(
-          "pointer-events-auto mx-auto w-full max-w-lg px-3",
-          "pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+          "pointer-events-auto mx-auto w-full max-w-md px-4 sm:px-5",
+          "pb-[max(0.75rem,env(safe-area-inset-bottom))]"
         )}
       >
         <nav
           className={cn(
-            "rounded-2xl border border-sidebar-border/70 bg-sidebar/95 shadow-lg ring-1 shadow-black/10 ring-sidebar-border/60 backdrop-blur-xl",
-            "supports-backdrop-filter:bg-sidebar/85 dark:shadow-black/40 dark:ring-white/10"
+            "overflow-hidden rounded-2xl border border-border/50",
+            "bg-background/90 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.25)]",
+            "ring-1 ring-black/[0.05] backdrop-blur-xl",
+            "supports-backdrop-filter:bg-background/75",
+            "dark:border-white/10 dark:shadow-[0_10px_40px_-12px_rgba(0,0,0,0.55)] dark:ring-white/10"
           )}
           aria-label="Primary navigation"
         >
-          <ul className="flex gap-0.5 overflow-x-auto p-1.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {navItems.map((item) => {
+          <ul
+            className="grid gap-0.5 p-1 pb-1.5"
+            style={{
+              gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))`,
+            }}
+          >
+            {navItems.map((item, index) => {
               const Icon = item.icon
+              const isFirst = index === 0
+              const isLast = index === navItems.length - 1
+
               return (
-                <li key={item.href} className="min-w-[4.25rem] flex-1">
+                <li key={item.href} className="min-w-0">
                   <Link
                     href={item.href}
                     prefetch
                     className={cn(
-                      "flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 text-[10px] font-semibold tracking-tight transition-[color,transform,background-color,box-shadow] duration-200 ease-out",
+                      "flex w-full min-w-0 flex-col items-center justify-center gap-1 px-0.5 pt-2 pb-2.5",
+                      "text-[10px] font-semibold leading-tight tracking-tight transition-all duration-200",
                       "focus-visible:ring-2 focus-visible:ring-[#6C5CE7]/45 focus-visible:outline-none",
-                      "active:scale-[0.96]",
                       item.isActive
-                        ? "bg-[#6C5CE7] text-white shadow-md shadow-[#6C5CE7]/35"
-                        : "text-muted-foreground hover:bg-sidebar-accent/90 hover:text-foreground [&_svg]:text-muted-foreground hover:[&_svg]:text-foreground"
+                        ? cn(
+                            "bg-[#6C5CE7] text-white",
+                            isFirst && isLast && "rounded-xl",
+                            isFirst &&
+                              !isLast &&
+                              "rounded-l-xl rounded-r-lg",
+                            isLast &&
+                              !isFirst &&
+                              "rounded-l-lg rounded-r-xl",
+                            !isFirst && !isLast && "rounded-xl"
+                          )
+                        : "rounded-xl text-muted-foreground active:bg-muted/70 [&_svg]:text-muted-foreground"
                     )}
                   >
                     <Icon
@@ -49,8 +70,8 @@ export function DashboardBottomNav({
                       )}
                       strokeWidth={item.isActive ? 2.5 : 2}
                     />
-                    <span className="max-w-full truncate text-center leading-none">
-                      {item.title}
+                    <span className="block w-full truncate px-0.5 pb-px text-center leading-tight">
+                      {item.mobileTitle}
                     </span>
                   </Link>
                 </li>

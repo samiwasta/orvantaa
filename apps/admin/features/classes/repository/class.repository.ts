@@ -10,7 +10,76 @@ import {
   type SectionInput,
 } from "../model/class-list-item"
 
+function mapClassRows(
+  rows: Array<{
+    id: string
+    name: string
+    school: {
+      id: string
+      name: string
+      code: string | null
+      board: { name: string }
+    }
+    sections: Array<{
+      id: string
+      name: string
+      _count: { students: number }
+    }>
+    _count: { subjects: number }
+  }>
+): ClassListItem[] {
+  return rows.map((row) => {
+    const sections = row.sections.map((section) => ({
+      id: section.id,
+      name: section.name,
+      studentCount: section._count.students,
+    }))
+
+    return {
+      id: row.id,
+      schoolId: row.school.id,
+      className: row.name,
+      classDisplayName: formatClassDisplayName(row.name),
+      sections,
+      schoolName: row.school.name,
+      schoolCode: formatSchoolCodeForClass(row.school.code, row.school.id),
+      boardName: row.school.board.name,
+      studentCount: sections.reduce((sum, section) => sum + section.studentCount, 0),
+      subjectCount: row._count.subjects,
+    }
+  })
+}
+
 export class ClassRepository {
+  async findClassesBySchoolId(schoolId: string): Promise<ClassListItem[]> {
+    const rows = await prisma.class.findMany({
+      where: { schoolId },
+      select: {
+        id: true,
+        name: true,
+        school: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            board: { select: { name: true } },
+          },
+        },
+        sections: {
+          orderBy: { name: "asc" },
+          select: {
+            id: true,
+            name: true,
+            _count: { select: { students: true } },
+          },
+        },
+        _count: { select: { subjects: true } },
+      },
+    })
+
+    return mapClassRows(rows).sort(compareClassListItems)
+  }
+
   async findAllClasses(): Promise<ClassListItem[]> {
     const rows = await prisma.class.findMany({
       select: {
@@ -36,28 +105,7 @@ export class ClassRepository {
       },
     })
 
-    const items: ClassListItem[] = rows.map((row) => {
-      const sections = row.sections.map((section) => ({
-        id: section.id,
-        name: section.name,
-        studentCount: section._count.students,
-      }))
-
-      return {
-        id: row.id,
-        schoolId: row.school.id,
-        className: row.name,
-        classDisplayName: formatClassDisplayName(row.name),
-        sections,
-        schoolName: row.school.name,
-        schoolCode: formatSchoolCodeForClass(row.school.code, row.school.id),
-        boardName: row.school.board.name,
-        studentCount: sections.reduce((sum, s) => sum + s.studentCount, 0),
-        subjectCount: row._count.subjects,
-      }
-    })
-
-    return items.sort(compareClassListItems)
+    return mapClassRows(rows).sort(compareClassListItems)
   }
 
   async findSchoolOptions(): Promise<SchoolOption[]> {

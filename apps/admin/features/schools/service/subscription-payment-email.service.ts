@@ -21,6 +21,7 @@ const subjects: Record<SubscriptionPaymentEmailKind, string> = {
   success: "Orvantaa subscription payment received",
   failed: "Orvantaa subscription payment failed",
   late: "Orvantaa subscription payment overdue",
+  setup: "Complete your Orvantaa subscription setup",
 }
 
 export type SubscriptionPaymentEmailPayload = {
@@ -33,6 +34,7 @@ export type SubscriptionPaymentEmailPayload = {
   transactionDate: string
   paymentMethod: string | null
   invoiceUrl: string | null
+  paymentUrl: string | null
 }
 
 export class SubscriptionPaymentEmailService {
@@ -50,6 +52,7 @@ export class SubscriptionPaymentEmailService {
         amountLabel: payload.amountLabel,
         transactionDate: payload.transactionDate,
         paymentMethod: payload.paymentMethod,
+        paymentUrl: payload.paymentUrl,
         invoiceUrl: payload.invoiceUrl,
         portalUrl: portalUrl(),
       })
