@@ -1,3 +1,5 @@
+import { classService } from "@/features/classes/service/class.service"
+
 import type {
   BoardOption,
   SchoolCreateInput,
@@ -25,6 +27,7 @@ export class SchoolService {
 
   async createSchool(input: SchoolCreateInput): Promise<void> {
     const schoolId = await this.repository.createSchool(input)
+    await classService.syncPlatformClassesToSchool(schoolId)
     await schoolRecurringSubscriptionService.tryAutoStartForSchool(schoolId)
   }
 

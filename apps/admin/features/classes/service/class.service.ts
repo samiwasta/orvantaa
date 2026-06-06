@@ -26,6 +26,14 @@ export class ClassService {
     return this.repository.findSchoolOptions()
   }
 
+  async listCatalogClasses(): Promise<ClassListItem[]> {
+    return this.repository.findCatalogClasses()
+  }
+
+  async syncPlatformClassesToSchool(schoolId: string): Promise<void> {
+    await this.repository.syncPlatformClassesToSchool(schoolId)
+  }
+
   async createClass(input: ClassInput): Promise<void> {
     await this.repository.createClass(input)
   }

@@ -105,7 +105,6 @@ export function SchoolFormDialog({
       name,
       code: code.trim() === "" ? null : code.trim(),
       boardId,
-      subscriptionStatus,
       billingEmail: billingEmail.trim() === "" ? null : billingEmail.trim(),
       contact: {
         fullName: contactFullName,
@@ -174,26 +173,28 @@ export function SchoolFormDialog({
             <FieldError>{fieldErrors.code?.[0]}</FieldError>
           </Field>
 
-          <Field>
-            <FieldLabel required>Subscription</FieldLabel>
-            <Select
-              value={subscriptionStatus}
-              onValueChange={(value) =>
-                setSubscriptionStatus(value as SchoolListItem["subscriptionStatus"])
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="hold">Hold</SelectItem>
-                <SelectItem value="blocked">Blocked</SelectItem>
-              </SelectContent>
-            </Select>
-            <FieldError>{fieldErrors.subscriptionStatus?.[0]}</FieldError>
-          </Field>
+          {isEdit ? (
+            <Field>
+              <FieldLabel required>Subscription</FieldLabel>
+              <Select
+                value={subscriptionStatus}
+                onValueChange={(value) =>
+                  setSubscriptionStatus(value as SchoolListItem["subscriptionStatus"])
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="hold">Hold</SelectItem>
+                  <SelectItem value="blocked">Blocked</SelectItem>
+                </SelectContent>
+              </Select>
+              <FieldError>{fieldErrors.subscriptionStatus?.[0]}</FieldError>
+            </Field>
+          ) : null}
 
           {!isEdit ? (
             <>

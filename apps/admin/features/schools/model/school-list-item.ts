@@ -52,7 +52,7 @@ export const schoolInputSchema = z.object({
 
 export type SchoolInput = z.infer<typeof schoolInputSchema>
 
-export const schoolCreateInputSchema = schoolInputSchema.extend({
+export const schoolCreateInputSchema = schoolInputSchema.omit({ subscriptionStatus: true }).extend({
   billingEmail: z
     .string()
     .trim()

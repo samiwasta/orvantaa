@@ -150,14 +150,6 @@ export class SchoolRecurringSubscriptionService {
       cancelledAt: update.cancelledAt,
     })
 
-    const schoolStatus = schoolStatusFromRecurringStatus(update.status)
-    if (schoolStatus) {
-      await this.paymentRepository.updateSchoolSubscriptionStatus(
-        schoolId,
-        schoolStatus
-      )
-    }
-
     if (input.sendEmail && subscription.short_url) {
       await this.sendSetupEmailIfEnabled({
         to: billingEmail,
@@ -359,6 +351,13 @@ export class SchoolRecurringSubscriptionService {
         serviceName:
           parsed.payment.serviceName || "Orvantaa Platform Subscription",
       })
+
+      if (parsed.payment.status === "success") {
+        await this.paymentRepository.updateSchoolSubscriptionStatus(
+          schoolId,
+          "active"
+        )
+      }
 
       if (options.sendEmail && parsed.payment.status === "success") {
         const context =

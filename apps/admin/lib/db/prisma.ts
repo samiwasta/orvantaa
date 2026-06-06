@@ -7,7 +7,7 @@ const globalForPrisma = globalThis as unknown as {
   prismaRevision: string | undefined
 }
 
-const PRISMA_CLIENT_REVISION = "20260606180000_subscription_principal_per_student"
+const PRISMA_CLIENT_REVISION = "20260606190000_platform_classes_inactive_school_default"
 
 function createPrismaClient(): PrismaClient {
   return new PrismaClient({
@@ -23,6 +23,7 @@ const REQUIRED_PRISMA_DELEGATES = [
   "schoolRecurringSubscription",
   "platformSettings",
   "adminNotification",
+  "platformClass",
 ] as const
 
 function prismaClientIsCurrent(client: PrismaClient): boolean {

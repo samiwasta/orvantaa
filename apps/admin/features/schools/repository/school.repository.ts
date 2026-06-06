@@ -129,7 +129,7 @@ export class SchoolRepository {
           name: input.name,
           code: input.code ?? null,
           boardId: input.boardId,
-          subscriptionStatus: mapSubscriptionStatusToPrisma(input.subscriptionStatus),
+          subscriptionStatus: "INACTIVE",
           billingEmail: input.billingEmail ?? null,
         },
       })

@@ -117,11 +117,11 @@ export function schoolStatusFromRecurringStatus(
     | "EXPIRED"
 ): "active" | "inactive" | "hold" | null {
   switch (status) {
-    case "ACTIVE":
-    case "AUTHENTICATED":
-      return "active"
     case "HALTED":
       return "hold"
+    case "ACTIVE":
+      return null
+    case "AUTHENTICATED":
     case "CREATED":
     case "PENDING":
     case "CANCELLED":

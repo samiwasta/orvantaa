@@ -10,7 +10,6 @@ import { ConfirmDialog } from "@/features/shared/view/confirm-dialog"
 import { useActionRunner } from "@/lib/actions/use-action-runner"
 
 import {
-  aggregateCatalogClasses,
   type ClassListItem,
   compareCatalogClassItems,
 } from "../model/class-list-item"
@@ -97,10 +96,7 @@ export function ClassesCardsView({ classes }: ClassesCardsViewProps) {
   const [createOpen, setCreateOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<ClassListItem | null>(null)
 
-  const catalogClasses = useMemo(
-    () => aggregateCatalogClasses(classes),
-    [classes]
-  )
+  const catalogClasses = classes
 
   const { run: runDelete, pending: deletePending } = useActionRunner(
     deleteClassCatalogAction,

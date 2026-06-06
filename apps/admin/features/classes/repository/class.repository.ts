@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db"
 import {
   type ClassInput,
   type ClassListItem,
+  type ClassSectionItem,
+  compareCatalogClassItems,
   compareClassListItems,
   formatClassDisplayName,
   formatSchoolCodeForClass,
@@ -116,6 +118,109 @@ export class ClassRepository {
     return rows
   }
 
+  async findCatalogClasses(): Promise<ClassListItem[]> {
+    const [platformClasses, schoolClassRows] = await Promise.all([
+      prisma.platformClass.findMany({ orderBy: { name: "asc" } }),
+      prisma.class.findMany({
+        select: {
+          name: true,
+          sections: {
+            orderBy: { name: "asc" },
+            select: {
+              id: true,
+              name: true,
+              _count: { select: { students: true } },
+            },
+          },
+          _count: { select: { subjects: true } },
+        },
+      }),
+    ])
+
+    const statsByName = new Map<
+      string,
+      {
+        studentCount: number
+        subjectCount: number
+        sections: ClassSectionItem[]
+      }
+    >()
+
+    for (const row of schoolClassRows) {
+      const key = row.name.trim().toLowerCase()
+      const sections = row.sections.map((section) => ({
+        id: section.id,
+        name: section.name,
+        studentCount: section._count.students,
+      }))
+      const rowStudentCount = sections.reduce(
+        (sum, section) => sum + section.studentCount,
+        0
+      )
+      const existing = statsByName.get(key)
+      if (!existing) {
+        statsByName.set(key, {
+          studentCount: rowStudentCount,
+          subjectCount: row._count.subjects,
+          sections,
+        })
+        continue
+      }
+
+      existing.studentCount += rowStudentCount
+      existing.subjectCount += row._count.subjects
+      existing.sections.push(...sections)
+    }
+
+    return platformClasses
+      .map((platformClass) => {
+        const stat = statsByName.get(platformClass.name.trim().toLowerCase())
+        return {
+          id: platformClass.id,
+          schoolId: "",
+          className: platformClass.name,
+          classDisplayName: formatClassDisplayName(platformClass.name),
+          sections: stat?.sections ?? [],
+          schoolName: "",
+          schoolCode: "",
+          boardName: "",
+          studentCount: stat?.studentCount ?? 0,
+          subjectCount: stat?.subjectCount ?? 0,
+        }
+      })
+      .sort(compareCatalogClassItems)
+  }
+
+  async syncPlatformClassesToSchool(schoolId: string): Promise<void> {
+    const platformClasses = await prisma.platformClass.findMany({
+      select: { name: true },
+    })
+    if (platformClasses.length === 0) return
+
+    const existing = await prisma.class.findMany({
+      where: { schoolId },
+      select: { name: true },
+    })
+    const existingNames = new Set(
+      existing.map((row) => row.name.trim().toLowerCase())
+    )
+
+    const toCreate = platformClasses.filter(
+      (platformClass) =>
+        !existingNames.has(platformClass.name.trim().toLowerCase())
+    )
+
+    if (toCreate.length === 0) return
+
+    await prisma.$transaction(
+      toCreate.map((platformClass) =>
+        prisma.class.create({
+          data: { schoolId, name: platformClass.name },
+        })
+      )
+    )
+  }
+
   async createClass(input: ClassInput): Promise<void> {
     await prisma.class.create({
       data: { schoolId: input.schoolId, name: input.name },
@@ -124,27 +229,21 @@ export class ClassRepository {
 
   async createCatalogClass(name: string): Promise<void> {
     const trimmed = name.trim()
-    const schools = await prisma.school.findMany({ select: { id: true } })
-
-    if (schools.length === 0) {
-      throw new Error("Add a school before creating classes.")
-    }
-
-    const existing = await prisma.class.findMany({
+    const existing = await prisma.platformClass.findFirst({
       where: { name: { equals: trimmed, mode: "insensitive" } },
-      select: { schoolId: true },
     })
-    const schoolsWithClass = new Set(existing.map((row) => row.schoolId))
-    const schoolsToCreate = schools.filter(
-      (school) => !schoolsWithClass.has(school.id)
-    )
 
-    if (schoolsToCreate.length === 0) {
+    if (existing) {
       throw new Error("This class already exists.")
     }
 
+    await prisma.platformClass.create({ data: { name: trimmed } })
+
+    const schools = await prisma.school.findMany({ select: { id: true } })
+    if (schools.length === 0) return
+
     await prisma.$transaction(
-      schoolsToCreate.map((school) =>
+      schools.map((school) =>
         prisma.class.create({
           data: { schoolId: school.id, name: trimmed },
         })
@@ -156,14 +255,29 @@ export class ClassRepository {
     const trimmedCurrent = currentName.trim()
     const trimmedNext = name.trim()
 
+    const platformClass = await prisma.platformClass.findFirst({
+      where: { name: { equals: trimmedCurrent, mode: "insensitive" } },
+    })
+
+    if (!platformClass) {
+      throw new Error("Class not found.")
+    }
+
+    const platformConflict = await prisma.platformClass.findFirst({
+      where: {
+        name: { equals: trimmedNext, mode: "insensitive" },
+        NOT: { id: platformClass.id },
+      },
+      select: { id: true },
+    })
+    if (platformConflict) {
+      throw new Error("This class already exists.")
+    }
+
     const rows = await prisma.class.findMany({
       where: { name: { equals: trimmedCurrent, mode: "insensitive" } },
       select: { id: true, schoolId: true },
     })
-
-    if (rows.length === 0) {
-      throw new Error("Class not found.")
-    }
 
     for (const row of rows) {
       const conflict = await prisma.class.findFirst({
@@ -179,14 +293,29 @@ export class ClassRepository {
       }
     }
 
-    await prisma.class.updateMany({
-      where: { id: { in: rows.map((row) => row.id) } },
+    await prisma.platformClass.update({
+      where: { id: platformClass.id },
       data: { name: trimmedNext },
     })
+
+    if (rows.length > 0) {
+      await prisma.class.updateMany({
+        where: { id: { in: rows.map((row) => row.id) } },
+        data: { name: trimmedNext },
+      })
+    }
   }
 
   async deleteCatalogClass(name: string): Promise<void> {
     const trimmed = name.trim()
+    const platformClass = await prisma.platformClass.findFirst({
+      where: { name: { equals: trimmed, mode: "insensitive" } },
+    })
+
+    if (!platformClass) {
+      throw new Error("Class not found.")
+    }
+
     const rows = await prisma.class.findMany({
       where: { name: { equals: trimmed, mode: "insensitive" } },
       select: {
@@ -197,10 +326,6 @@ export class ClassRepository {
         },
       },
     })
-
-    if (rows.length === 0) {
-      throw new Error("Class not found.")
-    }
 
     for (const row of rows) {
       if (row._count.subjects > 0) {
@@ -220,8 +345,14 @@ export class ClassRepository {
       }
     }
 
-    await prisma.class.deleteMany({
-      where: { id: { in: rows.map((row) => row.id) } },
+    if (rows.length > 0) {
+      await prisma.class.deleteMany({
+        where: { id: { in: rows.map((row) => row.id) } },
+      })
+    }
+
+    await prisma.platformClass.delete({
+      where: { id: platformClass.id },
     })
   }
 
