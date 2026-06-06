@@ -11,10 +11,11 @@ import { ConfirmDialog } from "@/features/shared/view/confirm-dialog"
 import { useActionRunner } from "@/lib/actions/use-action-runner"
 
 import { schoolDetailHref, type SchoolListItem } from "../model/school-list-item"
-import type {
-  SchoolClassTab,
-  SchoolSectionOption,
-  SchoolStudentListItem,
+import {
+  compareClassTabs,
+  type SchoolClassTab,
+  type SchoolSectionOption,
+  type SchoolStudentListItem,
 } from "../model/school-student-list-item"
 import {
   deleteSchoolStudentAction,
@@ -83,6 +84,11 @@ export function SchoolStudentsTable({
     [students]
   )
 
+  const sortedClassTabs = useMemo(
+    () => [...classTabs].sort(compareClassTabs),
+    [classTabs]
+  )
+
   const filtered = useMemo(
     () => filterStudents(students, search),
     [students, search]
@@ -126,7 +132,7 @@ export function SchoolStudentsTable({
           <Link href={classTabHref("all")} className={classPillClass(activeClassId === "all")}>
             All
           </Link>
-          {classTabs.map((tab) => (
+          {sortedClassTabs.map((tab) => (
             <Link
               key={tab.id}
               href={classTabHref(tab.id)}

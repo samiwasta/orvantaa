@@ -8,10 +8,13 @@ export const PUBLIC_PATH_PREFIXES = [
   "/auth",
   "/forgot-password",
   "/reset-password",
+  "/subscribe",
 ] as const
 
 export const AUTH_API_PUBLIC_PATHS = [
   "/api/auth/login",
   "/api/auth/forgot-password",
   "/api/auth/reset-password",
+  "/api/webhooks/razorpay",
+  "/api/subscriptions/verify",
 ] as const

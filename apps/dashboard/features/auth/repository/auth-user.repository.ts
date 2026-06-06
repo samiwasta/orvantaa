@@ -11,6 +11,7 @@ function mapRow(row: {
   lastName: string
   role: "ADMIN" | "STUDENT"
   passwordHash: string
+  mustChangePassword: boolean
 }): AuthUserRecord {
   return {
     id: row.id,
@@ -20,10 +21,16 @@ function mapRow(row: {
     lastName: row.lastName ?? "",
     role: mapPrismaRoleToAppRole(row.role),
     passwordHash: row.passwordHash,
+    mustChangePassword: row.mustChangePassword,
   }
 }
 
 export class AuthUserRepository {
+  async findById(userId: string): Promise<AuthUserRecord | null> {
+    const row = await prisma.user.findUnique({ where: { id: userId } })
+    return row ? mapRow(row) : null
+  }
+
   async findByUsernameOrEmail(
     identifier: string
   ): Promise<AuthUserRecord | null> {
@@ -38,11 +45,17 @@ export class AuthUserRepository {
 
   async updatePasswordHash(
     userId: string,
-    passwordHash: string
+    passwordHash: string,
+    options?: { clearMustChangePassword?: boolean }
   ): Promise<void> {
     await prisma.user.update({
       where: { id: userId },
-      data: { passwordHash },
+      data: {
+        passwordHash,
+        ...(options?.clearMustChangePassword
+          ? { mustChangePassword: false }
+          : {}),
+      },
     })
   }
 }

@@ -8,6 +8,7 @@ export type AuthUserRecord = {
   lastName: string
   role: AppUserRole
   passwordHash: string
+  mustChangePassword: boolean
 }
 
 export type SafeAuthUser = {
@@ -22,6 +23,7 @@ export type SafeAuthUser = {
 export type LoginResult = {
   accessToken: string
   user: SafeAuthUser
+  mustChangePassword: boolean
 }
 
 export function toSafeAuthUser(record: AuthUserRecord): SafeAuthUser {

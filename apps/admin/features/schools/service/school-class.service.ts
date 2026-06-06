@@ -36,7 +36,7 @@ export class SchoolClassService {
     for (const name of parsed.data.names) {
       const canonical = allowedByKey.get(name.trim().toLowerCase())
       if (!canonical) {
-        throw new Error(`"${name}" is not available for this board.`)
+        throw new Error(`"${name}" is not available in the class catalog.`)
       }
       names.push(canonical)
     }

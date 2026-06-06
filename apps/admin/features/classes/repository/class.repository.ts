@@ -8,6 +8,7 @@ import {
   compareClassListItems,
   formatClassDisplayName,
   formatSchoolCodeForClass,
+  parseClassLevel,
   type SchoolOption,
   type SectionInput,
 } from "../model/class-list-item"
@@ -79,7 +80,12 @@ export class ClassRepository {
       },
     })
 
-    return mapClassRows(rows).sort(compareClassListItems)
+    return mapClassRows(rows).sort((a, b) => {
+      const levelA = parseClassLevel(a.className)
+      const levelB = parseClassLevel(b.className)
+      if (levelA !== levelB) return levelA - levelB
+      return a.className.localeCompare(b.className, undefined, { numeric: true })
+    })
   }
 
   async findAllClasses(): Promise<ClassListItem[]> {
@@ -191,36 +197,6 @@ export class ClassRepository {
       .sort(compareCatalogClassItems)
   }
 
-  async syncPlatformClassesToSchool(schoolId: string): Promise<void> {
-    const platformClasses = await prisma.platformClass.findMany({
-      select: { name: true },
-    })
-    if (platformClasses.length === 0) return
-
-    const existing = await prisma.class.findMany({
-      where: { schoolId },
-      select: { name: true },
-    })
-    const existingNames = new Set(
-      existing.map((row) => row.name.trim().toLowerCase())
-    )
-
-    const toCreate = platformClasses.filter(
-      (platformClass) =>
-        !existingNames.has(platformClass.name.trim().toLowerCase())
-    )
-
-    if (toCreate.length === 0) return
-
-    await prisma.$transaction(
-      toCreate.map((platformClass) =>
-        prisma.class.create({
-          data: { schoolId, name: platformClass.name },
-        })
-      )
-    )
-  }
-
   async createClass(input: ClassInput): Promise<void> {
     await prisma.class.create({
       data: { schoolId: input.schoolId, name: input.name },
@@ -238,17 +214,6 @@ export class ClassRepository {
     }
 
     await prisma.platformClass.create({ data: { name: trimmed } })
-
-    const schools = await prisma.school.findMany({ select: { id: true } })
-    if (schools.length === 0) return
-
-    await prisma.$transaction(
-      schools.map((school) =>
-        prisma.class.create({
-          data: { schoolId: school.id, name: trimmed },
-        })
-      )
-    )
   }
 
   async renameCatalogClass(currentName: string, name: string): Promise<void> {

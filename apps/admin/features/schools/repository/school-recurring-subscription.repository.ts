@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/db"
 
 import {
+  formatSchoolDisplayCode,
+  parseSchoolRouteCode,
+} from "../model/school-list-item"
+import {
   formatRecurringDate,
   formatRecurringStatusLabel,
   mapPrismaRecurringStatus,
@@ -83,6 +87,89 @@ export class SchoolRecurringSubscriptionRepository {
     }
   }
 
+  async findCheckoutContextByRouteCode(routeCode: string): Promise<{
+    schoolId: string
+    schoolCode: string
+    schoolName: string
+    billingEmail: string | null
+    subscription: {
+      razorpaySubscriptionId: string
+      status: RecurringSubscriptionListItem["status"]
+      planName: string
+      amountLabel: string
+      statusLabel: string
+    } | null
+  } | null> {
+    const normalized = parseSchoolRouteCode(routeCode)
+    if (!normalized) return null
+
+    const selection = {
+      id: true,
+      code: true,
+      name: true,
+      billingEmail: true,
+      recurringSubscription: {
+        select: {
+          razorpaySubscriptionId: true,
+          status: true,
+          planName: true,
+          amountPaise: true,
+          currency: true,
+        },
+      },
+    } as const
+
+    let school = await prisma.school.findFirst({
+      where: { code: { equals: normalized, mode: "insensitive" } },
+      select: selection,
+    })
+
+    if (!school) {
+      const upper = normalized.toUpperCase()
+      const candidates = await prisma.school.findMany({
+        select: selection,
+      })
+      school =
+        candidates.find(
+          (row) => formatSchoolDisplayCode(row.code, row.id) === upper
+        ) ?? null
+    }
+
+    if (!school) return null
+
+    const schoolCode = formatSchoolDisplayCode(school.code, school.id)
+    const subscription = school.recurringSubscription
+
+    return {
+      schoolId: school.id,
+      schoolCode,
+      schoolName: school.name,
+      billingEmail: school.billingEmail,
+      subscription: subscription
+        ? {
+            razorpaySubscriptionId: subscription.razorpaySubscriptionId,
+            status: mapPrismaRecurringStatus(subscription.status),
+            planName: subscription.planName,
+            amountLabel:
+              formatAmountLabel(subscription.amountPaise, subscription.currency) ??
+              "—",
+            statusLabel: formatRecurringStatusLabel(
+              mapPrismaRecurringStatus(subscription.status)
+            ),
+          }
+        : null,
+    }
+  }
+
+  async findSchoolRouteCodeById(schoolId: string): Promise<string | null> {
+    const row = await prisma.school.findUnique({
+      where: { id: schoolId },
+      select: { id: true, code: true },
+    })
+    if (!row) return null
+    return formatSchoolDisplayCode(row.code, row.id)
+  }
+
   async updateBillingSnapshot(
     schoolId: string,
     data: {
@@ -95,6 +182,14 @@ export class SchoolRecurringSubscriptionRepository {
       where: { schoolId },
       data,
     })
+  }
+
+  async findCustomerIdBySchoolId(schoolId: string): Promise<string | null> {
+    const row = await prisma.schoolRecurringSubscription.findUnique({
+      where: { schoolId },
+      select: { razorpayCustomerId: true },
+    })
+    return row?.razorpayCustomerId ?? null
   }
 
   async findBySchoolId(

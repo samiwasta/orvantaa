@@ -1,6 +1,7 @@
 import { z } from "zod"
 
-import { formatClassDisplayName } from "@/features/classes/model/class-list-item"
+import { formatClassDisplayName, parseClassLevel } from "@/features/classes/model/class-list-item"
+import type { UserGender } from "@/features/user/model/user"
 
 export type SchoolClassTab = {
   id: string
@@ -29,6 +30,7 @@ export type SchoolStudentListItem = {
   sectionName: string | null
   email: string
   phone: string | null
+  gender: UserGender
   username: string
   mailStatus: StudentMailStatus
   mailStatusLabel: string
@@ -85,6 +87,9 @@ export const schoolStudentInputSchema = z.object({
     .nullable()
     .optional(),
   sectionId: z.string().trim().min(1, "Select a class and section"),
+  gender: z.enum(["male", "female"], {
+    required_error: "Select a gender",
+  }),
   password: z
     .string()
     .optional()
@@ -107,4 +112,11 @@ export function mapClassTab(className: string, id: string): SchoolClassTab {
     className,
     classDisplayName: formatClassDisplayName(className),
   }
+}
+
+export function compareClassTabs(a: SchoolClassTab, b: SchoolClassTab): number {
+  const levelA = parseClassLevel(a.className)
+  const levelB = parseClassLevel(b.className)
+  if (levelA !== levelB) return levelA - levelB
+  return a.className.localeCompare(b.className, undefined, { numeric: true })
 }

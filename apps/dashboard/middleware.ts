@@ -4,6 +4,7 @@ import { NextResponse } from "next/server"
 import {
   AUTH_API_PUBLIC_PATHS,
   AUTH_COOKIE_NAME,
+  CHANGE_PASSWORD_PATH,
   PUBLIC_PATH_PREFIXES,
   SUBSCRIPTION_UNAVAILABLE_PATH,
 } from "@/lib/auth/constants"
@@ -12,6 +13,7 @@ import {
   clearAuthCookie,
   forbiddenAuthResponse,
   isStudentSession,
+  sessionMustChangePassword,
 } from "@/lib/auth/middleware-auth"
 
 function isPublicPath(pathname: string): boolean {
@@ -22,6 +24,17 @@ function isPublicPath(pathname: string): boolean {
 
 function isAuthApiPublicPath(pathname: string): boolean {
   return AUTH_API_PUBLIC_PATHS.some((path) => pathname === path)
+}
+
+function isChangePasswordPath(pathname: string): boolean {
+  return (
+    pathname === CHANGE_PASSWORD_PATH ||
+    pathname.startsWith(`${CHANGE_PASSWORD_PATH}/`)
+  )
+}
+
+function isChangePasswordApiPath(pathname: string): boolean {
+  return pathname === "/api/auth/change-password"
 }
 
 export async function middleware(request: NextRequest) {
@@ -42,9 +55,19 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  const mustChangePassword =
+    isStudentSession(session) && sessionMustChangePassword(session)
+
   if (pathname === "/") {
     return NextResponse.redirect(
-      new URL(isStudentSession(session) ? "/dashboard" : "/auth", request.url)
+      new URL(
+        isStudentSession(session)
+          ? mustChangePassword
+            ? CHANGE_PASSWORD_PATH
+            : "/dashboard"
+          : "/auth",
+        request.url
+      )
     )
   }
 
@@ -57,6 +80,18 @@ export async function middleware(request: NextRequest) {
       pathname.startsWith(`${SUBSCRIPTION_UNAVAILABLE_PATH}/`)
     ) {
       return NextResponse.next()
+    }
+    if (mustChangePassword) {
+      if (isChangePasswordPath(pathname)) {
+        return NextResponse.next()
+      }
+      return NextResponse.redirect(new URL(CHANGE_PASSWORD_PATH, request.url))
+    }
+    if (isChangePasswordPath(pathname)) {
+      return NextResponse.redirect(new URL("/dashboard", request.url))
+    }
+    if (pathname === "/auth" || pathname.startsWith("/auth/")) {
+      return NextResponse.redirect(new URL("/dashboard", request.url))
     }
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
@@ -80,6 +115,21 @@ export async function middleware(request: NextRequest) {
 
   if (session && isProtected && !isStudentSession(session)) {
     return forbiddenAuthResponse(request, { clearCookie: true, token })
+  }
+
+  if (mustChangePassword && isProtected) {
+    if (isChangePasswordApiPath(pathname)) {
+      return NextResponse.next()
+    }
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { message: "Password change required." },
+        { status: 403 }
+      )
+    }
+    if (!isChangePasswordPath(pathname)) {
+      return NextResponse.redirect(new URL(CHANGE_PASSWORD_PATH, request.url))
+    }
   }
 
   return NextResponse.next()

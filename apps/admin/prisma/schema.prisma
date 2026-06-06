@@ -433,6 +433,7 @@ model User {
   studentCode  String?  @unique
   phone        String?
   mailStatus   StudentMailStatus @default(NOT_SENT)
+  mustChangePassword Boolean @default(false)
   firstName    String
   lastName     String   @default("")
   gender       Gender   @default(FEMALE)

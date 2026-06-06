@@ -1,12 +1,19 @@
 import {
+  buildSubscriptionCheckoutCompleteUrl,
+  buildSubscriptionCheckoutUrl,
+} from "@/lib/app-urls"
+import {
   cancelRazorpaySubscription,
-  createRazorpayCustomer,
+  getOrCreateRazorpayCustomer,
   createRazorpaySubscription,
   fetchRazorpaySubscription,
+  getRazorpayConfig,
+  isRazorpayConfigured,
   parseRazorpaySubscriptionWebhook,
   schoolStatusFromRecurringStatus,
-  subscriptionEntityToUpdate,
+  subscriptionEntityToSyncUpdate,
   updateRazorpaySubscriptionQuantity,
+  verifyRazorpaySubscriptionPaymentSignature,
   type ParsedSubscriptionWebhook,
 } from "@/lib/payments/razorpay"
 import { platformSettingsRepository } from "@/features/settings/repository/platform-settings.repository"
@@ -27,6 +34,10 @@ import {
   formatTransactionDate,
   type SubscriptionPaymentEmailKind,
 } from "../model/subscription-payment"
+import type {
+  SubscriptionCheckoutSession,
+  VerifySubscriptionCheckoutInput,
+} from "../model/subscription-checkout"
 import {
   type SchoolRecurringSubscriptionRepository,
   schoolRecurringSubscriptionRepository,
@@ -116,10 +127,14 @@ export class SchoolRecurringSubscriptionService {
 
     const totalAmountPaise = plan.principalAmountPaise * studentCount
 
-    const customer = await createRazorpayCustomer({
+    const existingCustomerId =
+      await this.repository.findCustomerIdBySchoolId(schoolId)
+
+    const customer = await getOrCreateRazorpayCustomer({
       name: context.schoolName,
       email: billingEmail,
       schoolId,
+      existingCustomerId,
     })
 
     const subscription = await createRazorpaySubscription({
@@ -130,7 +145,13 @@ export class SchoolRecurringSubscriptionService {
       quantity: studentCount,
     })
 
-    const update = subscriptionEntityToUpdate(subscription)
+    const update = subscriptionEntityToSyncUpdate(subscription)
+    const schoolCode = await this.repository.findSchoolRouteCodeById(schoolId)
+    if (!schoolCode) {
+      throw new Error("School not found.")
+    }
+
+    const checkoutUrl = buildSubscriptionCheckoutUrl(schoolCode)
 
     const row = await this.repository.upsertFromRazorpay({
       schoolId,
@@ -143,28 +164,126 @@ export class SchoolRecurringSubscriptionService {
       studentCount,
       currency: plan.currency,
       planName: plan.planName,
-      authUrl: update.authUrl,
+      authUrl: checkoutUrl,
       currentPeriodStart: update.currentPeriodStart,
       currentPeriodEnd: update.currentPeriodEnd,
       nextChargeAt: update.nextChargeAt,
       cancelledAt: update.cancelledAt,
     })
 
-    if (input.sendEmail && subscription.short_url) {
+    if (input.sendEmail) {
       await this.sendSetupEmailIfEnabled({
         to: billingEmail,
         schoolName: context.schoolName,
-        authUrl: subscription.short_url,
+        checkoutUrl,
+        subscriptionId: subscription.id,
         amountLabel: formatAmountLabel(totalAmountPaise, plan.currency),
         planName: plan.planName,
       })
     }
 
     return {
-      authUrl: row.authUrl,
+      authUrl: checkoutUrl,
       razorpaySubscriptionId: row.razorpaySubscriptionId,
       status: row.status,
     }
+  }
+
+  async getCheckoutSession(
+    routeCode: string
+  ): Promise<SubscriptionCheckoutSession | null> {
+    if (!isRazorpayConfigured()) return null
+
+    const context =
+      await this.repository.findCheckoutContextByRouteCode(routeCode)
+    if (!context?.subscription) return null
+
+    const { keyId } = getRazorpayConfig()
+    const billingEmail = resolveBillingEmail(context.billingEmail)
+    const { subscription } = context
+
+    if (
+      subscription.status === "active" ||
+      subscription.status === "authenticated"
+    ) {
+      return {
+        schoolCode: context.schoolCode,
+        schoolName: context.schoolName,
+        planName: subscription.planName,
+        amountLabel: subscription.amountLabel,
+        subscriptionId: subscription.razorpaySubscriptionId,
+        keyId,
+        callbackUrl: buildSubscriptionCheckoutCompleteUrl(context.schoolCode),
+        prefill: {
+          name: context.schoolName,
+          email: billingEmail ?? "",
+        },
+        status: "completed",
+        statusMessage:
+          "This subscription authorization is already complete. Platform access will activate after the first successful payment is confirmed.",
+      }
+    }
+
+    if (
+      subscription.status === "cancelled" ||
+      subscription.status === "completed" ||
+      subscription.status === "expired"
+    ) {
+      return {
+        schoolCode: context.schoolCode,
+        schoolName: context.schoolName,
+        planName: subscription.planName,
+        amountLabel: subscription.amountLabel,
+        subscriptionId: subscription.razorpaySubscriptionId,
+        keyId,
+        callbackUrl: buildSubscriptionCheckoutCompleteUrl(context.schoolCode),
+        prefill: {
+          name: context.schoolName,
+          email: billingEmail ?? "",
+        },
+        status: "unavailable",
+        statusMessage: `This subscription is ${subscription.statusLabel.toLowerCase()} and cannot accept new authorization payments.`,
+      }
+    }
+
+    return {
+      schoolCode: context.schoolCode,
+      schoolName: context.schoolName,
+      planName: subscription.planName,
+      amountLabel: subscription.amountLabel,
+      subscriptionId: subscription.razorpaySubscriptionId,
+      keyId,
+      callbackUrl: buildSubscriptionCheckoutCompleteUrl(context.schoolCode),
+      prefill: {
+        name: context.schoolName,
+        email: billingEmail ?? "",
+      },
+      status: "ready",
+      statusMessage: null,
+    }
+  }
+
+  async verifyCheckoutPayment(
+    input: VerifySubscriptionCheckoutInput
+  ): Promise<void> {
+    const stored = await this.repository.findByRazorpaySubscriptionId(
+      input.razorpay_subscription_id
+    )
+    if (!stored) {
+      throw new Error("Subscription not found.")
+    }
+
+    const valid = verifyRazorpaySubscriptionPaymentSignature({
+      razorpayPaymentId: input.razorpay_payment_id,
+      razorpaySubscriptionId: input.razorpay_subscription_id,
+      razorpaySignature: input.razorpay_signature,
+    })
+
+    if (!valid) {
+      throw new Error("Payment verification failed.")
+    }
+
+    await this.syncRecurringSubscription(stored.schoolId)
   }
 
   async tryAutoStartForSchool(schoolId: string): Promise<void> {
@@ -238,7 +357,7 @@ export class SchoolRecurringSubscriptionService {
           snapshot.razorpaySubscriptionId,
           { cancelAtCycleEnd: true }
         )
-        const update = subscriptionEntityToUpdate(entity)
+        const update = subscriptionEntityToSyncUpdate(entity)
         await this.repository.updateByRazorpaySubscriptionId(
           snapshot.razorpaySubscriptionId,
           update
@@ -262,7 +381,7 @@ export class SchoolRecurringSubscriptionService {
       scheduleChangeAt,
     })
 
-    const update = subscriptionEntityToUpdate(entity)
+    const update = subscriptionEntityToSyncUpdate(entity)
     await this.repository.updateByRazorpaySubscriptionId(
       snapshot.razorpaySubscriptionId,
       update
@@ -286,7 +405,7 @@ export class SchoolRecurringSubscriptionService {
     const entity = await cancelRazorpaySubscription(
       existing.razorpaySubscriptionId
     )
-    const update = subscriptionEntityToUpdate(entity)
+    const update = subscriptionEntityToSyncUpdate(entity)
 
     await this.repository.updateByRazorpaySubscriptionId(
       existing.razorpaySubscriptionId,
@@ -318,6 +437,14 @@ export class SchoolRecurringSubscriptionService {
       snapshot.razorpaySubscriptionId
     )
     await this.applySubscriptionEntity(schoolId, entity, { sendEmail: false })
+
+    const schoolCode = await this.repository.findSchoolRouteCodeById(schoolId)
+    if (schoolCode) {
+      await this.repository.updateByRazorpaySubscriptionId(
+        snapshot.razorpaySubscriptionId,
+        { authUrl: buildSubscriptionCheckoutUrl(schoolCode) }
+      )
+    }
   }
 
   async handleSubscriptionWebhook(body: unknown): Promise<number> {
@@ -391,7 +518,7 @@ export class SchoolRecurringSubscriptionService {
     entity: ParsedSubscriptionWebhook["subscription"],
     _options: { sendEmail: boolean }
   ): Promise<void> {
-    const update = subscriptionEntityToUpdate(entity)
+    const update = subscriptionEntityToSyncUpdate(entity)
     const updated = await this.repository.updateByRazorpaySubscriptionId(
       entity.id,
       update
@@ -402,6 +529,7 @@ export class SchoolRecurringSubscriptionService {
       const studentCount =
         await this.paymentRepository.countStudentsForSchool(schoolId)
       const principalAmountPaise = billing.principalAmountPaise
+      const schoolCode = await this.repository.findSchoolRouteCodeById(schoolId)
       await this.repository.upsertFromRazorpay({
         schoolId,
         razorpaySubscriptionId: entity.id,
@@ -413,7 +541,7 @@ export class SchoolRecurringSubscriptionService {
         studentCount,
         currency: "INR",
         planName: billing.planName,
-        authUrl: update.authUrl,
+        authUrl: schoolCode ? buildSubscriptionCheckoutUrl(schoolCode) : null,
         currentPeriodStart: update.currentPeriodStart,
         currentPeriodEnd: update.currentPeriodEnd,
         nextChargeAt: update.nextChargeAt,
@@ -446,7 +574,8 @@ export class SchoolRecurringSubscriptionService {
   private async sendSetupEmailIfEnabled(payload: {
     to: string
     schoolName: string
-    authUrl: string
+    checkoutUrl: string
+    subscriptionId: string
     amountLabel: string | null
     planName: string
   }): Promise<void> {
@@ -457,12 +586,12 @@ export class SchoolRecurringSubscriptionService {
       to: payload.to,
       schoolName: payload.schoolName,
       kind: "setup",
-      transactionId: payload.authUrl,
+      transactionId: payload.subscriptionId,
       serviceName: payload.planName,
       amountLabel: payload.amountLabel,
       transactionDate: formatTransactionDate(new Date()),
       paymentMethod: null,
-      paymentUrl: payload.authUrl,
+      paymentUrl: payload.checkoutUrl,
       invoiceUrl: null,
     })
   }

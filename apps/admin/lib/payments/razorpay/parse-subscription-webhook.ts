@@ -62,9 +62,7 @@ export function parseRazorpaySubscriptionWebhook(
   }
 }
 
-export function subscriptionEntityToUpdate(
-  entity: RazorpaySubscriptionEntity
-): {
+type RecurringSubscriptionSyncUpdate = {
   status:
     | "CREATED"
     | "AUTHENTICATED"
@@ -74,12 +72,15 @@ export function subscriptionEntityToUpdate(
     | "CANCELLED"
     | "COMPLETED"
     | "EXPIRED"
-  authUrl: string | null
   currentPeriodStart: Date | null
   currentPeriodEnd: Date | null
   nextChargeAt: Date | null
   cancelledAt: Date | null
-} {
+}
+
+function mapSubscriptionEntityStatus(
+  entity: RazorpaySubscriptionEntity
+): RecurringSubscriptionSyncUpdate["status"] {
   const mapped = mapRazorpaySubscriptionStatus(entity.status)
   const statusMap = {
     created: "CREATED",
@@ -92,9 +93,16 @@ export function subscriptionEntityToUpdate(
     expired: "EXPIRED",
   } as const
 
+  return statusMap[mapped]
+}
+
+export function subscriptionEntityToSyncUpdate(
+  entity: RazorpaySubscriptionEntity
+): RecurringSubscriptionSyncUpdate {
+  const mapped = mapRazorpaySubscriptionStatus(entity.status)
+
   return {
-    status: statusMap[mapped],
-    authUrl: entity.short_url ?? null,
+    status: mapSubscriptionEntityStatus(entity),
     currentPeriodStart: unixToDate(entity.current_start),
     currentPeriodEnd: unixToDate(entity.current_end),
     nextChargeAt: unixToDate(entity.charge_at),
@@ -102,6 +110,15 @@ export function subscriptionEntityToUpdate(
       mapped === "cancelled" || mapped === "completed" || mapped === "expired"
         ? (unixToDate(entity.ended_at) ?? new Date())
         : null,
+  }
+}
+
+export function subscriptionEntityToUpdate(
+  entity: RazorpaySubscriptionEntity
+): RecurringSubscriptionSyncUpdate & { authUrl: string | null } {
+  return {
+    ...subscriptionEntityToSyncUpdate(entity),
+    authUrl: entity.short_url ?? null,
   }
 }
 

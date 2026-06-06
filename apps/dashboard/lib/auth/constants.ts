@@ -6,6 +6,8 @@ export const AUTH_COOKIE_MAX_AGE_DEFAULT_SEC = 60 * 60 * 24 * 7
 
 export const AUTH_COOKIE_MAX_AGE_REMEMBER_SEC = 60 * 60 * 24 * 30
 
+export const CHANGE_PASSWORD_PATH = "/auth/change-password"
+
 export const PUBLIC_PATH_PREFIXES = [
   "/auth",
   "/forgot-password",

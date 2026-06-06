@@ -112,7 +112,7 @@ export function ClassFormDialog({
             {isEdit
               ? "Rename this class (grade) for its school."
               : isCatalog
-                ? "Add a grade (e.g. 6, 10). It becomes available across schools."
+                ? "Add a grade (e.g. 6, 10) to the platform catalog. Assign it to schools from each school's Classes tab."
                 : "Add a grade (e.g. 6, 10) to a school. Sections are managed inside the class."}
           </DialogDescription>
         </DialogHeader>

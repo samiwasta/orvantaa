@@ -7,7 +7,12 @@ import { Eye, EyeOff, Loader2, LockKeyhole } from "lucide-react"
 import type { ResetPasswordController } from "../controller/use-reset-password-controller"
 import { AuthMarketingColumn } from "./auth-marketing-column"
 
-export type ResetPasswordViewProps = ResetPasswordController
+export type ResetPasswordViewProps = ResetPasswordController & {
+  title?: string
+  description?: string
+  submitLabel?: string
+  pendingLabel?: string
+}
 
 export function ResetPasswordView({
   showPassword,
@@ -20,6 +25,10 @@ export function ResetPasswordView({
   onSubmit,
   isResettingPassword,
   canSubmit,
+  title = "Set a new password",
+  description = "Enter your new password",
+  submitLabel = "Reset Password",
+  pendingLabel = "Resetting password...",
 }: ResetPasswordViewProps) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F3F3FF] p-4 lg:p-6 xl:p-8">
@@ -30,10 +39,10 @@ export function ResetPasswordView({
           <div className="mx-auto w-full max-w-md space-y-6 sm:space-y-8 md:space-y-8 lg:space-y-12">
             <div className="space-y-1 text-center sm:space-y-1.5">
               <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-[1.35rem] lg:text-2xl">
-                Set a new password
+                {title}
               </h1>
               <p className="text-sm text-muted-foreground lg:text-base">
-                Enter your new password
+                {description}
               </p>
             </div>
 
@@ -161,10 +170,10 @@ export function ResetPasswordView({
                       className="size-4 shrink-0 animate-spin lg:size-5"
                       aria-hidden
                     />
-                    Resetting password...
+                    {pendingLabel}
                   </span>
                 ) : (
-                  "Reset Password"
+                  submitLabel
                 )}
               </Button>
             </form>

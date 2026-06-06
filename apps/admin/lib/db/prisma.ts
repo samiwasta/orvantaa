@@ -7,7 +7,16 @@ const globalForPrisma = globalThis as unknown as {
   prismaRevision: string | undefined
 }
 
-const PRISMA_CLIENT_REVISION = "20260606190000_platform_classes_inactive_school_default"
+const PRISMA_CLIENT_REVISION =
+  "20260606200000_platform_class_delegate_validation"
+
+const REQUIRED_PRISMA_DELEGATES = [
+  "schoolContact",
+  "schoolRecurringSubscription",
+  "platformSettings",
+  "adminNotification",
+  "platformClass",
+] as const
 
 function createPrismaClient(): PrismaClient {
   return new PrismaClient({
@@ -18,24 +27,28 @@ function createPrismaClient(): PrismaClient {
   })
 }
 
-const REQUIRED_PRISMA_DELEGATES = [
-  "schoolContact",
-  "schoolRecurringSubscription",
-  "platformSettings",
-  "adminNotification",
-  "platformClass",
-] as const
+function clientHasRequiredDelegates(client: PrismaClient): boolean {
+  return REQUIRED_PRISMA_DELEGATES.every((key) => {
+    const delegate = client[key as keyof PrismaClient]
+    return (
+      delegate != null &&
+      typeof delegate === "object" &&
+      "findMany" in delegate &&
+      typeof (delegate as { findMany?: unknown }).findMany === "function"
+    )
+  })
+}
 
-function prismaClientIsCurrent(client: PrismaClient): boolean {
+function cachedClientIsCurrent(client: PrismaClient): boolean {
   if (globalForPrisma.prismaRevision !== PRISMA_CLIENT_REVISION) {
     return false
   }
-  return REQUIRED_PRISMA_DELEGATES.every((key) => key in client)
+  return clientHasRequiredDelegates(client)
 }
 
 function getPrismaClient(): PrismaClient {
   const cached = globalForPrisma.prisma
-  if (cached && prismaClientIsCurrent(cached)) {
+  if (cached && cachedClientIsCurrent(cached)) {
     return cached
   }
 
@@ -44,11 +57,24 @@ function getPrismaClient(): PrismaClient {
   }
 
   const client = createPrismaClient()
-  if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.prisma = client
-    globalForPrisma.prismaRevision = PRISMA_CLIENT_REVISION
+  if (!clientHasRequiredDelegates(client)) {
+    throw new Error(
+      "Prisma client is out of date (missing required models). Run `pnpm db:generate` in apps/admin, then restart the dev server."
+    )
   }
+
+  globalForPrisma.prisma = client
+  globalForPrisma.prismaRevision = PRISMA_CLIENT_REVISION
   return client
 }
 
-export const prisma = getPrismaClient()
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop, receiver) {
+    const client = getPrismaClient()
+    const value = Reflect.get(client, prop, receiver)
+    if (typeof value === "function") {
+      return value.bind(client)
+    }
+    return value
+  },
+})

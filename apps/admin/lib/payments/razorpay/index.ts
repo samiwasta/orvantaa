@@ -8,6 +8,7 @@ export { getRazorpayPaymentsClient, parseRazorpayWebhookPayments } from "./clien
 export {
   cancelRazorpaySubscription,
   createRazorpayCustomer,
+  getOrCreateRazorpayCustomer,
   createRazorpayPlan,
   createRazorpaySubscription,
   fetchRazorpaySubscription,
@@ -17,8 +18,10 @@ export type { RazorpaySubscriptionEntity } from "./subscriptions"
 export {
   parseRazorpaySubscriptionWebhook,
   schoolStatusFromRecurringStatus,
+  subscriptionEntityToSyncUpdate,
   subscriptionEntityToUpdate,
 } from "./parse-subscription-webhook"
+export { verifyRazorpaySubscriptionPaymentSignature } from "./verify-subscription-payment"
 export type { ParsedSubscriptionWebhook } from "./parse-subscription-webhook"
 export type {
   RazorpayPaymentRecord,

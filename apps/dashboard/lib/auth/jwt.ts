@@ -11,6 +11,7 @@ export type AccessTokenPayload = {
   sub: string
   username: string
   role: AppUserRole
+  mustChangePassword?: boolean
 }
 
 function getJwtSecret(): Uint8Array {
@@ -44,6 +45,7 @@ export async function signAccessToken(
   return new SignJWT({
     username: payload.username,
     role: payload.role,
+    ...(payload.mustChangePassword ? { mcp: true } : {}),
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(payload.sub)
@@ -69,7 +71,12 @@ export async function verifyAccessToken(
     throw new Error("Invalid token payload")
   }
 
-  return { sub, username, role }
+  return {
+    sub,
+    username,
+    role,
+    mustChangePassword: payload.mcp === true ? true : undefined,
+  }
 }
 
 export function getTokenMaxAgeSeconds(rememberMe = false): number {

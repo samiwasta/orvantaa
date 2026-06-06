@@ -26,7 +26,7 @@ export default function StudentCredentialsEmail({
   loginUrl = "https://app.orvantaa.com/auth",
   username = "student",
   password = "example-password",
-  studentCode = "STU001",
+  studentCode = "ORVNT0001",
 }: StudentCredentialsEmailProps) {
   const logoBaseUrl = "https://app.orvantaa.com"
 

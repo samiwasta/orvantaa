@@ -22,6 +22,8 @@ import { useEffect, useState } from "react"
 
 import { useActionRunner } from "@/lib/actions/use-action-runner"
 
+import type { UserGender } from "@/features/user/model/user"
+
 import type {
   SchoolSectionOption,
   SchoolStudentListItem,
@@ -55,6 +57,7 @@ export function SchoolStudentFormDialog({
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
   const [sectionId, setSectionId] = useState("")
+  const [gender, setGender] = useState<UserGender>("female")
   const [password, setPassword] = useState("")
 
   const { run, pending, fieldErrors, formError, reset } = useActionRunner(
@@ -81,6 +84,7 @@ export function SchoolStudentFormDialog({
     setEmail(student?.email ?? "")
     setPhone(student?.phone ?? "")
     setSectionId(student?.sectionId ?? sectionOptions[0]?.id ?? "")
+    setGender(student?.gender ?? "female")
     setPassword("")
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, student, sectionOptions])
@@ -93,6 +97,7 @@ export function SchoolStudentFormDialog({
       email,
       phone,
       sectionId,
+      gender,
       ...(isEdit
         ? { password: password.trim() === "" ? undefined : password }
         : {}),
@@ -140,6 +145,23 @@ export function SchoolStudentFormDialog({
               <FieldError>{fieldErrors.lastName?.[0]}</FieldError>
             </Field>
           </div>
+
+          <Field>
+            <FieldLabel required>Gender</FieldLabel>
+            <Select
+              value={gender}
+              onValueChange={(value) => setGender(value as UserGender)}
+            >
+              <SelectTrigger id="student-gender">
+                <SelectValue placeholder="Select gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="female">Female</SelectItem>
+                <SelectItem value="male">Male</SelectItem>
+              </SelectContent>
+            </Select>
+            <FieldError>{fieldErrors.gender?.[0]}</FieldError>
+          </Field>
 
           <Field>
             <FieldLabel required>Class & section</FieldLabel>

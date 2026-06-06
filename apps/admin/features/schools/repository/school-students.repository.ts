@@ -1,6 +1,7 @@
-import { type Prisma,UserRole } from "@prisma/client"
+import { type Prisma, UserRole } from "@prisma/client"
 
-import { formatClassDisplayName } from "@/features/classes/model/class-list-item"
+import { formatClassDisplayName, parseClassLevel } from "@/features/classes/model/class-list-item"
+import { mapPrismaGenderToUserGender, mapUserGenderToPrismaGender } from "@/features/user/model/user"
 import { prisma } from "@/lib/db"
 
 import {
@@ -8,6 +9,7 @@ import {
   formatStudentDisplayCode,
   formatStudentFullName,
   mapClassTab,
+  compareClassTabs,
   mapPrismaMailStatus,
   type SchoolClassTab,
   type SchoolSectionOption,
@@ -15,6 +17,10 @@ import {
   type SchoolStudentListItem,
   type SchoolSyllabusClassRow,
 } from "../model/school-student-list-item"
+import {
+  formatOrvntStudentCode,
+  maxOrvntStudentCodeSequence,
+} from "../model/school-student-code"
 
 function mapStudentRow(row: {
   id: string
@@ -24,6 +30,7 @@ function mapStudentRow(row: {
   studentCode: string | null
   firstName: string
   lastName: string
+  gender: "MALE" | "FEMALE"
   mailStatus: "NOT_SENT" | "SENT"
   section: {
     id: string
@@ -47,6 +54,7 @@ function mapStudentRow(row: {
     sectionName: row.section?.name ?? null,
     email: row.email,
     phone: row.phone,
+    gender: mapPrismaGenderToUserGender(row.gender),
     username: row.username,
     mailStatus: mapPrismaMailStatus(row.mailStatus),
     mailStatusLabel: formatMailStatusLabel(mapPrismaMailStatus(row.mailStatus)),
@@ -69,6 +77,7 @@ export class SchoolStudentsRepository {
         studentCode: true,
         firstName: true,
         lastName: true,
+        gender: true,
         mailStatus: true,
         section: {
           select: {
@@ -86,17 +95,15 @@ export class SchoolStudentsRepository {
   async findClassTabs(schoolId: string): Promise<SchoolClassTab[]> {
     const rows = await prisma.class.findMany({
       where: { schoolId },
-      orderBy: { name: "asc" },
       select: { id: true, name: true },
     })
 
-    return rows.map((row) => mapClassTab(row.name, row.id))
+    return rows.map((row) => mapClassTab(row.name, row.id)).sort(compareClassTabs)
   }
 
   async findSectionOptions(schoolId: string): Promise<SchoolSectionOption[]> {
     const rows = await prisma.section.findMany({
       where: { class: { schoolId } },
-      orderBy: [{ class: { name: "asc" } }, { name: "asc" }],
       select: {
         id: true,
         name: true,
@@ -104,7 +111,18 @@ export class SchoolStudentsRepository {
       },
     })
 
-    return rows.map((row) => ({
+    const sortedRows = [...rows].sort((a, b) => {
+      const levelA = parseClassLevel(a.class.name)
+      const levelB = parseClassLevel(b.class.name)
+      if (levelA !== levelB) return levelA - levelB
+      const classNameOrder = a.class.name.localeCompare(b.class.name, undefined, {
+        numeric: true,
+      })
+      if (classNameOrder !== 0) return classNameOrder
+      return a.name.localeCompare(b.name, undefined, { numeric: true })
+    })
+
+    return sortedRows.map((row) => ({
       id: row.id,
       name: row.name,
       classId: row.class.id,
@@ -137,25 +155,40 @@ export class SchoolStudentsRepository {
     return count > 0
   }
 
-  async findUniqueStudentCode(
-    base: string,
+  async getMaxOrvntStudentCodeSequence(): Promise<number> {
+    const rows = await prisma.$queryRaw<Array<{ max: bigint | number | null }>>`
+      SELECT MAX(CAST(SUBSTRING(UPPER("studentCode") FROM 6) AS INTEGER)) AS max
+      FROM users
+      WHERE UPPER("studentCode") ~ '^ORVNT[0-9]+$'
+    `
+
+    const value = rows[0]?.max
+    if (value === null || value === undefined) return 0
+    return typeof value === "bigint" ? Number(value) : value
+  }
+
+  async allocateStudentCode(
     reserved: ReadonlySet<string> = new Set()
   ): Promise<string> {
-    const normalized = base.replace(/[^A-Z0-9]/g, "").toUpperCase()
-    const root = normalized.length >= 3 ? normalized : "STU"
-    let candidate = root
-    let suffix = 1
+    const dbMax = await this.getMaxOrvntStudentCodeSequence()
+    let next = Math.max(dbMax, maxOrvntStudentCodeSequence(reserved)) + 1
 
     while (true) {
-      if (!reserved.has(candidate)) {
-        const existing = await prisma.user.findFirst({
-          where: { studentCode: candidate },
-          select: { id: true },
-        })
-        if (!existing) return candidate
+      const candidate = formatOrvntStudentCode(next)
+      if (reserved.has(candidate)) {
+        next += 1
+        continue
       }
-      candidate = `${root}${suffix}`
-      suffix += 1
+
+      const existing = await prisma.user.findFirst({
+        where: {
+          studentCode: { equals: candidate, mode: "insensitive" },
+        },
+        select: { id: true },
+      })
+      if (!existing) return candidate
+
+      next += 1
     }
   }
 
@@ -196,6 +229,7 @@ export class SchoolStudentsRepository {
         phone: input.phone ?? null,
         firstName: input.firstName.trim(),
         lastName: input.lastName?.trim() ?? "",
+        gender: mapUserGenderToPrismaGender(input.gender),
         role: UserRole.STUDENT,
         sectionId: input.sectionId,
         mailStatus: "NOT_SENT",
@@ -222,6 +256,7 @@ export class SchoolStudentsRepository {
             phone: entry.input.phone ?? null,
             firstName: entry.input.firstName.trim(),
             lastName: entry.input.lastName?.trim() ?? "",
+            gender: mapUserGenderToPrismaGender(entry.input.gender),
             role: UserRole.STUDENT,
             sectionId: entry.input.sectionId,
             mailStatus: "NOT_SENT",
@@ -241,6 +276,7 @@ export class SchoolStudentsRepository {
       phone: input.phone ?? null,
       firstName: input.firstName.trim(),
       lastName: input.lastName?.trim() ?? "",
+      gender: mapUserGenderToPrismaGender(input.gender),
       section: { connect: { id: input.sectionId } },
     }
 
@@ -313,6 +349,7 @@ export class SchoolStudentsRepository {
       data: {
         passwordHash,
         mailStatus: "SENT",
+        mustChangePassword: true,
       },
     })
   }

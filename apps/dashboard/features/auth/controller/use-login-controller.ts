@@ -68,6 +68,7 @@ export function useLoginController() {
           const data = (await response.json()) as {
             message?: string
             fieldErrors?: Record<string, string[]>
+            mustChangePassword?: boolean
           }
 
           if (!response.ok) {
@@ -92,7 +93,9 @@ export function useLoginController() {
             return
           }
 
-          router.push("/dashboard")
+          router.push(
+            data.mustChangePassword ? "/auth/change-password" : "/dashboard"
+          )
           router.refresh()
         } catch {
           setFormError("Unable to reach the server. Please try again.")

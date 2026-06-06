@@ -43,7 +43,10 @@ export async function POST(request: Request) {
       rememberMe
     )
 
-    const response = NextResponse.json({ user: result.user })
+    const response = NextResponse.json({
+      user: result.user,
+      mustChangePassword: result.mustChangePassword,
+    })
     setAuthCookie(response, result.accessToken, rememberMe)
     return response
   } catch (error) {

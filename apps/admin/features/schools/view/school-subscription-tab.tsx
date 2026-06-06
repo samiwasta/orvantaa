@@ -332,7 +332,7 @@ export function SchoolSubscriptionTab({
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Open setup link
+                  Complete setup
                   <ExternalLink className="size-3.5" aria-hidden />
                 </Link>
               </Button>
@@ -344,7 +344,7 @@ export function SchoolSubscriptionTab({
                 onClick={() => copyLink(recurringSubscription.authUrl!)}
               >
                 <Copy className="size-3.5" aria-hidden />
-                Copy setup link
+                Copy setup page link
               </Button>
             </div>
           ) : null}
@@ -361,7 +361,7 @@ export function SchoolSubscriptionTab({
                     }
                   />
                   <Label htmlFor="send-setup-email" className="text-sm font-normal">
-                    Email mandate setup link to billing address
+                    Email setup page link to billing address
                   </Label>
                 </div>
                 <Button

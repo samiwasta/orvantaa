@@ -73,6 +73,7 @@ export class AuthService {
         sub: user.id,
         username: user.username,
         role: user.role,
+        mustChangePassword: user.mustChangePassword,
       },
       rememberMe
     )
@@ -80,6 +81,7 @@ export class AuthService {
     return {
       accessToken,
       user: toSafeAuthUser(user),
+      mustChangePassword: user.mustChangePassword,
     }
   }
 
@@ -118,8 +120,25 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 10)
-    await this.authUsers.updatePasswordHash(token.userId, passwordHash)
+    await this.authUsers.updatePasswordHash(token.userId, passwordHash, {
+      clearMustChangePassword: true,
+    })
     await this.consumePasswordResetToken(token.id)
+  }
+
+  async changePassword(userId: string, newPassword: string): Promise<void> {
+    const user = await this.authUsers.findById(userId)
+    if (user?.role !== "student") {
+      throw new Error("Unauthorized")
+    }
+    if (!user.mustChangePassword) {
+      throw new Error("Password change is not required.")
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10)
+    await this.authUsers.updatePasswordHash(userId, passwordHash, {
+      clearMustChangePassword: true,
+    })
   }
 }
 

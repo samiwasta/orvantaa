@@ -64,7 +64,7 @@ const copyByKind: Record<
   setup: {
     preview: "Set up your Orvantaa monthly subscription",
     heading: "Complete subscription setup",
-    body: "Your school has been enrolled in automatic monthly billing. Complete the one-time authorization so Razorpay can charge your subscription each month.",
+    body: "Your school has been enrolled in automatic monthly billing. Open the setup page below to authorize recurring payments through Razorpay Standard Checkout.",
     cta: "Complete setup",
   },
 }

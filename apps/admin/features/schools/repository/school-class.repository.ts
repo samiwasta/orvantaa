@@ -8,12 +8,12 @@ import type { BoardClassOption } from "../model/board-class-option"
 
 export class SchoolClassRepository {
   async findBoardClassOptions(
-    boardId: string,
+    _boardId: string,
     schoolId: string
   ): Promise<BoardClassOption[]> {
-    const [boardClassRows, schoolClassRows] = await Promise.all([
-      prisma.class.findMany({
-        where: { school: { boardId } },
+    const [platformClasses, schoolClassRows] = await Promise.all([
+      prisma.platformClass.findMany({
+        orderBy: { name: "asc" },
         select: { name: true },
       }),
       prisma.class.findMany({
@@ -26,27 +26,17 @@ export class SchoolClassRepository {
       schoolClassRows.map((row) => row.name.trim().toLowerCase())
     )
 
-    const byNormalized = new Map<string, string>()
-    for (const row of boardClassRows) {
-      const trimmed = row.name.trim()
-      if (!trimmed) continue
-      const key = trimmed.toLowerCase()
-      if (!byNormalized.has(key)) {
-        byNormalized.set(key, trimmed)
-      }
-    }
-
-    return [...byNormalized.values()]
-      .filter((name) => !existingNames.has(name.toLowerCase()))
+    return platformClasses
+      .filter((row) => !existingNames.has(row.name.trim().toLowerCase()))
       .sort((a, b) => {
-        const levelA = parseClassLevel(a)
-        const levelB = parseClassLevel(b)
+        const levelA = parseClassLevel(a.name)
+        const levelB = parseClassLevel(b.name)
         if (levelA !== levelB) return levelA - levelB
-        return a.localeCompare(b, undefined, { numeric: true })
+        return a.name.localeCompare(b.name, undefined, { numeric: true })
       })
-      .map((name) => ({
-        name,
-        displayName: formatClassDisplayName(name),
+      .map((row) => ({
+        name: row.name,
+        displayName: formatClassDisplayName(row.name),
       }))
   }
 

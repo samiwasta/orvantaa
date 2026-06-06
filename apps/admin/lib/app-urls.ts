@@ -45,3 +45,13 @@ export function buildPasswordResetUrl(
     ? buildStudentPasswordResetUrl(rawToken)
     : buildAdminPasswordResetUrl(rawToken)
 }
+
+export function buildSubscriptionCheckoutUrl(schoolCode: string): string {
+  const encoded = encodeURIComponent(schoolCode.trim())
+  return `${getAdminAppUrl()}/subscribe/${encoded}`
+}
+
+export function buildSubscriptionCheckoutCompleteUrl(schoolCode: string): string {
+  const encoded = encodeURIComponent(schoolCode.trim())
+  return `${getAdminAppUrl()}/subscribe/${encoded}/complete`
+}

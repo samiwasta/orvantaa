@@ -33,3 +33,9 @@ export function isStudentSession(
 ): session is AccessTokenPayload {
   return session?.role === "student"
 }
+
+export function sessionMustChangePassword(
+  session: AccessTokenPayload | null
+): boolean {
+  return session?.mustChangePassword === true
+}

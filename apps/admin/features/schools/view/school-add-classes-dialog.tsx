@@ -72,19 +72,19 @@ export function SchoolAddClassesDialog({
         <DialogHeader>
           <DialogTitle>Add class</DialogTitle>
           <DialogDescription>
-            Select grades linked to {boardName} that are not yet added to{" "}
+            Select grades from the platform catalog that are not yet assigned to{" "}
             {schoolName}.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <fieldset className="flex flex-col gap-2">
-            <legend className="sr-only">Classes for {boardName}</legend>
+            <legend className="sr-only">Platform classes</legend>
             {options.length === 0 ? (
               <p className="rounded-lg border border-dashed border-border/80 bg-muted/15 px-4 py-6 text-center text-sm text-muted-foreground">
-                No board-linked classes are available to add. Grades appear here
-                once they exist on another school under {boardName}, or add a
-                class from the Classes page first.
+                No catalog classes are available to assign. Create grades on the
+                Classes page first, or use Custom class to add one only to this
+                school.
               </p>
             ) : (
               <div className="flex max-h-64 flex-col gap-2 overflow-y-auto pr-1">

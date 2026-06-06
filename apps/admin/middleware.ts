@@ -71,6 +71,10 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    if (pathname.startsWith("/subscribe")) {
+      return NextResponse.next()
+    }
+
     if (!isAdminSession(session)) {
       return forbiddenAuthResponse(request, { clearCookie: true, token })
     }

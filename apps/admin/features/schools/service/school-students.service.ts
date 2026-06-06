@@ -1,7 +1,10 @@
 import bcrypt from "bcryptjs"
 
 import {
-  buildStudentCodeBase,
+  formatOrvntStudentCode,
+  maxOrvntStudentCodeSequence,
+} from "../model/school-student-code"
+import {
   type CsvStudentRow,
   csvStudentRowSchema,
   generateRandomPassword,
@@ -77,8 +80,7 @@ export class SchoolStudentsService {
       throw new Error("Selected section does not belong to this school.")
     }
 
-    const codeBase = buildStudentCodeBase(input.firstName, input.lastName ?? "")
-    const studentCode = await this.repository.findUniqueStudentCode(codeBase)
+    const studentCode = await this.repository.allocateStudentCode()
     const usernameBase =
       input.email.split("@")[0]?.toLowerCase() ?? studentCode.toLowerCase()
     const username = await this.repository.findUniqueUsername(usernameBase)
@@ -184,6 +186,8 @@ export class SchoolStudentsService {
     }> = []
     const reservedUsernames = new Set<string>()
     const reservedStudentCodes = new Set<string>()
+    let nextStudentSequence =
+      (await this.repository.getMaxOrvntStudentCodeSequence()) + 1
 
     for (let i = 0; i < validatedRows.length; i += 1) {
       const row = validatedRows[i]!
@@ -199,12 +203,18 @@ export class SchoolStudentsService {
         throw new Error(`Row ${i + 2}: Section does not belong to this school.`)
       }
 
-      const codeBase = buildStudentCodeBase(row.firstName, row.lastName)
-      const studentCode = await this.repository.findUniqueStudentCode(
-        codeBase,
-        reservedStudentCodes
+      nextStudentSequence = Math.max(
+        nextStudentSequence,
+        maxOrvntStudentCodeSequence(reservedStudentCodes) + 1
       )
+
+      let studentCode = formatOrvntStudentCode(nextStudentSequence)
+      while (reservedStudentCodes.has(studentCode)) {
+        nextStudentSequence += 1
+        studentCode = formatOrvntStudentCode(nextStudentSequence)
+      }
       reservedStudentCodes.add(studentCode)
+      nextStudentSequence += 1
 
       const usernameBase = row.email.split("@")[0]?.toLowerCase() ?? "student"
       const username = await this.repository.findUniqueUsername(
@@ -224,6 +234,7 @@ export class SchoolStudentsService {
           phone: row.phone,
           studentCode,
           sectionId,
+          gender: "female",
         },
         passwordHash,
         username,

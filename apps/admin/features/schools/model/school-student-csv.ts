@@ -67,13 +67,6 @@ function parseCsvLine(line: string): string[] {
   return cells
 }
 
-export function buildStudentCodeBase(firstName: string, lastName: string): string {
-  const first = firstName.replace(/[^a-zA-Z0-9]/g, "").slice(0, 4).toUpperCase()
-  const last = (lastName ?? "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 4).toUpperCase()
-  const combined = `${first}${last}`.replace(/[^A-Z0-9]/g, "")
-  return (combined.length >= 3 ? combined : `STU${combined}`).slice(0, 12)
-}
-
 export function generateRandomPassword(length = 12): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"
   const bytes = randomBytes(length)
