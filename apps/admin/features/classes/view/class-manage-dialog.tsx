@@ -16,28 +16,39 @@ import { useEffect, useState } from "react"
 import { useActionRunner } from "@/lib/actions/use-action-runner"
 
 import type { ClassListItem } from "../model/class-list-item"
-import { updateClassAction } from "../server/actions"
+import { renameClassCatalogAction, updateClassAction } from "../server/actions"
 
 type ClassManageDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   classItem: ClassListItem | null
+  catalogMode?: boolean
 }
 
 export function ClassManageDialog({
   open,
   onOpenChange,
   classItem,
+  catalogMode = false,
 }: ClassManageDialogProps) {
   const [name, setName] = useState("")
 
-  const { run: runUpdate, pending, fieldErrors, formError, reset } = useActionRunner(
-    updateClassAction,
-    {
-      successMessage: "Class updated",
-      onSuccess: () => onOpenChange(false),
-    }
-  )
+  const catalogRunner = useActionRunner(renameClassCatalogAction, {
+    successMessage: "Class updated",
+    onSuccess: () => onOpenChange(false),
+  })
+
+  const schoolRunner = useActionRunner(updateClassAction, {
+    successMessage: "Class updated",
+    onSuccess: () => onOpenChange(false),
+  })
+
+  const pending = catalogMode ? catalogRunner.pending : schoolRunner.pending
+  const fieldErrors = catalogMode
+    ? catalogRunner.fieldErrors
+    : schoolRunner.fieldErrors
+  const formError = catalogMode ? catalogRunner.formError : schoolRunner.formError
+  const reset = catalogMode ? catalogRunner.reset : schoolRunner.reset
 
   useEffect(() => {
     if (!open) return
@@ -49,7 +60,16 @@ export function ClassManageDialog({
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     if (!classItem) return
-    runUpdate(classItem.id, name)
+
+    if (catalogMode) {
+      catalogRunner.run({
+        currentName: classItem.className,
+        name,
+      })
+      return
+    }
+
+    schoolRunner.run(classItem.id, name)
   }
 
   return (
@@ -57,7 +77,11 @@ export function ClassManageDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit class</DialogTitle>
-          <DialogDescription>Update the class name.</DialogDescription>
+          <DialogDescription>
+            {catalogMode
+              ? "Rename this grade across all schools that use it."
+              : "Update the class name."}
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

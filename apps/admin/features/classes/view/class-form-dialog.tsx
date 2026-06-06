@@ -27,13 +27,18 @@ import type {
   ClassListItem,
   SchoolOption,
 } from "../model/class-list-item"
-import { createClassAction, updateClassAction } from "../server/actions"
+import {
+  createClassAction,
+  createClassCatalogAction,
+  updateClassAction,
+} from "../server/actions"
 
 type ClassFormDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   classItem?: ClassListItem | null
-  schoolOptions: SchoolOption[]
+  mode?: "school" | "catalog"
+  schoolOptions?: SchoolOption[]
   defaultSchoolId?: string
   defaultSchoolName?: string
   revalidateSchoolCode?: string
@@ -43,29 +48,36 @@ export function ClassFormDialog({
   open,
   onOpenChange,
   classItem,
-  schoolOptions,
+  mode = "school",
+  schoolOptions = [],
   defaultSchoolId,
   defaultSchoolName,
   revalidateSchoolCode,
 }: ClassFormDialogProps) {
   const isEdit = Boolean(classItem)
-  const schoolLocked = Boolean(defaultSchoolId && !isEdit)
+  const isCatalog = mode === "catalog"
+  const schoolLocked = Boolean(defaultSchoolId && !isEdit && !isCatalog)
 
   const [schoolId, setSchoolId] = useState("")
   const [name, setName] = useState("")
 
   const { run, pending, fieldErrors, formError, reset } = useActionRunner<
-    [ClassInput] | [string, string],
+    [ClassInput] | [string, string] | [{ name: string }],
     undefined
   >(
-    ((...args: unknown[]) =>
-      isEdit
-        ? updateClassAction(
-            args[0] as string,
-            args[1] as string,
-            revalidateSchoolCode
-          )
-        : createClassAction(args[0] as ClassInput, revalidateSchoolCode)) as never,
+    ((...args: unknown[]) => {
+      if (isEdit) {
+        return updateClassAction(
+          args[0] as string,
+          args[1] as string,
+          revalidateSchoolCode
+        )
+      }
+      if (isCatalog) {
+        return createClassCatalogAction(args[0])
+      }
+      return createClassAction(args[0] as ClassInput, revalidateSchoolCode)
+    }) as never,
     {
       successMessage: isEdit ? "Class updated" : "Class created",
       onSuccess: () => onOpenChange(false),
@@ -84,6 +96,8 @@ export function ClassFormDialog({
     event.preventDefault()
     if (isEdit && classItem) {
       run(classItem.id, name)
+    } else if (isCatalog) {
+      run({ name })
     } else {
       run({ schoolId, name })
     }
@@ -97,22 +111,28 @@ export function ClassFormDialog({
           <DialogDescription>
             {isEdit
               ? "Rename this class (grade) for its school."
-              : "Add a grade (e.g. 6, 10) to a school. Sections are managed inside the class."}
+              : isCatalog
+                ? "Add a grade (e.g. 6, 10). It becomes available across schools."
+                : "Add a grade (e.g. 6, 10) to a school. Sections are managed inside the class."}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {isEdit ? (
+          {!isCatalog && isEdit ? (
             <Field>
               <FieldLabel>School</FieldLabel>
               <Input value={classItem?.schoolName ?? ""} disabled />
             </Field>
-          ) : schoolLocked ? (
+          ) : null}
+
+          {!isCatalog && !isEdit && schoolLocked ? (
             <Field>
               <FieldLabel>School</FieldLabel>
               <Input value={defaultSchoolName ?? ""} disabled />
             </Field>
-          ) : (
+          ) : null}
+
+          {!isCatalog && !isEdit && !schoolLocked ? (
             <Field>
               <FieldLabel required>School</FieldLabel>
               <Select value={schoolId} onValueChange={setSchoolId}>
@@ -129,7 +149,7 @@ export function ClassFormDialog({
               </Select>
               <FieldError>{fieldErrors.schoolId?.[0]}</FieldError>
             </Field>
-          )}
+          ) : null}
 
           <Field>
             <FieldLabel htmlFor="class-name" required>

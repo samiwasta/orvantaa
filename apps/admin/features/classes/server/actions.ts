@@ -12,6 +12,8 @@ import {
 } from "@/lib/actions/action-result"
 
 import {
+  classCatalogCreateSchema,
+  classCatalogRenameSchema,
   classInputSchema,
   sectionInputSchema,
 } from "../model/class-list-item"
@@ -29,6 +31,72 @@ function revalidateClassPaths(schoolCode?: string) {
   if (schoolCode) {
     revalidatePath(schoolDetailHref(schoolCode))
     revalidatePath("/schools")
+  }
+}
+
+export async function createClassCatalogAction(
+  raw: unknown
+): Promise<ActionResult<undefined>> {
+  const parsed = parseInput(classCatalogCreateSchema, raw)
+  if (!parsed.success) return parsed.result
+
+  try {
+    await classService.createCatalogClass(parsed.data.name)
+    revalidateClassPaths()
+    return actionOk(undefined, "Class created")
+  } catch (error) {
+    if (isUniqueError(error)) {
+      return actionError("This class already exists.")
+    }
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Could not create the class. Please try again."
+    return actionError(message)
+  }
+}
+
+export async function renameClassCatalogAction(
+  raw: unknown
+): Promise<ActionResult<undefined>> {
+  const parsed = parseInput(classCatalogRenameSchema, raw)
+  if (!parsed.success) return parsed.result
+
+  try {
+    await classService.renameCatalogClass(
+      parsed.data.currentName,
+      parsed.data.name
+    )
+    revalidateClassPaths()
+    return actionOk(undefined, "Class updated")
+  } catch (error) {
+    if (isUniqueError(error)) {
+      return actionError("A school already has a class with that name.")
+    }
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Could not update the class. Please try again."
+    return actionError(message)
+  }
+}
+
+export async function deleteClassCatalogAction(
+  name: string
+): Promise<ActionResult<{ name: string }>> {
+  const trimmed = name?.trim()
+  if (!trimmed) return actionError("Missing class name.")
+
+  try {
+    await classService.deleteCatalogClass(trimmed)
+    revalidateClassPaths()
+    return actionOk({ name: trimmed }, "Class deleted")
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Could not delete the class. Please try again."
+    return actionError(message)
   }
 }
 

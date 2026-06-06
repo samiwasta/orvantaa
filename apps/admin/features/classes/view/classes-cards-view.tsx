@@ -10,18 +10,19 @@ import { ConfirmDialog } from "@/features/shared/view/confirm-dialog"
 import { useActionRunner } from "@/lib/actions/use-action-runner"
 
 import {
+  aggregateCatalogClasses,
   type ClassListItem,
-  compareClassListItems,
-  type SchoolOption,
+  compareCatalogClassItems,
 } from "../model/class-list-item"
 import { filterClasses } from "../model/classes-filters"
-import { deleteClassAction } from "../server/actions"
+import {
+  deleteClassCatalogAction,
+} from "../server/actions"
 import { ClassFormDialog } from "./class-form-dialog"
 import { ClassManageDialog } from "./class-manage-dialog"
 
 type ClassesCardsViewProps = {
   classes: ClassListItem[]
-  schoolOptions: SchoolOption[]
 }
 
 function ClassCard({
@@ -89,18 +90,20 @@ function ClassCard({
   )
 }
 
-export function ClassesCardsView({
-  classes,
-  schoolOptions,
-}: ClassesCardsViewProps) {
+export function ClassesCardsView({ classes }: ClassesCardsViewProps) {
   const [search, setSearch] = useState("")
   const [selectedClass, setSelectedClass] = useState<ClassListItem | null>(null)
   const [manageOpen, setManageOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<ClassListItem | null>(null)
 
+  const catalogClasses = useMemo(
+    () => aggregateCatalogClasses(classes),
+    [classes]
+  )
+
   const { run: runDelete, pending: deletePending } = useActionRunner(
-    deleteClassAction,
+    deleteClassCatalogAction,
     {
       successMessage: "Class deleted",
       onSuccess: () => setDeleteTarget(null),
@@ -108,9 +111,9 @@ export function ClassesCardsView({
   )
 
   const filtered = useMemo(() => {
-    const result = filterClasses(classes, search)
-    return [...result].sort(compareClassListItems)
-  }, [classes, search])
+    const result = filterClasses(catalogClasses, search)
+    return [...result].sort(compareCatalogClassItems)
+  }, [catalogClasses, search])
 
   function handleEdit(classItem: ClassListItem) {
     setSelectedClass(classItem)
@@ -174,12 +177,13 @@ export function ClassesCardsView({
         open={manageOpen}
         onOpenChange={setManageOpen}
         classItem={selectedClass}
+        catalogMode
       />
 
       <ClassFormDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        schoolOptions={schoolOptions}
+        mode="catalog"
       />
 
       <ConfirmDialog
@@ -197,7 +201,7 @@ export function ClassesCardsView({
         destructive
         pending={deletePending}
         onConfirm={() => {
-          if (deleteTarget) runDelete(deleteTarget.id)
+          if (deleteTarget) runDelete(deleteTarget.className)
         }}
       />
     </>

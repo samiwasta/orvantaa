@@ -70,7 +70,58 @@ export const classInputSchema = z.object({
     .max(40, "Class name is too long"),
 })
 
+export const classCatalogCreateSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Class name is required")
+    .max(40, "Class name is too long"),
+})
+
+export const classCatalogRenameSchema = z.object({
+  currentName: z.string().trim().min(1, "Missing class name"),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Class name is required")
+    .max(40, "Class name is too long"),
+})
+
 export type ClassInput = z.infer<typeof classInputSchema>
+export type ClassCatalogCreateInput = z.infer<typeof classCatalogCreateSchema>
+export type ClassCatalogRenameInput = z.infer<typeof classCatalogRenameSchema>
+
+export function compareCatalogClassItems(
+  a: ClassListItem,
+  b: ClassListItem
+): number {
+  const levelA = parseClassLevel(a.className)
+  const levelB = parseClassLevel(b.className)
+  if (levelA !== levelB) return levelA - levelB
+  return a.className.localeCompare(b.className, undefined, { numeric: true })
+}
+
+export function aggregateCatalogClasses(classes: ClassListItem[]): ClassListItem[] {
+  const grouped = new Map<string, ClassListItem>()
+
+  for (const item of classes) {
+    const key = item.className.trim().toLowerCase()
+    const existing = grouped.get(key)
+    if (!existing) {
+      grouped.set(key, {
+        ...item,
+        sections: [...item.sections],
+      })
+      continue
+    }
+
+    existing.studentCount += item.studentCount
+    existing.subjectCount += item.subjectCount
+    existing.sections = [...existing.sections, ...item.sections]
+  }
+
+  return [...grouped.values()].sort(compareCatalogClassItems)
+}
 
 export const sectionInputSchema = z.object({
   classId: z.string().trim().min(1, "Missing class"),

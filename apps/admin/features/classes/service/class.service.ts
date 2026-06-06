@@ -30,6 +30,18 @@ export class ClassService {
     await this.repository.createClass(input)
   }
 
+  async createCatalogClass(name: string): Promise<void> {
+    await this.repository.createCatalogClass(name)
+  }
+
+  async renameCatalogClass(currentName: string, name: string): Promise<void> {
+    await this.repository.renameCatalogClass(currentName, name)
+  }
+
+  async deleteCatalogClass(name: string): Promise<void> {
+    await this.repository.deleteCatalogClass(name)
+  }
+
   async updateClass(id: string, name: string): Promise<void> {
     await this.repository.updateClass(id, name)
   }
