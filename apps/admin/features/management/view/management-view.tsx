@@ -4,8 +4,6 @@ import { useSearchParams } from "next/navigation"
 
 import {
   pageContainerClass,
-  pageHeaderDescriptionClass,
-  pageHeaderTitleClass,
   pageSectionBodyClass,
   pageSectionClass,
 } from "@/features/shared/view/page-layout"
@@ -65,13 +63,6 @@ export function ManagementView({
 
   return (
     <div className={pageContainerClass}>
-      <div className="min-w-0">
-        <h1 className={pageHeaderTitleClass}>Management</h1>
-        <p className={pageHeaderDescriptionClass}>
-          Admin team access and platform subscription billing.
-        </p>
-      </div>
-
       <div className={pageSectionClass}>
         <div className="border-b border-border/60 bg-muted/20">
           <ScrollableTabs
