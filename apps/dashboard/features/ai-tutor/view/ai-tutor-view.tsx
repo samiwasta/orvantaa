@@ -6,7 +6,7 @@ import {
   useBodyScrollLock,
 } from "@workspace/ui/hooks/use-body-scroll-lock"
 import { cn } from "@workspace/ui/lib/utils"
-import { ArrowUp, Bot, History, Plus, Bi } from "lucide-react"
+import { ArrowUp, Bot, History, Plus, Sparkles } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 
@@ -495,7 +495,7 @@ function AiTutorChat({ chatId, session }: AiTutorChatProps) {
             <div className="flex flex-col items-center gap-4 text-center">
               <div className="relative">
                 <div className="flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#6C5CE7] to-[#8b5cf6] text-white shadow-lg shadow-[#6C5CE7]/25">
-                  <Sparkles className="size-8" strokeWidth={1.75} />
+                  <BotIcon className="size-8" strokeWidth={1.75} />
                 </div>
                 <div className="absolute -right-0.5 -bottom-0.5 size-4 rounded-full bg-emerald-400 ring-2 ring-background" />
               </div>
@@ -530,7 +530,7 @@ export function AiTutorView({ chatId, initialSession }: AiTutorViewProps) {
   const [session, setSession] = useState<ChatSession | undefined>(
     initialSession
   )
-ot  const [isLoadingSession, setIsLoadingSession] = useState(
+  const [isLoadingSession, setIsLoadingSession] = useState(
     () => !isNewChat && !initialSession
   )
 
