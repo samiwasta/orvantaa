@@ -10,22 +10,27 @@ import {
 } from "react"
 
 import {
-  type ChatMessage,
-  type ChatSession,
-  createSessionId,
-  mockChatHistory,
-} from "./chat-data"
+  createAiTutorSession,
+  deleteAiTutorSession,
+  fetchAiTutorSession,
+  syncAiTutorSession,
+} from "../service/ai-tutor-sessions.service"
+import type { ChatMessage, ChatSession } from "./chat-data"
+import { deserializeChatSessions } from "./serialize-chat-session"
 
 type ChatSessionsContextValue = {
   sessions: ChatSession[]
+  isLoading: boolean
   getSession: (id: string) => ChatSession | undefined
+  loadSession: (id: string) => Promise<ChatSession>
   upsertSession: (session: ChatSession) => void
   updateSessionMessages: (
     sessionId: string,
     messages: ChatMessage[],
     title?: string
-  ) => void
-  createSession: (title: string) => ChatSession
+  ) => Promise<ChatSession>
+  createSession: (title: string) => Promise<ChatSession>
+  deleteSession: (sessionId: string) => Promise<void>
 }
 
 const ChatSessionsContext = createContext<ChatSessionsContextValue | null>(null)
@@ -36,77 +41,92 @@ function sortSessions(sessions: ChatSession[]) {
   )
 }
 
-export function ChatSessionsProvider({ children }: { children: ReactNode }) {
+function upsertSessionInList(
+  sessions: ChatSession[],
+  session: ChatSession
+): ChatSession[] {
+  const exists = sessions.some((item) => item.id === session.id)
+  const next = exists
+    ? sessions.map((item) => (item.id === session.id ? session : item))
+    : [session, ...sessions]
+  return sortSessions(next)
+}
+
+type ChatSessionsProviderProps = {
+  children: ReactNode
+  initialSessions?: ChatSession[]
+}
+
+export function ChatSessionsProvider({
+  children,
+  initialSessions = [],
+}: ChatSessionsProviderProps) {
   const [sessions, setSessions] = useState<ChatSession[]>(() =>
-    sortSessions(mockChatHistory)
+    sortSessions(deserializeChatSessions(initialSessions))
   )
+  const [isLoading] = useState(false)
 
   const getSession = useCallback(
-    (id: string) => sessions.find((s) => s.id === id),
+    (id: string) => sessions.find((session) => session.id === id),
     [sessions]
   )
 
   const upsertSession = useCallback((session: ChatSession) => {
-    setSessions((prev) => {
-      const exists = prev.some((s) => s.id === session.id)
-      const next = exists
-        ? prev.map((s) => (s.id === session.id ? session : s))
-        : [session, ...prev]
-      return sortSessions(next)
-    })
+    setSessions((current) => upsertSessionInList(current, session))
+  }, [])
+
+  const loadSession = useCallback(async (id: string) => {
+    const session = await fetchAiTutorSession(id)
+    setSessions((current) => upsertSessionInList(current, session))
+    return session
   }, [])
 
   const updateSessionMessages = useCallback(
-    (sessionId: string, messages: ChatMessage[], title?: string) => {
-      setSessions((prev) => {
-        const exists = prev.some((s) => s.id === sessionId)
-        if (!exists) {
-          return sortSessions([
-            {
-              id: sessionId,
-              title: title ?? "New chat",
-              messages,
-              updatedAt: new Date(),
-            },
-            ...prev,
-          ])
-        }
-        const next = prev.map((s) =>
-          s.id === sessionId
-            ? {
-                ...s,
-                messages,
-                updatedAt: new Date(),
-                ...(title ? { title } : {}),
-              }
-            : s
-        )
-        return sortSessions(next)
+    async (sessionId: string, messages: ChatMessage[], title?: string) => {
+      const session = await syncAiTutorSession(sessionId, {
+        title,
+        messages,
       })
+      setSessions((current) => upsertSessionInList(current, session))
+      return session
     },
     []
   )
 
-  const createSession = useCallback((title: string) => {
-    const session: ChatSession = {
-      id: createSessionId(),
-      title,
-      messages: [],
-      updatedAt: new Date(),
-    }
-    setSessions((prev) => sortSessions([session, ...prev]))
+  const createSession = useCallback(async (title: string) => {
+    const session = await createAiTutorSession(title)
+    setSessions((current) => upsertSessionInList(current, session))
     return session
+  }, [])
+
+  const deleteSession = useCallback(async (sessionId: string) => {
+    await deleteAiTutorSession(sessionId)
+    setSessions((current) =>
+      current.filter((session) => session.id !== sessionId)
+    )
   }, [])
 
   const value = useMemo(
     () => ({
       sessions,
+      isLoading,
       getSession,
+      loadSession,
       upsertSession,
       updateSessionMessages,
       createSession,
+      deleteSession,
     }),
-    [sessions, getSession, upsertSession, updateSessionMessages, createSession]
+    [
+      sessions,
+      isLoading,
+      getSession,
+      loadSession,
+      upsertSession,
+      updateSessionMessages,
+      createSession,
+      deleteSession,
+    ]
   )
 
   return (

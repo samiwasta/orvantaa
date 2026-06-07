@@ -87,6 +87,11 @@ enum AdminNotificationPriority {
   URGENT
 }
 
+enum AiTutorMessageRole {
+  USER
+  ASSISTANT
+}
+
 // ─── Board / University ───────────────────────────────────────────────────────
 
 model Board {
@@ -445,6 +450,7 @@ model User {
 
   passwordResetTokens PasswordResetToken[]
   notificationReads   AdminNotificationRead[]
+  aiTutorChatSessions AiTutorChatSession[]
 
   @@index([sectionId])
   @@index([role])
@@ -464,4 +470,32 @@ model PasswordResetToken {
 
   @@index([userId])
   @@map("password_reset_tokens")
+}
+
+// ─── AI Tutor chat ────────────────────────────────────────────────────────────
+
+model AiTutorChatSession {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages AiTutorChatMessage[]
+
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("ai_tutor_chat_sessions")
+}
+
+model AiTutorChatMessage {
+  id        String             @id @default(cuid())
+  sessionId String
+  session   AiTutorChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      AiTutorMessageRole
+  content   String
+  createdAt DateTime           @default(now())
+
+  @@index([sessionId, createdAt])
+  @@map("ai_tutor_chat_messages")
 }

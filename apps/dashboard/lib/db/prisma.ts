@@ -15,8 +15,28 @@ function createPrismaClient(): PrismaClient {
   })
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient()
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma
+function isStalePrismaClient(client: PrismaClient): boolean {
+  return !("aiTutorChatSession" in client)
 }
+
+function getPrismaClient(): PrismaClient {
+  const existing = globalForPrisma.prisma
+
+  if (existing && !isStalePrismaClient(existing)) {
+    return existing
+  }
+
+  if (existing) {
+    void existing.$disconnect()
+  }
+
+  const client = createPrismaClient()
+
+  if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.prisma = client
+  }
+
+  return client
+}
+
+export const prisma = getPrismaClient()

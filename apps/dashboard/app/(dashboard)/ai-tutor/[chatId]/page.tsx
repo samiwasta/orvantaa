@@ -1,5 +1,11 @@
 import type { Metadata } from "next"
+import { redirect } from "next/navigation"
 
+import {
+  aiTutorChatHref,
+  NEW_CHAT_ID,
+} from "@/features/ai-tutor/model/chat-data"
+import { loadAiTutorSessionForCurrentStudent } from "@/features/ai-tutor/server/load-ai-tutor-sessions"
 import { AiTutorView } from "@/features/ai-tutor/view/ai-tutor-view"
 
 export const metadata: Metadata = {
@@ -15,5 +21,16 @@ export default async function AiTutorChatPage({
   params,
 }: AiTutorChatPageProps) {
   const { chatId } = await params
-  return <AiTutorView chatId={chatId} />
+
+  if (chatId === NEW_CHAT_ID) {
+    return <AiTutorView chatId={chatId} />
+  }
+
+  const session = await loadAiTutorSessionForCurrentStudent(chatId)
+
+  if (!session) {
+    redirect(aiTutorChatHref(NEW_CHAT_ID))
+  }
+
+  return <AiTutorView chatId={chatId} initialSession={session} />
 }

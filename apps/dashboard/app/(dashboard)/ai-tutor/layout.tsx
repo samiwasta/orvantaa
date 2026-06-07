@@ -1,9 +1,19 @@
-import { ChatSessionsProvider } from "@/features/ai-tutor/model/chat-sessions-context"
+import { redirect } from "next/navigation"
 
-export default function AiTutorLayout({
+import { NEW_CHAT_ID } from "@/features/ai-tutor/model/chat-data"
+import { ChatSessionsProvider } from "@/features/ai-tutor/model/chat-sessions-context"
+import { loadAiTutorSessionsForCurrentStudent } from "@/features/ai-tutor/server/load-ai-tutor-sessions"
+
+export default async function AiTutorLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  return <ChatSessionsProvider>{children}</ChatSessionsProvider>
+  const initialSessions = await loadAiTutorSessionsForCurrentStudent()
+
+  return (
+    <ChatSessionsProvider initialSessions={initialSessions}>
+      {children}
+    </ChatSessionsProvider>
+  )
 }
