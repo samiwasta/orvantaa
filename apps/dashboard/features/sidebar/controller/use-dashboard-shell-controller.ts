@@ -6,6 +6,7 @@ import * as React from "react"
 
 import {
   dashboardNavItems,
+  isAiTutorPath,
   isDashboardNavPathActive,
   resolveDashboardPageTitle,
 } from "../model/navigation"
@@ -32,7 +33,9 @@ export function useDashboardShellController() {
     [pathname]
   )
 
-  return { navItems, pageTitle }
+  const isAiTutorPage = React.useMemo(() => isAiTutorPath(pathname), [pathname])
+
+  return { navItems, pageTitle, isAiTutorPage }
 }
 
 export type DashboardShellController = ReturnType<

@@ -525,15 +525,21 @@ export function ChapterDetailView({
 
             {/* List */}
             <div className="mt-3 divide-y divide-border/40">
-              {topics.map((topic, i) => (
-                <TopicRow
-                  key={topic.id}
-                  subjectSlug={subjectSlug}
-                  chapterSlug={chSlug}
-                  topic={topic}
-                  index={i}
-                />
-              ))}
+              {topics.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  No notes have been assigned for this chapter yet.
+                </p>
+              ) : (
+                topics.map((topic, i) => (
+                  <TopicRow
+                    key={topic.id}
+                    subjectSlug={subjectSlug}
+                    chapterSlug={chSlug}
+                    topic={topic}
+                    index={i}
+                  />
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -562,14 +568,20 @@ export function ChapterDetailView({
 
             {/* List */}
             <div className="mt-3 divide-y divide-border/40">
-              {quizzes.map((quiz) => (
-                <QuizRow
-                  key={quiz.id}
-                  subjectSlug={subjectSlug}
-                  chapterSlug={chSlug}
-                  quiz={quiz}
-                />
-              ))}
+              {quizzes.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  No quizzes have been assigned for this chapter yet.
+                </p>
+              ) : (
+                quizzes.map((quiz) => (
+                  <QuizRow
+                    key={quiz.id}
+                    subjectSlug={subjectSlug}
+                    chapterSlug={chSlug}
+                    quiz={quiz}
+                  />
+                ))
+              )}
             </div>
           </CardContent>
         </Card>

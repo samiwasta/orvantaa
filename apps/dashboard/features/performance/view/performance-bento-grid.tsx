@@ -20,12 +20,10 @@ import {
 } from "recharts"
 
 import {
-  performanceInsights,
-  subjectAccuracy,
   subjectBarColors,
-  weeklyAccuracyDeltaPercent,
-  weeklyAccuracyTrend,
+  type WeeklyAccuracyPoint,
 } from "../model/performance-data"
+import type { PerformanceDashboardData } from "../repository/performance.repository"
 import { ReportCardUploadCard } from "./report-card-upload-card"
 
 // ─── Card wrapper ─────────────────────────────────────────────────────────────
@@ -100,12 +98,34 @@ function LineTooltip({
   )
 }
 
-function PerformanceOverTimeChart() {
+function PerformanceOverTimeChart({
+  data,
+  hasActivity,
+}: {
+  data: WeeklyAccuracyPoint[]
+  hasActivity: boolean
+}) {
+  const values = data
+    .map((point) => point.value)
+    .filter((value): value is number => value !== null)
+  const minValue = values.length > 0 ? Math.max(0, Math.min(...values) - 10) : 0
+
+  if (!hasActivity) {
+    return (
+      <div className="flex h-[280px] items-center justify-center px-6 text-center sm:h-[320px]">
+        <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+          Complete quizzes, lessons, or AI tutor sessions to start tracking your
+          performance over time.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="h-[280px] w-full px-3 pt-4 pb-4 sm:h-[320px] sm:px-4">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
-          data={weeklyAccuracyTrend}
+          data={data}
           margin={{ top: 12, right: 12, bottom: 8, left: 0 }}
         >
           <defs>
@@ -133,8 +153,8 @@ function PerformanceOverTimeChart() {
             dy={8}
           />
           <YAxis
-            domain={[35, 100]}
-            ticks={[35, 50, 75, 100]}
+            domain={[minValue, 100]}
+            ticks={[minValue, 50, 75, 100]}
             tickLine={false}
             axisLine={false}
             tick={{ fill: "#b0b7c3", fontSize: 11 }}
@@ -155,6 +175,7 @@ function PerformanceOverTimeChart() {
             stroke="#6C5CE7"
             strokeWidth={2.5}
             fill="url(#rechartsLineAreaGrad)"
+            connectNulls
             dot={{ fill: "#6C5CE7", stroke: "#fff", strokeWidth: 2, r: 4 }}
             activeDot={{
               fill: "#6C5CE7",
@@ -210,64 +231,125 @@ function BarTooltip({
   )
 }
 
-function SubjectBarChart() {
+function truncateSubjectLabel(label: string, maxLength = 12) {
+  if (label.length <= maxLength) return label
+  return `${label.slice(0, maxLength - 1)}…`
+}
+
+function SubjectBarChart({
+  data,
+}: {
+  data: PerformanceDashboardData["subjectAccuracy"]
+}) {
+  const subjectCount = data.length
+
+  if (subjectCount === 0) {
+    return (
+      <div className="flex h-[280px] items-center justify-center px-6 text-center sm:h-[320px]">
+        <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+          Your class subjects will appear here once assigned by your school.
+        </p>
+      </div>
+    )
+  }
+
+  const useCompactLayout = subjectCount > 6
+  const useScroll = subjectCount > 6
+  const chartMinWidth = Math.max(
+    320,
+    subjectCount * (useCompactLayout ? 52 : 72)
+  )
+  const barSize =
+    subjectCount > 10 ? 28 : subjectCount > 8 ? 32 : subjectCount > 5 ? 40 : 52
+  const tickFontSize = subjectCount > 10 ? 8.5 : subjectCount > 8 ? 9 : 10.5
+
   return (
-    <div className="h-[280px] w-full px-3 pt-4 pb-4 sm:h-[320px] sm:px-4">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={subjectAccuracy}
-          margin={{ top: 24, right: 12, bottom: 8, left: 0 }}
-          barCategoryGap="20%"
-        >
-          <CartesianGrid
-            vertical={false}
-            stroke="#e9eaec"
-            strokeDasharray="5 5"
-          />
-          <XAxis
-            dataKey="subject"
-            tickLine={false}
-            axisLine={false}
-            tick={{ fill: "#9ca3af", fontSize: 10.5, fontWeight: 500 }}
-            dy={8}
-          />
-          <YAxis
-            domain={[0, 110]}
-            ticks={[0, 25, 50, 75, 100]}
-            tickLine={false}
-            axisLine={false}
-            tick={{ fill: "#b0b7c3", fontSize: 11 }}
-            tickFormatter={(v) => `${v}%`}
-            width={42}
-          />
-          <ReferenceLine y={100} stroke="#e9eaec" strokeDasharray="5 5" />
-          <Tooltip
-            content={<BarTooltip />}
-            cursor={{ fill: "rgba(108,92,231,0.06)", radius: 6 }}
-          />
-          <Bar
-            dataKey="value"
-            radius={[6, 6, 0, 0]}
-            maxBarSize={52}
-            label={<BarValueLabel />}
+    <div
+      className={cn(
+        "h-[280px] w-full px-3 pt-4 pb-4 sm:h-[320px] sm:px-4",
+        useScroll && "overflow-x-auto"
+      )}
+    >
+      <div
+        className="h-full"
+        style={{ minWidth: useScroll ? chartMinWidth : "100%" }}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={data}
+            margin={{
+              top: 24,
+              right: 12,
+              bottom: useCompactLayout ? 28 : 8,
+              left: 0,
+            }}
+            barCategoryGap={subjectCount > 8 ? "10%" : "18%"}
           >
-            {subjectAccuracy.map((item) => (
-              <Cell
-                key={item.subject}
-                fill={subjectBarColors[item.tier]}
-                fillOpacity={0.9}
-              />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+            <CartesianGrid
+              vertical={false}
+              stroke="#e9eaec"
+              strokeDasharray="5 5"
+            />
+            <XAxis
+              dataKey="subject"
+              interval={0}
+              tickLine={false}
+              axisLine={false}
+              angle={useCompactLayout ? -35 : 0}
+              textAnchor={useCompactLayout ? "end" : "middle"}
+              height={useCompactLayout ? 52 : 32}
+              tick={{
+                fill: "#9ca3af",
+                fontSize: tickFontSize,
+                fontWeight: 500,
+              }}
+              tickFormatter={(value: string) =>
+                truncateSubjectLabel(value, useCompactLayout ? 10 : 14)
+              }
+              dy={useCompactLayout ? 4 : 8}
+            />
+            <YAxis
+              domain={[0, 110]}
+              ticks={[0, 25, 50, 75, 100]}
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: "#b0b7c3", fontSize: 11 }}
+              tickFormatter={(v) => `${v}%`}
+              width={42}
+            />
+            <ReferenceLine y={100} stroke="#e9eaec" strokeDasharray="5 5" />
+            <Tooltip
+              content={<BarTooltip />}
+              cursor={{ fill: "rgba(108,92,231,0.06)", radius: 6 }}
+            />
+            <Bar
+              dataKey="value"
+              radius={[6, 6, 0, 0]}
+              maxBarSize={barSize}
+              label={subjectCount <= 8 ? <BarValueLabel /> : undefined}
+            >
+              {data.map((item) => (
+                <Cell
+                  key={item.subjectId}
+                  fill={subjectBarColors[item.tier]}
+                  fillOpacity={item.value > 0 ? 0.9 : 0.35}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   )
 }
 
 // ─── Insights card ────────────────────────────────────────────────────────────
-function PerformanceInsightsCard() {
-  const { strength, needsImprovement, tip, focusChapters } = performanceInsights
+function PerformanceInsightsCard({
+  insights,
+}: {
+  insights: PerformanceDashboardData["performanceInsights"]
+}) {
+  const { strength, needsImprovement, tip, focusChapters } = insights
 
   return (
     <Card className="flex h-full flex-col gap-0 overflow-hidden rounded-2xl border-0 bg-card py-0 shadow-md ring-1 ring-black/5">
@@ -326,20 +408,26 @@ function PerformanceInsightsCard() {
             Chapters to focus on
           </p>
           <ul className="flex flex-col gap-2">
-            {focusChapters.map((chapter) => (
-              <li key={chapter.id}>
-                <Link
-                  href={chapter.href}
-                  className={cn(
-                    "flex items-center justify-between gap-2 rounded-xl border border-[#FF8A3D]/30 bg-muted/30 px-4 py-3 text-sm font-medium text-foreground transition-colors",
-                    "hover:border-[#FF8A3D]/55 hover:bg-orange-50/60"
-                  )}
-                >
-                  {chapter.label}
-                  <ChevronRight className="size-4 shrink-0 text-[#FF8A3D]" />
-                </Link>
+            {focusChapters.length === 0 ? (
+              <li className="rounded-xl border border-dashed border-border/70 px-4 py-3 text-sm text-muted-foreground">
+                Complete more quizzes to see chapters that need attention.
               </li>
-            ))}
+            ) : (
+              focusChapters.map((chapter) => (
+                <li key={chapter.id}>
+                  <Link
+                    href={chapter.href}
+                    className={cn(
+                      "flex items-center justify-between gap-2 rounded-xl border border-[#FF8A3D]/30 bg-muted/30 px-4 py-3 text-sm font-medium text-foreground transition-colors",
+                      "hover:border-[#FF8A3D]/55 hover:bg-orange-50/60"
+                    )}
+                  >
+                    {chapter.label}
+                    <ChevronRight className="size-4 shrink-0 text-[#FF8A3D]" />
+                  </Link>
+                </li>
+              ))
+            )}
           </ul>
         </div>
       </div>
@@ -348,7 +436,15 @@ function PerformanceInsightsCard() {
 }
 
 // ─── Bento grid ───────────────────────────────────────────────────────────────
-export function PerformanceBentoGrid() {
+export function PerformanceBentoGrid({
+  dashboard,
+}: {
+  dashboard: PerformanceDashboardData
+}) {
+  const delta = dashboard.weeklyAccuracyDeltaPercent
+  const deltaLabel =
+    delta === 0 ? null : `${delta > 0 ? "+" : ""}${delta}% this week`
+
   return (
     <section className="@container/perf flex flex-col gap-4 sm:gap-5">
       <div className="grid grid-cols-1 gap-4 @[900px]/perf:grid-cols-5 @[900px]/perf:items-stretch @[900px]/perf:gap-5">
@@ -357,12 +453,24 @@ export function PerformanceBentoGrid() {
           title="Performance over time"
           description="See how your accuracy has improved"
           badge={
-            <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200 sm:text-xs">
-              +{weeklyAccuracyDeltaPercent}% this week
-            </span>
+            deltaLabel ? (
+              <span
+                className={cn(
+                  "inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 sm:text-xs",
+                  delta > 0
+                    ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                    : "bg-rose-50 text-rose-700 ring-rose-200"
+                )}
+              >
+                {deltaLabel}
+              </span>
+            ) : null
           }
         >
-          <PerformanceOverTimeChart />
+          <PerformanceOverTimeChart
+            data={dashboard.weeklyAccuracyTrend}
+            hasActivity={dashboard.hasActivity}
+          />
         </ChartMetricCard>
 
         <ChartMetricCard
@@ -370,16 +478,16 @@ export function PerformanceBentoGrid() {
           title="Subject-wise Performance"
           description="Compare your accuracy across subjects"
         >
-          <SubjectBarChart />
+          <SubjectBarChart data={dashboard.subjectAccuracy} />
         </ChartMetricCard>
       </div>
 
       <div className="grid grid-cols-1 gap-4 @[900px]/perf:grid-cols-5 @[900px]/perf:items-stretch @[900px]/perf:gap-5">
         <div className="@[900px]/perf:col-span-3">
-          <PerformanceInsightsCard />
+          <PerformanceInsightsCard insights={dashboard.performanceInsights} />
         </div>
         <div className="@[900px]/perf:col-span-2">
-          <ReportCardUploadCard />
+          <ReportCardUploadCard initialReport={dashboard.reportCard} />
         </div>
       </div>
     </section>

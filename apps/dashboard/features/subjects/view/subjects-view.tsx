@@ -68,7 +68,8 @@ export function SubjectsView({ subjects }: SubjectsViewProps) {
   if (subjects.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        No subjects are available for your class yet.
+        No subjects have been assigned to your class yet. Your school admin will
+        add subjects, chapters, notes, and quizzes here.
       </p>
     )
   }

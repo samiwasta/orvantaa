@@ -6,7 +6,9 @@ import { cn } from "@workspace/ui/lib/utils"
 import { ArrowLeft, ChevronLeft } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
+
+import { submitQuizAttempt } from "@/features/performance/service/activity-tracking.service"
 
 import type { ChapterItem } from "../model/chapter-data"
 import { chapterSlug } from "../model/chapter-data"
@@ -47,13 +49,31 @@ export function QuizView({ subjectSlug, chapter, session }: QuizViewProps) {
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null)
+  const [answerMap, setAnswerMap] = useState<Record<string, string>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [aiTutorOpen, setAiTutorOpen] = useState(false)
+  const startedAtRef = useRef(Date.now())
 
   const question = questions[currentIndex]
   const questionNumber = currentIndex + 1
   const totalQuestions = questions.length
   const isFirst = currentIndex === 0
   const isLast = currentIndex === totalQuestions - 1
+
+  useEffect(() => {
+    if (!question) return
+
+    const savedOptionDbId = answerMap[question.dbId]
+    if (!savedOptionDbId) {
+      setSelectedOptionId(null)
+      return
+    }
+
+    const savedOption = question.options.find(
+      (option) => option.dbId === savedOptionDbId
+    )
+    setSelectedOptionId(savedOption?.id ?? null)
+  }, [answerMap, question])
 
   if (!question) {
     return (
@@ -75,17 +95,46 @@ export function QuizView({ subjectSlug, chapter, session }: QuizViewProps) {
   const handlePrevious = () => {
     if (isFirst) return
     setCurrentIndex((i) => i - 1)
-    setSelectedOptionId(null)
   }
 
-  const handleSubmit = () => {
-    if (!selectedOptionId) return
-    if (isLast) {
-      router.push(chapterHref)
+  const handleSubmit = async () => {
+    if (!selectedOptionId || isSubmitting) return
+
+    const selectedOption = question.options.find(
+      (option) => option.id === selectedOptionId
+    )
+    if (!selectedOption) return
+
+    const nextAnswers = {
+      ...answerMap,
+      [question.dbId]: selectedOption.dbId,
+    }
+    setAnswerMap(nextAnswers)
+
+    if (!isLast) {
+      setCurrentIndex((i) => i + 1)
       return
     }
-    setCurrentIndex((i) => i + 1)
-    setSelectedOptionId(null)
+
+    setIsSubmitting(true)
+    try {
+      await submitQuizAttempt({
+        quizId: quiz.id,
+        answers: questions.map((item) => ({
+          questionId: item.dbId,
+          optionId: nextAnswers[item.dbId] ?? "",
+        })),
+        timeSpentSeconds: Math.max(
+          1,
+          Math.round((Date.now() - startedAtRef.current) / 1000)
+        ),
+      })
+      router.push(chapterHref)
+    } catch (error) {
+      console.error("[quiz] Failed to submit attempt:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const tutorContext = `${quiz.title} — Question ${questionNumber}`
@@ -198,11 +247,15 @@ export function QuizView({ subjectSlug, chapter, session }: QuizViewProps) {
 
               <Button
                 type="button"
-                onClick={handleSubmit}
-                disabled={!selectedOptionId}
+                onClick={() => void handleSubmit()}
+                disabled={!selectedOptionId || isSubmitting}
                 className="h-10 rounded-xl bg-[#FF8A3D] px-6 text-sm font-semibold text-white shadow-md shadow-orange-200/50 hover:bg-[#E8722A] active:bg-[#D96A20] disabled:opacity-50"
               >
-                {isLast ? "Finish Quiz" : "Submit Answer"}
+                {isSubmitting
+                  ? "Saving..."
+                  : isLast
+                    ? "Finish Quiz"
+                    : "Submit Answer"}
               </Button>
             </div>
           </div>

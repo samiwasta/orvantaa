@@ -21,6 +21,10 @@ export function isDashboardNavPathActive(
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
+export function isAiTutorPath(pathname: string): boolean {
+  return isDashboardNavPathActive(pathname, "/ai-tutor")
+}
+
 export function resolveDashboardPageTitle(pathname: string): string {
   if (pathname.match(/^\/subjects\/[^/]+\/[^/]+\/quiz\/[^/]+\/?$/)) {
     return "Quiz"

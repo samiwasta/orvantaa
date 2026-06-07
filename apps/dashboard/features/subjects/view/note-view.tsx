@@ -17,7 +17,9 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+
+import { trackNoteProgress } from "@/features/performance/service/activity-tracking.service"
 
 import type { ChapterItem, TopicItem } from "../model/chapter-data"
 import { chapterSlug } from "../model/chapter-data"
@@ -234,6 +236,18 @@ export function NoteView({
     topic.title.trim().toLowerCase() !== note.title.trim().toLowerCase()
   const [aiTutorOpen, setAiTutorOpen] = useState(false)
 
+  useEffect(() => {
+    void trackNoteProgress(note.id, "VIEWED").catch((error) => {
+      console.error("[note] Failed to track view:", error)
+    })
+  }, [note.id])
+
+  const markNoteCompleted = () => {
+    void trackNoteProgress(note.id, "COMPLETED").catch((error) => {
+      console.error("[note] Failed to track completion:", error)
+    })
+  }
+
   return (
     <div className="w-full">
       <div>
@@ -378,7 +392,10 @@ export function NoteView({
                   className="h-10 gap-1.5 rounded-xl bg-[#FF8A3D] px-5 text-sm font-semibold text-white shadow-md shadow-orange-300/50 hover:bg-[#E8722A] active:bg-[#D96A20]"
                   asChild
                 >
-                  <Link href={noteHref(subjectSlug, chSlug, topic.id, next.id)}>
+                  <Link
+                    href={noteHref(subjectSlug, chSlug, topic.id, next.id)}
+                    onClick={markNoteCompleted}
+                  >
                     <span>Next lesson</span>
                     <ChevronRight className="size-4" aria-hidden />
                   </Link>
@@ -388,7 +405,7 @@ export function NoteView({
                   className="h-10 gap-1.5 rounded-xl bg-emerald-500 px-5 text-sm font-semibold text-white shadow-md shadow-emerald-300/50 hover:bg-emerald-600 active:bg-emerald-700"
                   asChild
                 >
-                  <Link href={chapterHref}>
+                  <Link href={chapterHref} onClick={markNoteCompleted}>
                     <span>Finish topic</span>
                     <ArrowRight className="size-4" aria-hidden />
                   </Link>

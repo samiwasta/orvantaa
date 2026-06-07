@@ -6,7 +6,7 @@ import {
   useBodyScrollLock,
 } from "@workspace/ui/hooks/use-body-scroll-lock"
 import { cn } from "@workspace/ui/lib/utils"
-import { ArrowUp, Bot, History, Plus, Sparkles } from "lucide-react"
+import { ArrowUp, Bot, History, Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 
@@ -19,6 +19,11 @@ import {
   NEW_CHAT_ID,
 } from "../model/chat-data"
 import { useChatSessions } from "../model/chat-sessions-context"
+import {
+  clearPendingChatMessageProcessing,
+  setPendingChatMessage,
+  takePendingChatMessage,
+} from "../model/pending-chat-message"
 import { requestAiTutorReply } from "../service/ai-tutor-chat.service"
 import { AiTutorMarkdown } from "./ai-tutor-markdown"
 import {
@@ -166,9 +171,10 @@ function AiTutorChat({ chatId, session }: AiTutorChatProps) {
   const [messageFeedback, setMessageFeedback] = useState<
     Record<string, MessageFeedback>
   >({})
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesScrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const pendingReplyRef = useRef(false)
+  const pendingMessageHandledRef = useRef(false)
 
   const isNewChat = chatId === NEW_CHAT_ID
   const hasMessages = messages.length > 0
@@ -254,7 +260,13 @@ function AiTutorChat({ chatId, session }: AiTutorChatProps) {
   }, [chatId, isTyping, messages, updateSessionMessages])
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    const container = messagesScrollRef.current
+    if (!container) return
+
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: "smooth",
+    })
   }, [messages, isTyping])
 
   useEffect(() => {
@@ -285,8 +297,10 @@ function AiTutorChat({ chatId, session }: AiTutorChatProps) {
       } catch (error) {
         console.error("[ai-tutor] Failed to create chat:", error)
         setInput(trimmed)
+        setPendingChatMessage(trimmed)
       } finally {
         setIsSending(false)
+        clearPendingChatMessageProcessing()
       }
       return
     }
@@ -311,6 +325,16 @@ function AiTutorChat({ chatId, session }: AiTutorChatProps) {
       setInput(trimmed)
     }
   }
+
+  useEffect(() => {
+    if (!isNewChat || pendingMessageHandledRef.current || hasMessages) return
+
+    const pending = takePendingChatMessage()
+    if (!pending) return
+
+    pendingMessageHandledRef.current = true
+    void sendMessage(pending)
+  }, [hasMessages, isNewChat])
 
   const handleSelectSession = (sessionId: string) => {
     router.push(aiTutorChatHref(sessionId))
@@ -420,13 +444,7 @@ function AiTutorChat({ chatId, session }: AiTutorChatProps) {
   )
 
   return (
-    <div
-      className={cn(
-        "relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background",
-        "max-md:-mx-4 max-md:-mt-4 max-md:w-[calc(100%+2rem)]",
-        "md:-mx-6 md:-mt-5 md:w-[calc(100%+3rem)]"
-      )}
-    >
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background max-md:pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))]">
       <header className="flex shrink-0 items-center justify-end gap-2 border-b border-border/40 bg-background px-3 py-2 md:px-6 md:py-2.5">
         <Button
           type="button"
@@ -463,7 +481,10 @@ function AiTutorChat({ chatId, session }: AiTutorChatProps) {
 
       {hasMessages ? (
         <>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <div
+            ref={messagesScrollRef}
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+          >
             <div className="flex w-full flex-col py-3 md:py-6">
               {messages.map((msg) => (
                 <ChatMessageRow
@@ -482,10 +503,9 @@ function AiTutorChat({ chatId, session }: AiTutorChatProps) {
               ))}
               {isTyping ? <TypingIndicator /> : null}
             </div>
-            <div ref={messagesEndRef} className="h-2" />
           </div>
 
-          <div className="shrink-0 bg-gradient-to-t from-background via-background to-transparent px-3 pt-2 pb-3 max-md:pb-[max(0.5rem,calc(env(safe-area-inset-bottom,0px)-0.5rem))] md:px-6 md:pb-5">
+          <div className="shrink-0 bg-gradient-to-t from-background via-background to-transparent px-3 pt-2 pb-3 md:px-6 md:pb-5">
             {composer}
           </div>
         </>
@@ -495,7 +515,7 @@ function AiTutorChat({ chatId, session }: AiTutorChatProps) {
             <div className="flex flex-col items-center gap-4 text-center">
               <div className="relative">
                 <div className="flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#6C5CE7] to-[#8b5cf6] text-white shadow-lg shadow-[#6C5CE7]/25">
-                  <BotIcon className="size-8" strokeWidth={1.75} />
+                  <Bot className="size-8" strokeWidth={1.75} />
                 </div>
                 <div className="absolute -right-0.5 -bottom-0.5 size-4 rounded-full bg-emerald-400 ring-2 ring-background" />
               </div>

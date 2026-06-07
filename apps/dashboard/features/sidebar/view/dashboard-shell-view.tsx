@@ -59,6 +59,7 @@ function DashboardSidebarBrandLink() {
 export function DashboardShellView({
   navItems,
   pageTitle,
+  isAiTutorPage,
   defaultSidebarOpen = true,
   userProfile,
   children,
@@ -135,12 +136,19 @@ export function DashboardShellView({
           </Sidebar>
         ) : null}
 
-        <SidebarInset>
+        <SidebarInset
+          className={cn(
+            isAiTutorPage && "h-svh max-h-svh min-h-0 overflow-hidden"
+          )}
+        >
           <SidebarInsetHeader pageTitle={pageTitle} userProfile={userProfile} />
           <div
             className={cn(
               "flex flex-1 flex-col gap-4 p-4 pt-6 md:p-6",
-              isMobile && "pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))]"
+              isMobile &&
+                !isAiTutorPage &&
+                "pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))]",
+              isAiTutorPage && "min-h-0 flex-1 gap-0 overflow-hidden p-0"
             )}
           >
             {children}

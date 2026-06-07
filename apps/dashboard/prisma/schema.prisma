@@ -254,6 +254,7 @@ model Subject {
   updatedAt  DateTime @updatedAt
 
   chapters Chapter[]
+  reportCardScores ReportCardSubjectScore[]
 
   @@unique([classId, slug])
   @@index([classId])
@@ -312,6 +313,8 @@ model Note {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  progress NoteProgress[]
+
   @@index([topicId])
   @@map("notes")
 }
@@ -331,6 +334,7 @@ model Quiz {
   updatedAt        DateTime       @updatedAt
 
   questions Question[]
+  attempts  QuizAttempt[]
 
   @@index([chapterId])
   @@map("quizzes")
@@ -451,6 +455,9 @@ model User {
   passwordResetTokens PasswordResetToken[]
   notificationReads   AdminNotificationRead[]
   aiTutorChatSessions AiTutorChatSession[]
+  quizAttempts        QuizAttempt[]
+  noteProgress        NoteProgress[]
+  reportCard          StudentReportCard?
 
   @@index([sectionId])
   @@index([role])
@@ -498,4 +505,101 @@ model AiTutorChatMessage {
 
   @@index([sessionId, createdAt])
   @@map("ai_tutor_chat_messages")
+}
+
+// ─── Student performance tracking ─────────────────────────────────────────────
+
+enum NoteProgressStatus {
+  VIEWED
+  COMPLETED
+}
+
+model QuizAttempt {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizId           String
+  quiz             Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  scorePercent     Int
+  correctCount     Int
+  totalQuestions   Int
+  timeSpentSeconds Int?
+  completedAt      DateTime @default(now())
+  createdAt        DateTime @default(now())
+
+  answers QuizAttemptAnswer[]
+
+  @@index([userId, completedAt(sort: Desc)])
+  @@index([quizId])
+  @@map("quiz_attempts")
+}
+
+model QuizAttemptAnswer {
+  id               String      @id @default(cuid())
+  attemptId        String
+  attempt          QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId       String
+  selectedOptionId String
+  isCorrect        Boolean
+
+  @@index([attemptId])
+  @@map("quiz_attempt_answers")
+}
+
+model NoteProgress {
+  id            String             @id @default(cuid())
+  userId        String
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  noteId        String
+  note          Note               @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  status        NoteProgressStatus
+  firstViewedAt DateTime           @default(now())
+  lastViewedAt  DateTime           @updatedAt
+  completedAt   DateTime?
+
+  @@unique([userId, noteId])
+  @@index([userId, lastViewedAt(sort: Desc)])
+  @@map("note_progress")
+}
+
+model StudentReportCard {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String   @default("Report Card")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  examColumns ReportCardExamColumn[]
+  scores      ReportCardSubjectScore[]
+
+  @@map("student_report_cards")
+}
+
+model ReportCardExamColumn {
+  id           String            @id @default(cuid())
+  reportCardId String
+  reportCard   StudentReportCard @relation(fields: [reportCardId], references: [id], onDelete: Cascade)
+  examKey      String
+  label        String
+  maxMarks     Int
+  orderIndex   Int               @default(0)
+
+  @@unique([reportCardId, examKey])
+  @@index([reportCardId])
+  @@map("report_card_exam_columns")
+}
+
+model ReportCardSubjectScore {
+  id            String            @id @default(cuid())
+  reportCardId  String
+  reportCard    StudentReportCard @relation(fields: [reportCardId], references: [id], onDelete: Cascade)
+  subjectId     String
+  subject       Subject           @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  examKey       String
+  obtainedMarks Int?
+
+  @@unique([reportCardId, subjectId, examKey])
+  @@index([reportCardId])
+  @@map("report_card_subject_scores")
 }

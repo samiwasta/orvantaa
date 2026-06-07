@@ -5,11 +5,6 @@ import { Card, CardDescription, CardTitle } from "@workspace/ui/components/card"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@workspace/ui/components/popover"
-import {
   Sheet,
   SheetClose,
   SheetContent,
@@ -17,22 +12,21 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@workspace/ui/components/sheet"
 import { cn } from "@workspace/ui/lib/utils"
-import { FilePlus2, Pencil, Plus, Upload } from "lucide-react"
-import { useRef, useState } from "react"
+import { FilePlus2, Loader2, Plus } from "lucide-react"
+import { useState } from "react"
 
 import {
   calcOverallPercent,
   calcSubjectPercent,
+  type ExamDef,
   type ExamKey,
-  mockReportCard,
   type ReportCard,
   type SubjectReportScore,
 } from "../model/performance-data"
+import { saveReportCard } from "../service/report-card.service"
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
 function percentColor(pct: number) {
   if (pct >= 80) return "text-emerald-600"
   if (pct >= 60) return "text-amber-600"
@@ -45,68 +39,116 @@ function percentBadgeClass(pct: number) {
   return "bg-red-50 text-red-600 ring-red-200"
 }
 
-// ─── Manual entry sheet ───────────────────────────────────────────────────────
+function emptyScores(): Record<ExamKey, number | null> {
+  return { unit1: null, term1: null, unit2: null, final: null }
+}
+
 type ManualEntrySheetProps = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  initialReport: ReportCard
   onSave: (card: ReportCard) => void
 }
 
-function ManualEntrySheet({ onSave }: ManualEntrySheetProps) {
-  const exams = mockReportCard.exams
-  const subjects = mockReportCard.subjects.map((s) => s.subject)
-
-  const emptyScores = (): Record<ExamKey, number | null> => ({
-    unit1: null,
-    term1: null,
-    unit2: null,
-    final: null,
-  })
-
+function ManualEntrySheet({
+  open,
+  onOpenChange,
+  initialReport,
+  onSave,
+}: ManualEntrySheetProps) {
+  const [isSaving, setIsSaving] = useState(false)
+  const [exams, setExams] = useState<ExamDef[]>(() =>
+    initialReport.exams.map((exam) => ({ ...exam }))
+  )
   const [scores, setScores] = useState<
     Record<string, Record<ExamKey, number | null>>
-  >(Object.fromEntries(subjects.map((s) => [s, emptyScores()])))
-  const [open, setOpen] = useState(false)
+  >(() =>
+    Object.fromEntries(
+      initialReport.subjects.map((subject) => [
+        subject.subjectId,
+        { ...subject.scores },
+      ])
+    )
+  )
 
-  const handleChange = (subject: string, key: ExamKey, raw: string) => {
+  const resetForm = () => {
+    setExams(initialReport.exams.map((exam) => ({ ...exam })))
+    setScores(
+      Object.fromEntries(
+        initialReport.subjects.map((subject) => [
+          subject.subjectId,
+          { ...subject.scores },
+        ])
+      )
+    )
+  }
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    onOpenChange(nextOpen)
+    if (nextOpen) resetForm()
+  }
+
+  const handleExamMaxChange = (key: ExamKey, raw: string) => {
+    const maxMarks = raw === "" ? 0 : Number(raw)
+    setExams((current) =>
+      current.map((exam) =>
+        exam.key === key
+          ? {
+              ...exam,
+              maxMarks: Number.isFinite(maxMarks) ? maxMarks : exam.maxMarks,
+            }
+          : exam
+      )
+    )
+  }
+
+  const handleScoreChange = (
+    subjectId: string,
+    key: ExamKey,
+    raw: string,
+    maxMarks: number
+  ) => {
     const num = raw === "" ? null : Number(raw)
+    if (num !== null && (Number.isNaN(num) || num < 0 || num > maxMarks)) return
+
     setScores((prev) => ({
       ...prev,
-      [subject]: { ...prev[subject], [key]: num } as Record<
-        ExamKey,
-        number | null
-      >,
+      [subjectId]: {
+        ...(prev[subjectId] ?? emptyScores()),
+        [key]: num,
+      },
     }))
   }
 
-  const handleSave = () => {
-    const newCard: ReportCard = {
-      ...mockReportCard,
-      id: "rc-manual",
-      subjects: subjects.map((subject) => ({
-        subject,
-        scores: scores[subject] ?? emptyScores(),
-      })),
+  const handleSave = async () => {
+    if (initialReport.subjects.length === 0) return
+
+    const invalidExam = exams.find((exam) => exam.maxMarks < 1)
+    if (invalidExam) return
+
+    setIsSaving(true)
+    try {
+      const payload: ReportCard = {
+        ...initialReport,
+        exams,
+        subjects: initialReport.subjects.map((subject) => ({
+          ...subject,
+          scores: scores[subject.subjectId] ?? emptyScores(),
+        })),
+      }
+
+      const saved = await saveReportCard(payload)
+      onSave(saved)
+      onOpenChange(false)
+    } catch (error) {
+      console.error("[report-card] Failed to save:", error)
+    } finally {
+      setIsSaving(false)
     }
-    onSave(newCard)
-    setOpen(false)
   }
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <button
-          type="button"
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/60"
-        >
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-violet-100 text-[#6C5CE7]">
-            <Pencil className="size-4" />
-          </div>
-          <div>
-            <p className="font-medium text-foreground">Enter manually</p>
-            <p className="text-xs text-muted-foreground">Type in your scores</p>
-          </div>
-        </button>
-      </SheetTrigger>
-
+    <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent
         side="right"
         className="flex w-full flex-col gap-0 p-0 sm:max-w-lg"
@@ -116,21 +158,47 @@ function ManualEntrySheet({ onSave }: ManualEntrySheetProps) {
             Enter Report Card
           </SheetTitle>
           <SheetDescription className="text-sm text-muted-foreground">
-            Fill in your marks for each subject and examination.
+            Set total marks for each exam, then enter your scores for assigned
+            subjects.
           </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
+          <div className="mb-5 rounded-xl border border-[#6C5CE7]/20 bg-violet-50/40 p-4">
+            <p className="mb-3 text-sm font-semibold text-foreground">
+              Exam total marks
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {exams.map((exam) => (
+                <div key={exam.key} className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">
+                    {exam.label}
+                  </Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={1000}
+                    value={exam.maxMarks}
+                    onChange={(e) =>
+                      handleExamMaxChange(exam.key, e.target.value)
+                    }
+                    className="h-9 text-sm"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="space-y-5">
-            {subjects.map((subject) => {
-              const subjectScores = scores[subject]
+            {initialReport.subjects.map((subject) => {
+              const subjectScores = scores[subject.subjectId] ?? emptyScores()
               return (
                 <div
-                  key={subject}
+                  key={subject.subjectId}
                   className="rounded-xl border border-border/60 bg-muted/20 p-4"
                 >
                   <p className="mb-3 text-sm font-semibold text-foreground">
-                    {subject}
+                    {subject.subject}
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     {exams.map((exam) => (
@@ -146,9 +214,14 @@ function ManualEntrySheet({ onSave }: ManualEntrySheetProps) {
                           min={0}
                           max={exam.maxMarks}
                           placeholder="—"
-                          value={subjectScores?.[exam.key] ?? ""}
+                          value={subjectScores[exam.key] ?? ""}
                           onChange={(e) =>
-                            handleChange(subject, exam.key, e.target.value)
+                            handleScoreChange(
+                              subject.subjectId,
+                              exam.key,
+                              e.target.value,
+                              exam.maxMarks
+                            )
                           }
                           className="h-9 text-sm"
                         />
@@ -165,6 +238,7 @@ function ManualEntrySheet({ onSave }: ManualEntrySheetProps) {
           <SheetClose asChild>
             <Button
               variant="outline"
+              disabled={isSaving}
               className="h-10 flex-1 rounded-xl text-sm"
             >
               Cancel
@@ -172,10 +246,18 @@ function ManualEntrySheet({ onSave }: ManualEntrySheetProps) {
           </SheetClose>
           <Button
             type="button"
-            onClick={handleSave}
+            disabled={isSaving}
+            onClick={() => void handleSave()}
             className="h-10 flex-1 rounded-xl bg-[#6C5CE7] text-sm font-semibold text-white hover:bg-[#5d4ed6]"
           >
-            Save Report
+            {isSaving ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Report"
+            )}
           </Button>
         </SheetFooter>
       </SheetContent>
@@ -183,50 +265,6 @@ function ManualEntrySheet({ onSave }: ManualEntrySheetProps) {
   )
 }
 
-// ─── Upload option ────────────────────────────────────────────────────────────
-type UploadOptionProps = {
-  onFileSelected: (file: File) => void
-  onClose: () => void
-}
-
-function UploadOption({ onFileSelected, onClose }: UploadOptionProps) {
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => {
-          inputRef.current?.click()
-          onClose()
-        }}
-        className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/60"
-      >
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-blue-100 text-blue-600">
-          <Upload className="size-4" />
-        </div>
-        <div>
-          <p className="font-medium text-foreground">Upload file</p>
-          <p className="text-xs text-muted-foreground">
-            PDF, PNG, JPG — max 10MB
-          </p>
-        </div>
-      </button>
-      <input
-        ref={inputRef}
-        type="file"
-        accept=".pdf,.png,.jpg,.jpeg,.webp"
-        className="sr-only"
-        onChange={(e) => {
-          const f = e.target.files?.[0]
-          if (f) onFileSelected(f)
-        }}
-      />
-    </>
-  )
-}
-
-// ─── Score cell ───────────────────────────────────────────────────────────────
 function ScoreCell({
   obtained,
   max,
@@ -255,131 +293,142 @@ function ScoreCell({
   )
 }
 
-// ─── Main card ────────────────────────────────────────────────────────────────
-export function ReportCardUploadCard() {
-  const [report, setReport] = useState<ReportCard>(mockReportCard)
-  const [popoverOpen, setPopoverOpen] = useState(false)
+type ReportCardUploadCardProps = {
+  initialReport: ReportCard
+}
+
+export function ReportCardUploadCard({
+  initialReport,
+}: ReportCardUploadCardProps) {
+  const [report, setReport] = useState<ReportCard>(initialReport)
+  const [sheetOpen, setSheetOpen] = useState(false)
 
   const overallPct = calcOverallPercent(report)
+  const hasAnyScore = report.subjects.some((subject) =>
+    report.exams.some((exam) => subject.scores[exam.key] !== null)
+  )
+  const hasSubjects = report.subjects.length > 0
 
   return (
-    <Card className="flex h-full flex-col gap-0 overflow-hidden rounded-2xl border-0 bg-card py-0 shadow-md ring-1 ring-black/5">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 border-b border-border/50 px-5 py-4 sm:px-6">
-        <div className="min-w-0">
-          <CardTitle className="font-heading text-base font-semibold tracking-tight text-foreground sm:text-[17px]">
-            Report Card Analysis
-          </CardTitle>
-          <CardDescription className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
-            Track your scores across all examinations
-          </CardDescription>
+    <>
+      <Card className="flex h-full flex-col gap-0 overflow-hidden rounded-2xl border-0 bg-card py-0 shadow-md ring-1 ring-black/5">
+        <div className="flex items-start justify-between gap-3 border-b border-border/50 px-5 py-4 sm:px-6">
+          <div className="min-w-0">
+            <CardTitle className="font-heading text-base font-semibold tracking-tight text-foreground sm:text-[17px]">
+              Report Card Analysis
+            </CardTitle>
+            <CardDescription className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
+              Track your scores across all examinations
+            </CardDescription>
+          </div>
+
+          <Button
+            size="sm"
+            disabled={!hasSubjects}
+            onClick={() => setSheetOpen(true)}
+            className="h-8 shrink-0 gap-1.5 rounded-lg bg-[#6C5CE7] px-3 text-xs font-semibold text-white hover:bg-[#5d4ed6]"
+          >
+            <Plus className="size-3.5" />
+            Add marks
+          </Button>
         </div>
 
-        <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              size="sm"
-              className="h-8 shrink-0 gap-1.5 rounded-lg bg-[#6C5CE7] px-3 text-xs font-semibold text-white hover:bg-[#5d4ed6]"
+        <div className="flex items-center justify-between gap-3 px-5 pt-4 sm:px-6">
+          <div className="flex items-center gap-2">
+            <FilePlus2
+              className="size-4 text-muted-foreground"
+              strokeWidth={1.75}
+            />
+            <span className="text-sm font-medium text-foreground">
+              {report.title}
+            </span>
+          </div>
+          {hasAnyScore ? (
+            <span
+              className={cn(
+                "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1",
+                percentBadgeClass(overallPct)
+              )}
             >
-              <Plus className="size-3.5" />
-              Add new report
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="end" sideOffset={8} className="w-64 gap-1 p-2">
-            <p className="mb-1 px-2 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-              Add report
-            </p>
-            <ManualEntrySheet
-              onSave={(card) => {
-                setReport(card)
-                setPopoverOpen(false)
-              }}
-            />
-            <UploadOption
-              onFileSelected={() => setPopoverOpen(false)}
-              onClose={() => setPopoverOpen(false)}
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
-
-      {/* Overall badge + title */}
-      <div className="flex items-center justify-between gap-3 px-5 pt-4 sm:px-6">
-        <div className="flex items-center gap-2">
-          <FilePlus2
-            className="size-4 text-muted-foreground"
-            strokeWidth={1.75}
-          />
-          <span className="text-sm font-medium text-foreground">
-            {report.title}
-          </span>
+              Overall {overallPct}%
+            </span>
+          ) : null}
         </div>
-        <span
-          className={cn(
-            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1",
-            percentBadgeClass(overallPct)
-          )}
-        >
-          Overall {overallPct}%
-        </span>
-      </div>
 
-      {/* Scores table */}
-      <div className="mt-3 flex-1 overflow-x-auto px-5 pb-5 sm:px-6">
-        <table className="w-full min-w-[360px] border-separate border-spacing-y-1 text-sm">
-          <thead>
-            <tr>
-              <th className="py-1 pr-3 text-left text-[11px] font-semibold tracking-wide text-muted-foreground">
-                Subject
-              </th>
-              {report.exams.map((exam) => (
-                <th
-                  key={exam.key}
-                  className="px-2 py-1 text-center text-[11px] font-semibold tracking-wide text-muted-foreground"
-                >
-                  {exam.label}
-                </th>
-              ))}
-              <th className="px-2 py-1 text-center text-[11px] font-semibold tracking-wide text-muted-foreground">
-                Overall
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {report.subjects.map((sub: SubjectReportScore) => {
-              const subPct = calcSubjectPercent(sub, report.exams)
-              return (
-                <tr key={sub.subject} className="group rounded-lg">
-                  <td className="rounded-l-lg py-2 pr-3 font-medium text-foreground">
-                    {sub.subject}
-                  </td>
+        <div className="mt-3 flex-1 overflow-x-auto px-5 pb-5 sm:px-6">
+          {report.subjects.length === 0 ? (
+            <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-border/70 px-4 text-center text-sm text-muted-foreground">
+              Your class subjects will appear here once assigned by your school.
+            </div>
+          ) : (
+            <table className="w-full min-w-[360px] border-separate border-spacing-y-1 text-sm">
+              <thead>
+                <tr>
+                  <th className="py-1 pr-3 text-left text-[11px] font-semibold tracking-wide text-muted-foreground">
+                    Subject
+                  </th>
                   {report.exams.map((exam) => (
-                    <td
+                    <th
                       key={exam.key}
-                      className="px-2 py-2 text-center text-[13px]"
+                      className="px-2 py-1 text-center text-[11px] font-semibold tracking-wide text-muted-foreground"
                     >
-                      <ScoreCell
-                        obtained={sub.scores[exam.key]}
-                        max={exam.maxMarks}
-                      />
-                    </td>
+                      <span className="block">{exam.label}</span>
+                      <span className="text-[10px] font-normal text-muted-foreground/70">
+                        /{exam.maxMarks}
+                      </span>
+                    </th>
                   ))}
-                  <td className="rounded-r-lg px-2 py-2 text-center">
-                    <span
-                      className={cn(
-                        "text-[13px] font-semibold tabular-nums",
-                        percentColor(subPct)
-                      )}
-                    >
-                      {subPct}%
-                    </span>
-                  </td>
+                  <th className="px-2 py-1 text-center text-[11px] font-semibold tracking-wide text-muted-foreground">
+                    Overall
+                  </th>
                 </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-    </Card>
+              </thead>
+              <tbody>
+                {report.subjects.map((sub: SubjectReportScore) => {
+                  const subPct = calcSubjectPercent(sub, report.exams)
+                  return (
+                    <tr key={sub.subjectId} className="group rounded-lg">
+                      <td className="rounded-l-lg py-2 pr-3 font-medium text-foreground">
+                        {sub.subject}
+                      </td>
+                      {report.exams.map((exam) => (
+                        <td
+                          key={exam.key}
+                          className="px-2 py-2 text-center text-[13px]"
+                        >
+                          <ScoreCell
+                            obtained={sub.scores[exam.key]}
+                            max={exam.maxMarks}
+                          />
+                        </td>
+                      ))}
+                      <td className="rounded-r-lg px-2 py-2 text-center">
+                        <span
+                          className={cn(
+                            "text-[13px] font-semibold tabular-nums",
+                            subPct > 0
+                              ? percentColor(subPct)
+                              : "text-muted-foreground/50"
+                          )}
+                        >
+                          {subPct > 0 ? `${subPct}%` : "—"}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </Card>
+
+      <ManualEntrySheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        initialReport={report}
+        onSave={setReport}
+      />
+    </>
   )
 }

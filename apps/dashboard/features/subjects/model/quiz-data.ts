@@ -2,11 +2,13 @@ import type { ChapterItem, QuizItem } from "./chapter-data"
 
 export type McqOption = {
   id: string
+  dbId: string
   label: string
 }
 
 export type McqQuestion = {
   id: string
+  dbId: string
   question: string
   options: McqOption[]
   correctOptionId: string

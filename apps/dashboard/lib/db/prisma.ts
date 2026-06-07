@@ -16,7 +16,11 @@ function createPrismaClient(): PrismaClient {
 }
 
 function isStalePrismaClient(client: PrismaClient): boolean {
-  return !("aiTutorChatSession" in client)
+  return (
+    !("aiTutorChatSession" in client) ||
+    !("quizAttempt" in client) ||
+    !("studentReportCard" in client)
+  )
 }
 
 function getPrismaClient(): PrismaClient {
