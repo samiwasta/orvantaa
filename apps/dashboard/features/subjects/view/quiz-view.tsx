@@ -6,15 +6,15 @@ import { cn } from "@workspace/ui/lib/utils"
 import { ArrowLeft, ChevronLeft } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { submitQuizAttempt } from "@/features/performance/service/activity-tracking.service"
 
+import { serializeQuizQuestionScope } from "../model/ai-tutor-scope"
 import type { ChapterItem } from "../model/chapter-data"
 import { chapterSlug } from "../model/chapter-data"
 import type { QuizSession } from "../model/quiz-data"
 import { optionDisplayLabel } from "../model/quiz-data"
-import { NoteAiTutorCard } from "./note-ai-tutor-card"
 import { NoteAiTutorFab } from "./note-ai-tutor-fab"
 
 function QuizProgressStrip({
@@ -137,7 +137,16 @@ export function QuizView({ subjectSlug, chapter, session }: QuizViewProps) {
     }
   }
 
-  const tutorContext = `${quiz.title} — Question ${questionNumber}`
+  const tutorContext = useMemo(
+    () =>
+      serializeQuizQuestionScope({
+        quizTitle: quiz.title,
+        chapterTitle: `Chapter ${chapter.number}: ${chapter.title}`,
+        questionNumber,
+        question,
+      }),
+    [quiz.title, chapter.number, chapter.title, questionNumber, question]
+  )
 
   return (
     <div className="w-full">
@@ -160,13 +169,7 @@ export function QuizView({ subjectSlug, chapter, session }: QuizViewProps) {
         </div>
       </div>
 
-      <div
-        className={cn(
-          "mt-5",
-          aiTutorOpen &&
-            "grid grid-cols-1 gap-5 xl:grid-cols-2 xl:items-start xl:gap-6"
-        )}
-      >
+      <div className="mt-5">
         <div className="min-w-0 space-y-4">
           <div>
             <p className="text-sm font-semibold text-foreground">
@@ -260,21 +263,13 @@ export function QuizView({ subjectSlug, chapter, session }: QuizViewProps) {
             </div>
           </div>
         </div>
-
-        {aiTutorOpen ? (
-          <aside className="hidden min-w-0 xl:sticky xl:top-6 xl:block xl:self-start">
-            <NoteAiTutorCard
-              lessonTitle={tutorContext}
-              onClose={() => setAiTutorOpen(false)}
-            />
-          </aside>
-        ) : null}
       </div>
 
       <NoteAiTutorFab
+        key={question.dbId}
         open={aiTutorOpen}
         onOpenChange={setAiTutorOpen}
-        lessonTitle={tutorContext}
+        scope={tutorContext}
       />
     </div>
   )

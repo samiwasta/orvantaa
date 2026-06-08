@@ -3,14 +3,17 @@ import type {
   AiTutorChatResponse,
 } from "../model/chat-request"
 
+type AiTutorScope = NonNullable<AiTutorChatRequest["scope"]>
+
 export async function requestAiTutorReply(
-  messages: AiTutorChatRequest["messages"]
+  messages: AiTutorChatRequest["messages"],
+  scope?: AiTutorScope
 ): Promise<AiTutorChatResponse> {
   const response = await fetch("/api/ai-tutor/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "same-origin",
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({ messages, scope }),
   })
 
   const payload = (await response.json().catch(() => null)) as

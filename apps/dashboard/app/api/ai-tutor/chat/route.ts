@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { parseAiTutorChatRequest } from "@/features/ai-tutor/model/chat-request"
 import { getAiTutorSetupHint, isAiTutorConfigured } from "@/lib/ai/config"
 import { generateAiTutorChatResponse } from "@/lib/ai/generate-chat-response"
+import { buildWidgetScopedSystemPrompt } from "@/lib/ai/prompts"
 import { requireStudentSession } from "@/lib/auth/session"
 
 export async function POST(request: Request) {
@@ -40,7 +41,17 @@ export async function POST(request: Request) {
   }
 
   try {
-    const content = await generateAiTutorChatResponse(parsed.data.messages)
+    const chatOptions = parsed.data.scope
+      ? {
+          systemPrompt: buildWidgetScopedSystemPrompt(parsed.data.scope),
+          maxTokens: 512,
+        }
+      : undefined
+
+    const content = await generateAiTutorChatResponse(
+      parsed.data.messages,
+      chatOptions
+    )
     return NextResponse.json({ content })
   } catch (error) {
     console.error("[ai-tutor] Chat failed:", error)

@@ -17,16 +17,16 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import { trackNoteProgress } from "@/features/performance/service/activity-tracking.service"
 
+import { serializeNoteScope } from "../model/ai-tutor-scope"
 import type { ChapterItem, TopicItem } from "../model/chapter-data"
 import { chapterSlug } from "../model/chapter-data"
 import { noteHref } from "../model/content-navigation"
 import type { NoteBlock, NoteContent } from "../model/note-data"
 import type { buildNoteNavigation } from "../model/note-navigation"
-import { NoteAiTutorCard } from "./note-ai-tutor-card"
 import { NoteAiTutorFab } from "./note-ai-tutor-fab"
 
 function DefinitionBox({ title, content }: { title: string; content: string }) {
@@ -235,6 +235,11 @@ export function NoteView({
   const showTopicBadge =
     topic.title.trim().toLowerCase() !== note.title.trim().toLowerCase()
   const [aiTutorOpen, setAiTutorOpen] = useState(false)
+  const aiTutorScope = useMemo(
+    () =>
+      serializeNoteScope(note, `Chapter ${chapter.number}: ${chapter.title}`),
+    [note, chapter.number, chapter.title]
+  )
 
   useEffect(() => {
     void trackNoteProgress(note.id, "VIEWED").catch((error) => {
@@ -269,13 +274,7 @@ export function NoteView({
         </div>
       </div>
 
-      <div
-        className={cn(
-          "mt-5",
-          aiTutorOpen &&
-            "grid grid-cols-1 gap-5 xl:grid-cols-2 xl:items-start xl:gap-6"
-        )}
-      >
+      <div className="mt-5">
         <div className="min-w-0">
           <article className="note-student-preview overflow-hidden rounded-2xl border-2 border-violet-100 bg-card font-heading shadow-lg shadow-violet-200/25">
             {/* Colorful lesson header */}
@@ -414,21 +413,12 @@ export function NoteView({
             </div>
           </article>
         </div>
-
-        {aiTutorOpen ? (
-          <aside className="hidden min-w-0 xl:sticky xl:top-6 xl:block xl:self-start">
-            <NoteAiTutorCard
-              lessonTitle={note.title}
-              onClose={() => setAiTutorOpen(false)}
-            />
-          </aside>
-        ) : null}
       </div>
 
       <NoteAiTutorFab
         open={aiTutorOpen}
         onOpenChange={setAiTutorOpen}
-        lessonTitle={note.title}
+        scope={aiTutorScope}
       />
     </div>
   )

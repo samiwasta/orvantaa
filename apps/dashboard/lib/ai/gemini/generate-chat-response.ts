@@ -1,5 +1,5 @@
 import { AI_TUTOR_SYSTEM_PROMPT } from "../prompts"
-import type { AiChatMessage } from "../types"
+import type { AiChatMessage, AiChatOptions } from "../types"
 import { getGeminiConfig, getGeminiModelCandidates } from "./config"
 import {
   assertGeminiConfigured,
@@ -37,7 +37,8 @@ function buildContents(messages: GeminiChatMessage[]) {
 async function generateWithModel(
   apiKey: string,
   modelName: string,
-  messages: GeminiChatMessage[]
+  messages: GeminiChatMessage[],
+  systemPrompt: string
 ): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent`
 
@@ -49,7 +50,7 @@ async function generateWithModel(
     },
     body: JSON.stringify({
       systemInstruction: {
-        parts: [{ text: AI_TUTOR_SYSTEM_PROMPT }],
+        parts: [{ text: systemPrompt }],
       },
       contents: buildContents(messages),
     }),
@@ -79,7 +80,8 @@ async function generateWithModel(
 }
 
 export async function generateGeminiChatResponse(
-  messages: GeminiChatMessage[]
+  messages: GeminiChatMessage[],
+  options?: AiChatOptions
 ): Promise<string> {
   assertGeminiConfigured()
 
@@ -94,6 +96,7 @@ export async function generateGeminiChatResponse(
 
   const config = getGeminiConfig()
   const models = getGeminiModelCandidates(config)
+  const systemPrompt = options?.systemPrompt ?? AI_TUTOR_SYSTEM_PROMPT
   let lastError: unknown = null
 
   for (let index = 0; index < models.length; index += 1) {
@@ -101,7 +104,12 @@ export async function generateGeminiChatResponse(
     const hasFallback = index < models.length - 1
 
     try {
-      return await generateWithModel(config.apiKey, modelName, messages)
+      return await generateWithModel(
+        config.apiKey,
+        modelName,
+        messages,
+        systemPrompt
+      )
     } catch (error) {
       lastError = error
 
@@ -114,7 +122,12 @@ export async function generateGeminiChatResponse(
         if (retryDelayMs && retryDelayMs <= 15_000) {
           await sleep(retryDelayMs)
           try {
-            return await generateWithModel(config.apiKey, modelName, messages)
+            return await generateWithModel(
+              config.apiKey,
+              modelName,
+              messages,
+              systemPrompt
+            )
           } catch (retryError) {
             lastError = retryError
             if (

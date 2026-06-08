@@ -1,5 +1,5 @@
 import { AI_TUTOR_SYSTEM_PROMPT } from "../prompts"
-import type { AiChatMessage } from "../types"
+import type { AiChatMessage, AiChatOptions } from "../types"
 import { getGroqConfig } from "./config"
 
 type GroqChatResponse = {
@@ -29,7 +29,8 @@ function assertGroqConfigured(): void {
 }
 
 export async function generateGroqChatResponse(
-  messages: AiChatMessage[]
+  messages: AiChatMessage[],
+  options?: AiChatOptions
 ): Promise<string> {
   assertGroqConfigured()
 
@@ -55,9 +56,12 @@ export async function generateGroqChatResponse(
       body: JSON.stringify({
         model: config.model,
         temperature: 0.7,
-        max_tokens: 2048,
+        max_tokens: options?.maxTokens ?? 2048,
         messages: [
-          { role: "system", content: AI_TUTOR_SYSTEM_PROMPT },
+          {
+            role: "system",
+            content: options?.systemPrompt ?? AI_TUTOR_SYSTEM_PROMPT,
+          },
           ...messages.map((message) => ({
             role: message.role,
             content: message.content,

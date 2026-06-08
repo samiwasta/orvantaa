@@ -2,29 +2,89 @@
 
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
-import { SendHorizontal, X } from "lucide-react"
+import { Loader2, SendHorizontal, Sparkles, X } from "lucide-react"
 import Image from "next/image"
 import { useCallback, useEffect, useRef, useState } from "react"
 
-const MAX_INPUT_ROWS = 4
+import { requestAiTutorReply } from "@/features/ai-tutor/service/ai-tutor-chat.service"
+import { AiTutorMarkdown } from "@/features/ai-tutor/view/ai-tutor-markdown"
 
-const quickPrompts = [
-  "Explain This Concept",
-  "Solve A Similar Problem",
-  "Give Me Practice Questions",
+import type { AiTutorWidgetScope } from "../model/ai-tutor-scope"
+
+const MAX_INPUT_ROWS = 3
+
+const noteQuickPrompts = [
+  "Explain this concept",
+  "Solve a similar problem",
+  "Give me practice questions",
 ] as const
 
+const quizQuickPrompts = [
+  "Explain the concept behind this",
+  "Give me a hint",
+  "What should I think about first?",
+] as const
+
+type ChatMessage = {
+  role: "user" | "assistant"
+  content: string
+}
+
 type NoteAiTutorCardProps = {
-  lessonTitle: string
+  scope: AiTutorWidgetScope
   onClose?: () => void
+  className?: string
+}
+
+function TutorAvatar({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "flex size-7 shrink-0 items-center justify-center rounded-full bg-white/12 ring-1 ring-white/20",
+        className
+      )}
+      aria-hidden
+    >
+      <Image
+        src="/robot.svg"
+        alt=""
+        width={20}
+        height={20}
+        className="size-4 object-contain"
+      />
+    </span>
+  )
+}
+
+function TypingDots() {
+  return (
+    <span className="flex items-center gap-1" aria-label="AI Tutor is typing">
+      {[0, 1, 2].map((index) => (
+        <span
+          key={index}
+          className="size-1.5 animate-bounce rounded-full bg-[#6C5CE7]/70"
+          style={{ animationDelay: `${index * 150}ms` }}
+        />
+      ))}
+    </span>
+  )
 }
 
 export function NoteAiTutorCard({
-  lessonTitle,
+  scope,
   onClose,
+  className,
 }: NoteAiTutorCardProps) {
   const [query, setQuery] = useState("")
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const quickPrompts =
+    scope.mode === "quiz" ? quizQuickPrompts : noteQuickPrompts
+  const isEmpty = messages.length === 0
 
   const adjustTextareaHeight = useCallback(() => {
     const el = textareaRef.current
@@ -46,97 +106,248 @@ export function NoteAiTutorCard({
     adjustTextareaHeight()
   }, [query, adjustTextareaHeight])
 
+  useEffect(() => {
+    setMessages([])
+    setQuery("")
+    setError(null)
+  }, [scope.title, scope.mode, scope.content])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
+  }, [messages, isLoading])
+
+  const submitMessage = async (rawMessage: string) => {
+    const trimmed = rawMessage.trim()
+    if (!trimmed || isLoading) return
+
+    const nextMessages: ChatMessage[] = [
+      ...messages,
+      { role: "user", content: trimmed },
+    ]
+
+    setQuery("")
+    setError(null)
+    setMessages(nextMessages)
+    setIsLoading(true)
+
+    try {
+      const { content } = await requestAiTutorReply(nextMessages, scope)
+      setMessages([...nextMessages, { role: "assistant", content }])
+    } catch (submitError) {
+      const message =
+        submitError instanceof Error
+          ? submitError.message
+          : "Could not get a response right now."
+      setError(message)
+      setMessages(nextMessages)
+    } finally {
+      setIsLoading(false)
+      requestAnimationFrame(adjustTextareaHeight)
+    }
+  }
+
+  const emptyHeadline =
+    scope.mode === "quiz" ? "Stuck on this question?" : "Ask about this lesson"
+  const emptyDescription =
+    scope.mode === "quiz"
+      ? "I'll explain the idea and nudge you with hints — not the direct answer."
+      : "Short, clear answers tailored to this lesson."
+
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-[#232061] via-[#1f1b57] to-[#171446] p-5 text-white shadow-[0_24px_46px_-26px_rgba(31,27,87,0.98)] sm:p-6">
+    <div
+      className={cn(
+        "relative flex h-full flex-col overflow-hidden rounded-2xl bg-linear-to-b from-[#211d57] via-[#1b1850] to-[#141137] text-white shadow-[0_24px_48px_-20px_rgba(15,12,45,0.95)] ring-1 ring-white/10",
+        className
+      )}
+    >
       <div
-        className="pointer-events-none absolute top-6 -left-8 size-32 rounded-full bg-[#7f54ee]/25 blur-3xl"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute -right-8 bottom-2 size-36 rounded-full bg-[#0ea5b7]/20 blur-3xl"
+        className="pointer-events-none absolute -top-8 -left-8 size-32 rounded-full bg-[#7f54ee]/25 blur-3xl"
         aria-hidden
       />
 
-      <div className="relative space-y-4">
-        <div className="flex items-start gap-2">
+      <header className="relative flex shrink-0 items-center gap-2.5 border-b border-white/10 px-3.5 py-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-[#8b6cf6] to-[#6447dd] shadow-[0_8px_18px_-12px_rgba(127,84,238,0.95)]">
           <Image
-            src="/sparkle.svg"
+            src="/robot.svg"
             alt=""
-            width={28}
-            height={28}
-            className="size-6 object-contain drop-shadow-[0_6px_12px_rgba(255,200,90,0.35)] sm:size-7"
+            width={22}
+            height={22}
+            className="size-5 object-contain"
             aria-hidden
           />
-          <h2 className="flex-1 text-lg font-semibold tracking-tight text-white sm:text-xl">
-            Ask your AI Tutor
-          </h2>
-          {onClose ? (
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/80 transition-colors hover:bg-white/20 hover:text-white"
-              aria-label="Close AI Tutor"
-            >
-              <X className="size-4" strokeWidth={2} aria-hidden />
-            </button>
-          ) : null}
-        </div>
-
-        <p className="text-sm leading-relaxed text-white/85">
-          Stuck on this topic? Ask questions, get step-by-step explanations, or
-          generate similar practice problems instantly.
-        </p>
-
-        <div className="flex items-start gap-2 rounded-2xl border border-white/60 bg-white/95 p-2 shadow-[0_10px_24px_-16px_rgba(10,12,29,0.7)]">
-          <div className="pointer-events-none flex shrink-0 pt-1 pl-1">
-            <Image
-              src="/robot.svg"
-              alt=""
-              width={32}
-              height={32}
-              className="size-7 object-contain sm:size-8"
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="flex items-center gap-1 text-sm font-semibold tracking-tight text-white">
+            AI Tutor
+            <Sparkles
+              className="size-3 text-amber-300"
+              strokeWidth={2.5}
               aria-hidden
             />
+          </h2>
+          <p className="truncate text-[11px] text-white/55">{scope.title}</p>
+        </div>
+        {onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex size-7 shrink-0 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+            aria-label="Close AI Tutor"
+          >
+            <X className="size-3.5" strokeWidth={2} aria-hidden />
+          </button>
+        ) : null}
+      </header>
+
+      <div className="relative min-h-0 flex-1 overflow-y-auto px-3.5 py-3">
+        {isEmpty ? (
+          <div className="flex h-full flex-col items-center justify-center px-1 text-center">
+            <span className="flex size-11 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15">
+              <Image
+                src="/sparkle.svg"
+                alt=""
+                width={24}
+                height={24}
+                className="size-5 object-contain"
+                aria-hidden
+              />
+            </span>
+            <h3 className="mt-3 text-sm font-semibold text-white">
+              {emptyHeadline}
+            </h3>
+            <p className="mt-1 max-w-[16rem] text-xs leading-relaxed text-white/65">
+              {emptyDescription}
+            </p>
+
+            <div className="mt-4 flex w-full flex-col gap-1.5">
+              {quickPrompts.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  disabled={isLoading}
+                  onClick={() => void submitMessage(prompt)}
+                  className="rounded-xl bg-white/8 px-3 py-2.5 text-left text-xs font-medium text-white/90 ring-1 ring-white/12 transition-all hover:bg-white/15 disabled:opacity-50"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
           </div>
+        ) : (
+          <div className="space-y-3">
+            {messages.map((message, index) => (
+              <div
+                key={`${message.role}-${index}`}
+                className={cn(
+                  "flex items-end gap-1.5",
+                  message.role === "user" ? "justify-end" : "justify-start"
+                )}
+              >
+                {message.role === "assistant" ? <TutorAvatar /> : null}
+                <div
+                  className={cn(
+                    "max-w-[85%] px-3 py-2 text-[13px] leading-5 shadow-sm",
+                    message.role === "user"
+                      ? "rounded-2xl rounded-br-md bg-linear-to-br from-[#8b6cf6] to-[#6447dd] text-white"
+                      : "rounded-2xl rounded-bl-md bg-white text-[#1f2937]"
+                  )}
+                >
+                  {message.role === "assistant" ? (
+                    <AiTutorMarkdown
+                      content={message.content}
+                      variant="compact"
+                    />
+                  ) : (
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+            {isLoading ? (
+              <div className="flex items-end gap-1.5">
+                <TutorAvatar />
+                <div className="rounded-2xl rounded-bl-md bg-white px-3 py-2 shadow-sm">
+                  <TypingDots />
+                </div>
+              </div>
+            ) : null}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
+      </div>
+
+      <div className="relative shrink-0 border-t border-white/10 px-3.5 py-3">
+        {error ? (
+          <p
+            className="mb-2 rounded-lg bg-rose-500/15 px-2.5 py-1.5 text-[11px] text-rose-200 ring-1 ring-rose-400/25"
+            role="alert"
+          >
+            {error}
+          </p>
+        ) : null}
+
+        {!isEmpty ? (
+          <div className="mb-2 flex flex-wrap gap-1">
+            {quickPrompts.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                disabled={isLoading}
+                onClick={() => void submitMessage(prompt)}
+                className="rounded-full bg-white/8 px-2.5 py-0.5 text-[10px] font-medium text-white/80 ring-1 ring-white/12 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-50"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        <form
+          className="flex items-end gap-1.5 rounded-xl bg-white p-1 pl-2.5 shadow-[0_10px_24px_-18px_rgba(8,10,30,0.9)]"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void submitMessage(query)
+          }}
+        >
           <textarea
             ref={textareaRef}
             rows={1}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(event) => setQuery(event.target.value)}
             onInput={adjustTextareaHeight}
-            placeholder="Ask about this lesson..."
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault()
+                void submitMessage(query)
+              }
+            }}
+            placeholder={
+              scope.mode === "quiz"
+                ? "Ask for a hint..."
+                : "Ask about this lesson..."
+            }
+            disabled={isLoading}
             className={cn(
-              "min-h-10 min-w-0 flex-1 resize-none border-0 bg-transparent px-1 py-2",
-              "text-sm leading-5 text-[#1f2937] shadow-none outline-none",
-              "placeholder:text-[#6b7280] focus-visible:ring-0"
+              "min-h-8 min-w-0 flex-1 resize-none self-center border-0 bg-transparent py-1.5",
+              "text-[13px] leading-5 text-[#1f2937] shadow-none outline-none",
+              "placeholder:text-[#9ca3af] focus-visible:ring-0 disabled:opacity-60"
             )}
-            aria-label={`Ask about ${lessonTitle}`}
+            aria-label={`Ask about ${scope.title}`}
           />
           <Button
-            type="button"
+            type="submit"
             size="icon"
-            className="mt-0.5 size-10 shrink-0 rounded-xl bg-[#1f1b57] text-white shadow-[0_8px_16px_-10px_rgba(31,27,87,0.95)] transition-all hover:bg-[#171446]"
+            disabled={!query.trim() || isLoading}
+            className="size-8 shrink-0 rounded-lg bg-linear-to-br from-[#8b6cf6] to-[#6447dd] text-white hover:from-[#7f5cf0] hover:to-[#5a3fd0] disabled:opacity-40"
             aria-label="Send message"
           >
-            <SendHorizontal className="size-4" aria-hidden />
+            {isLoading ? (
+              <Loader2 className="size-3.5 animate-spin" aria-hidden />
+            ) : (
+              <SendHorizontal className="size-3.5" aria-hidden />
+            )}
           </Button>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {quickPrompts.map((prompt) => (
-            <button
-              key={prompt}
-              type="button"
-              onClick={() => {
-                setQuery(prompt)
-                requestAnimationFrame(adjustTextareaHeight)
-              }}
-              className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white/90 ring-1 ring-white/15 transition-colors hover:bg-white/20 hover:text-white"
-            >
-              {prompt}
-            </button>
-          ))}
-        </div>
+        </form>
       </div>
     </div>
   )

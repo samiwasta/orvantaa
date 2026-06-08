@@ -10,6 +10,13 @@ export const aiTutorChatRequestSchema = z.object({
     )
     .min(1)
     .max(40),
+  scope: z
+    .object({
+      title: z.string().trim().min(1).max(500),
+      mode: z.enum(["note", "quiz"]).optional(),
+      content: z.string().trim().min(1).max(8000).optional(),
+    })
+    .optional(),
 })
 
 export type AiTutorChatRequest = z.infer<typeof aiTutorChatRequestSchema>
