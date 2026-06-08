@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { loadStudentClassId } from "@/features/curriculum/server/load-student-class-id"
+import { notificationService } from "@/features/notifications/service/notification.service"
 import { parseNoteProgress } from "@/features/performance/model/activity-request"
 import { noteProgressRepository } from "@/features/performance/repository/note-progress.repository"
 import { requireStudentSession } from "@/lib/auth/session"
@@ -51,6 +52,13 @@ export async function POST(request: Request, context: RouteContext) {
       noteId,
       parsed.data.status
     )
+
+    if (parsed.data.status === "COMPLETED") {
+      await notificationService.notifyLessonCompletedFromNote(
+        authSession.sub,
+        noteId
+      )
+    }
 
     return NextResponse.json({ success: true })
   } catch {

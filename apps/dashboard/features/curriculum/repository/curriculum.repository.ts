@@ -20,7 +20,24 @@ export class CurriculumRepository {
       include: {
         chapters: {
           where: chapterWithAssignedContentWhere,
-          select: { id: true },
+          orderBy: { number: "asc" },
+          include: {
+            topics: {
+              where: topicWithNotesWhere,
+              orderBy: { orderIndex: "asc" },
+              include: {
+                notes: {
+                  orderBy: { orderIndex: "asc" },
+                  select: { id: true },
+                },
+              },
+            },
+            quizzes: {
+              where: quizWithQuestionsWhere,
+              orderBy: { orderIndex: "asc" },
+              select: { id: true },
+            },
+          },
         },
       },
     })
@@ -36,7 +53,24 @@ export class CurriculumRepository {
       include: {
         chapters: {
           where: chapterWithAssignedContentWhere,
-          select: { id: true },
+          orderBy: { number: "asc" },
+          include: {
+            topics: {
+              where: topicWithNotesWhere,
+              orderBy: { orderIndex: "asc" },
+              include: {
+                notes: {
+                  orderBy: { orderIndex: "asc" },
+                  select: { id: true },
+                },
+              },
+            },
+            quizzes: {
+              where: quizWithQuestionsWhere,
+              orderBy: { orderIndex: "asc" },
+              select: { id: true },
+            },
+          },
         },
       },
     })
@@ -49,6 +83,23 @@ export class CurriculumRepository {
         ...chapterWithAssignedContentWhere,
       },
       orderBy: { number: "asc" },
+      include: {
+        topics: {
+          where: topicWithNotesWhere,
+          orderBy: { orderIndex: "asc" },
+          include: {
+            notes: {
+              orderBy: { orderIndex: "asc" },
+              select: { id: true },
+            },
+          },
+        },
+        quizzes: {
+          where: quizWithQuestionsWhere,
+          orderBy: { orderIndex: "asc" },
+          select: { id: true },
+        },
+      },
     })
   }
 

@@ -1,9 +1,10 @@
 export type CurrentLessonProgress = {
   subjectTitle: string
   chapterLabel: string
-  completedLessons: number
-  totalLessons: number
+  completedItems: number
+  totalItems: number
   progressPercent: number
+  isCompleted: boolean
   continueHref: string
 }
 

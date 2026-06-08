@@ -67,7 +67,7 @@ function ChapterCard({
         size="lg"
         className="w-full rounded-lg border-2 border-[#FF8A3D] bg-transparent text-[#FF8A3D] hover:border-[#E8722A] hover:bg-[#FF8A3D]/10 hover:text-[#E8722A] dark:hover:bg-[#FF8A3D]/12"
       >
-        <Link href={href}>Review Chapter</Link>
+        <Link href={href}>Revise Chapter</Link>
       </Button>
     ) : (
       <Button

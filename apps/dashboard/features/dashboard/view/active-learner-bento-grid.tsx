@@ -125,9 +125,9 @@ function CurrentLessonCard({
   lesson: ActiveLearnerDashboardData["currentLesson"]
 }) {
   const progressLabel =
-    lesson.totalLessons > 0
-      ? `${lesson.completedLessons}/${lesson.totalLessons} lessons`
-      : "No lessons yet"
+    lesson.totalItems > 0
+      ? `${lesson.completedItems}/${lesson.totalItems} completed`
+      : "No activities yet"
 
   return (
     <Card className="flex h-full flex-col gap-0 overflow-hidden rounded-2xl border-0 bg-white py-0 shadow-md ring-1 ring-black/5 xl:col-span-1">
@@ -154,9 +154,16 @@ function CurrentLessonCard({
         <div className="mt-auto flex justify-end pt-8">
           <Button
             asChild
-            className="h-10 rounded-xl bg-[#FF8A3D] px-5 text-sm font-semibold text-white shadow-[0_10px_20px_-12px_rgba(255,138,61,0.95)] hover:bg-[#f57f31]"
+            variant={lesson.isCompleted ? "outline" : "default"}
+            className={
+              lesson.isCompleted
+                ? "h-10 rounded-xl border-2 border-[#FF8A3D] bg-transparent px-5 text-sm font-semibold text-[#FF8A3D] hover:border-[#E8722A] hover:bg-[#FF8A3D]/10 hover:text-[#E8722A]"
+                : "h-10 rounded-xl bg-[#FF8A3D] px-5 text-sm font-semibold text-white shadow-[0_10px_20px_-12px_rgba(255,138,61,0.95)] hover:bg-[#f57f31]"
+            }
           >
-            <Link href={lesson.continueHref}>Continue</Link>
+            <Link href={lesson.continueHref}>
+              {lesson.isCompleted ? "Revise Chapter" : "Continue"}
+            </Link>
           </Button>
         </div>
       </div>

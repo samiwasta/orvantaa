@@ -4,6 +4,7 @@ import {
   subjectWithAssignedContentWhere,
   topicWithNotesWhere,
 } from "@/features/curriculum/model/assigned-content-filters"
+import { resolveChapterProgress } from "@/features/curriculum/model/chapter-progress"
 import {
   quizHref,
   topicFirstNoteHref,
@@ -99,7 +100,6 @@ export class ActiveLearnerDashboardRepository {
             quizzes: {
               where: quizWithQuestionsWhere,
               orderBy: { orderIndex: "asc" },
-              take: 1,
               select: { id: true },
             },
           },
@@ -115,6 +115,7 @@ export class ActiveLearnerDashboardRepository {
         prisma.quizAttempt.findMany({
           where: { userId },
           select: {
+            quizId: true,
             scorePercent: true,
             completedAt: true,
             timeSpentSeconds: true,
@@ -148,8 +149,15 @@ export class ActiveLearnerDashboardRepository {
     const progressByNoteId = new Map(
       noteProgressRows.map((row) => [row.noteId, row.status])
     )
+    const completedQuizIds = new Set(
+      quizAttempts.map((attempt) => attempt.quizId)
+    )
 
-    const currentLesson = this.resolveCurrentLesson(chapters, progressByNoteId)
+    const currentLesson = this.resolveCurrentLesson(
+      chapters,
+      progressByNoteId,
+      completedQuizIds
+    )
     if (!currentLesson) return null
 
     const actionCards = this.buildActionCards(
@@ -465,9 +473,19 @@ export class ActiveLearnerDashboardRepository {
       }>
       quizzes: Array<{ id: string }>
     }>,
-    progressByNoteId: Map<string, "VIEWED" | "COMPLETED">
+    progressByNoteId: Map<string, "VIEWED" | "COMPLETED">,
+    completedQuizIds: Set<string>
   ) {
     for (const chapter of chapters) {
+      const progress = resolveChapterProgress(
+        chapter,
+        progressByNoteId,
+        completedQuizIds
+      )
+
+      if (progress.totalItems === 0) continue
+      if (progress.isCompleted) continue
+
       const lessons = chapter.topics.flatMap((topic) =>
         topic.notes.map((note) => ({
           noteId: note.id,
@@ -475,27 +493,33 @@ export class ActiveLearnerDashboardRepository {
         }))
       )
 
-      if (lessons.length === 0) continue
-
-      const completedLessons = lessons.filter(
-        (lesson) => progressByNoteId.get(lesson.noteId) === "COMPLETED"
-      ).length
-
-      if (completedLessons >= lessons.length) continue
-
-      const nextLesson =
-        lessons.find(
-          (lesson) => progressByNoteId.get(lesson.noteId) !== "COMPLETED"
-        ) ?? lessons[0]
-
-      if (!nextLesson) continue
-
-      const continueHref = topicFirstNoteHref(
-        chapter.subject.slug,
-        chapter.slug,
-        nextLesson.topicSlug,
-        nextLesson.noteId
+      const nextLesson = lessons.find(
+        (lesson) => progressByNoteId.get(lesson.noteId) !== "COMPLETED"
       )
+
+      let continueHref: string | null = null
+
+      if (nextLesson) {
+        continueHref = topicFirstNoteHref(
+          chapter.subject.slug,
+          chapter.slug,
+          nextLesson.topicSlug,
+          nextLesson.noteId
+        )
+      } else {
+        const nextQuiz = chapter.quizzes.find(
+          (quiz) => !completedQuizIds.has(quiz.id)
+        )
+        if (nextQuiz) {
+          continueHref = quizHref(
+            chapter.subject.slug,
+            chapter.slug,
+            nextQuiz.id
+          )
+        } else {
+          continueHref = `/subjects/${chapter.subject.slug}/${chapter.slug}`
+        }
+      }
 
       if (!continueHref) continue
 
@@ -505,11 +529,43 @@ export class ActiveLearnerDashboardRepository {
         chapterSlug: chapter.slug,
         chapterTitle: chapter.title,
         chapterLabel: `Chapter ${chapter.number}: ${chapter.title}`,
-        completedLessons,
-        totalLessons: lessons.length,
-        progressPercent: Math.round((completedLessons / lessons.length) * 100),
+        completedItems: progress.completedItems,
+        totalItems: progress.totalItems,
+        progressPercent: progress.progressPercent,
+        isCompleted: false,
         continueHref,
         quizId: chapter.quizzes[0]?.id ?? null,
+      }
+    }
+
+    const reviseChapter = [...chapters].reverse().find((chapter) => {
+      const progress = resolveChapterProgress(
+        chapter,
+        progressByNoteId,
+        completedQuizIds
+      )
+      return progress.totalItems > 0 && progress.isCompleted
+    })
+
+    if (reviseChapter) {
+      const progress = resolveChapterProgress(
+        reviseChapter,
+        progressByNoteId,
+        completedQuizIds
+      )
+
+      return {
+        subjectTitle: reviseChapter.subject.title,
+        subjectSlug: reviseChapter.subject.slug,
+        chapterSlug: reviseChapter.slug,
+        chapterTitle: reviseChapter.title,
+        chapterLabel: `Chapter ${reviseChapter.number}: ${reviseChapter.title}`,
+        completedItems: progress.completedItems,
+        totalItems: progress.totalItems,
+        progressPercent: progress.progressPercent,
+        isCompleted: true,
+        continueHref: `/subjects/${reviseChapter.subject.slug}/${reviseChapter.slug}`,
+        quizId: reviseChapter.quizzes[0]?.id ?? null,
       }
     }
 
@@ -534,9 +590,10 @@ export class ActiveLearnerDashboardRepository {
 
     if (!continueHref) return null
 
-    const totalLessons = firstChapter.topics.reduce(
-      (sum, topic) => sum + topic.notes.length,
-      0
+    const progress = resolveChapterProgress(
+      firstChapter,
+      progressByNoteId,
+      completedQuizIds
     )
 
     return {
@@ -545,9 +602,10 @@ export class ActiveLearnerDashboardRepository {
       chapterSlug: firstChapter.slug,
       chapterTitle: firstChapter.title,
       chapterLabel: `Chapter ${firstChapter.number}: ${firstChapter.title}`,
-      completedLessons: 0,
-      totalLessons,
-      progressPercent: 0,
+      completedItems: progress.completedItems,
+      totalItems: progress.totalItems,
+      progressPercent: progress.progressPercent,
+      isCompleted: false,
       continueHref,
       quizId: firstChapter.quizzes[0]?.id ?? null,
     }

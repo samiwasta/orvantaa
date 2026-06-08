@@ -4,8 +4,9 @@ import { Button } from "@workspace/ui/components/button"
 import { SidebarTrigger } from "@workspace/ui/components/sidebar"
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile"
 import { cn } from "@workspace/ui/lib/utils"
-import { BellIcon } from "lucide-react"
 
+import type { StudentNotificationSummary } from "@/features/notifications/model/notification"
+import { NotificationBell } from "@/features/notifications/view/notification-bell"
 import type { DashboardUserProfile } from "@/features/user/model/user"
 
 import { UserProfileMenu } from "./user-profile-menu"
@@ -13,9 +14,11 @@ import { UserProfileMenu } from "./user-profile-menu"
 export function SidebarInsetHeader({
   pageTitle,
   userProfile,
+  notifications,
 }: {
   pageTitle: string
   userProfile: DashboardUserProfile
+  notifications: StudentNotificationSummary
 }) {
   const isMobile = useIsMobile()
 
@@ -34,14 +37,7 @@ export function SidebarInsetHeader({
           </h1>
         </div>
         <div className="flex shrink-0 items-center gap-3 sm:gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-9 shrink-0 cursor-pointer rounded-full bg-white shadow-sm"
-            aria-label="Notifications"
-          >
-            <BellIcon className="size-4 text-[#6C5CE7]" strokeWidth={2.5} />
-          </Button>
+          <NotificationBell initialSummary={notifications} />
           <UserProfileMenu profile={userProfile} />
         </div>
       </div>

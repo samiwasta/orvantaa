@@ -19,6 +19,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import Image from "next/image"
 import Link from "next/link"
 
+import type { StudentNotificationSummary } from "@/features/notifications/model/notification"
 import type { DashboardUserProfile } from "@/features/user/model/user"
 
 import type { DashboardShellController } from "../controller/use-dashboard-shell-controller"
@@ -28,6 +29,7 @@ import { SidebarInsetHeader } from "./sidebar-inset-header"
 export type DashboardShellViewProps = DashboardShellController & {
   defaultSidebarOpen?: boolean
   userProfile: DashboardUserProfile
+  notifications: StudentNotificationSummary
   children: React.ReactNode
 }
 
@@ -62,6 +64,7 @@ export function DashboardShellView({
   isAiTutorPage,
   defaultSidebarOpen = true,
   userProfile,
+  notifications,
   children,
 }: DashboardShellViewProps) {
   const isMobile = useIsMobile()
@@ -141,7 +144,11 @@ export function DashboardShellView({
             isAiTutorPage && "h-svh max-h-svh min-h-0 overflow-hidden"
           )}
         >
-          <SidebarInsetHeader pageTitle={pageTitle} userProfile={userProfile} />
+          <SidebarInsetHeader
+            pageTitle={pageTitle}
+            userProfile={userProfile}
+            notifications={notifications}
+          />
           <div
             className={cn(
               "flex flex-1 flex-col gap-4 p-4 pt-6 md:p-6",

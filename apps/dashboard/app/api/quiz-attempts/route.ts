@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { loadStudentClassId } from "@/features/curriculum/server/load-student-class-id"
+import { notificationService } from "@/features/notifications/service/notification.service"
 import { parseSubmitQuizAttempt } from "@/features/performance/model/activity-request"
 import { quizAttemptRepository } from "@/features/performance/repository/quiz-attempt.repository"
 import { requireStudentSession } from "@/lib/auth/session"
@@ -50,6 +51,15 @@ export async function POST(request: Request) {
     if (!attempt) {
       return NextResponse.json({ error: "Quiz not found." }, { status: 404 })
     }
+
+    await notificationService.notifyQuizCompletedFromAttempt(
+      authSession.sub,
+      parsed.data.quizId,
+      {
+        id: attempt.id,
+        scorePercent: attempt.scorePercent,
+      }
+    )
 
     return NextResponse.json({
       attempt: {

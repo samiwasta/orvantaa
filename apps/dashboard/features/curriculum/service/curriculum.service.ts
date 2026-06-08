@@ -1,6 +1,7 @@
 import type { DashboardQuickLinks } from "@/features/dashboard/model/dashboard-quick-links"
 import type {
   ChapterItem,
+  ChapterStatus,
   QuizItem,
   TopicItem,
   TopicStatus,
@@ -22,6 +23,10 @@ import type {
 } from "@/features/subjects/model/quiz-data"
 import type { SubjectCardItem } from "@/features/subjects/model/subject-cards"
 
+import {
+  countCompletedChapters,
+  resolveChapterProgress,
+} from "../model/chapter-progress"
 import { subjectImageUrl } from "../model/subject-images"
 import {
   curriculumRepository,
@@ -36,19 +41,31 @@ function estimateTopicDuration(noteCount: number): string {
 }
 
 function mapChapterItem(
-  row: { number: number; title: string; slug: string },
+  row: {
+    number: number
+    title: string
+    slug: string
+    topics: Array<{ notes: Array<{ id: string }> }>
+    quizzes: Array<{ id: string }>
+  },
+  progress: ReturnType<typeof resolveChapterProgress>,
   index: number,
   total: number
 ): ChapterItem {
-  const status =
-    index === 0 ? ("in_progress" as const) : ("not_started" as const)
+  let status: ChapterStatus = "not_started"
+  if (progress.isCompleted) {
+    status = "completed"
+  } else if (progress.hasProgress || index === 0) {
+    status = "in_progress"
+  }
+
   return {
     number: row.number,
     title: row.title,
     slug: row.slug,
     status,
-    progressPercent: 0,
-    recommended: index === 0 && total > 1,
+    progressPercent: progress.progressPercent,
+    recommended: !progress.isCompleted && index === 0 && total > 1,
   }
 }
 
@@ -88,15 +105,55 @@ function resolveTopicStatuses(
 export class CurriculumService {
   constructor(private readonly repository = curriculumRepository) {}
 
-  async listSubjects(classId: string): Promise<SubjectCardItem[]> {
+  async listSubjects(
+    classId: string,
+    userId?: string
+  ): Promise<SubjectCardItem[]> {
     const rows = await this.repository.findSubjectsForClass(classId)
-    return rows.map((row) => ({
-      id: row.slug,
-      title: row.title,
-      completed: 0,
-      total: row.chapters.length,
-      imageUrl: subjectImageUrl(row.slug, row.imageUrl),
-    }))
+
+    const noteIds = rows.flatMap((subject) =>
+      subject.chapters.flatMap((chapter) =>
+        chapter.topics.flatMap((topic) => topic.notes.map((note) => note.id))
+      )
+    )
+    const quizIds = rows.flatMap((subject) =>
+      subject.chapters.flatMap((chapter) =>
+        chapter.quizzes.map((quiz) => quiz.id)
+      )
+    )
+
+    const noteProgressMap = new Map<string, "VIEWED" | "COMPLETED">()
+    const completedQuizIds = new Set<string>()
+
+    if (userId) {
+      const [noteProgress, quizScores] = await Promise.all([
+        this.repository.findStudentNoteProgress(userId, noteIds),
+        this.repository.findStudentQuizScores(userId, quizIds),
+      ])
+
+      for (const progress of noteProgress) {
+        noteProgressMap.set(progress.noteId, progress.status)
+      }
+      for (const score of quizScores) {
+        completedQuizIds.add(score.quizId)
+      }
+    }
+
+    return rows.map((row) => {
+      const { completed, total } = countCompletedChapters(
+        row.chapters,
+        noteProgressMap,
+        completedQuizIds
+      )
+
+      return {
+        id: row.slug,
+        title: row.title,
+        completed,
+        total,
+        imageUrl: subjectImageUrl(row.slug, row.imageUrl),
+      }
+    })
   }
 
   async getDashboardQuickLinks(classId: string): Promise<DashboardQuickLinks> {
@@ -127,22 +184,55 @@ export class CurriculumService {
 
   async getSubject(
     classId: string,
-    slug: string
+    slug: string,
+    userId?: string
   ): Promise<SubjectCardItem | null> {
     const row = await this.repository.findSubjectBySlug(classId, slug)
     if (!row) return null
+
+    const noteIds = row.chapters.flatMap((chapter) =>
+      chapter.topics.flatMap((topic) => topic.notes.map((note) => note.id))
+    )
+    const quizIds = row.chapters.flatMap((chapter) =>
+      chapter.quizzes.map((quiz) => quiz.id)
+    )
+
+    const noteProgressMap = new Map<string, "VIEWED" | "COMPLETED">()
+    const completedQuizIds = new Set<string>()
+
+    if (userId) {
+      const [noteProgress, quizScores] = await Promise.all([
+        this.repository.findStudentNoteProgress(userId, noteIds),
+        this.repository.findStudentQuizScores(userId, quizIds),
+      ])
+
+      for (const progress of noteProgress) {
+        noteProgressMap.set(progress.noteId, progress.status)
+      }
+      for (const score of quizScores) {
+        completedQuizIds.add(score.quizId)
+      }
+    }
+
+    const { completed, total } = countCompletedChapters(
+      row.chapters,
+      noteProgressMap,
+      completedQuizIds
+    )
+
     return {
       id: row.slug,
       title: row.title,
-      completed: 0,
-      total: row.chapters.length,
+      completed,
+      total,
       imageUrl: subjectImageUrl(row.slug, row.imageUrl),
     }
   }
 
   async listChapters(
     classId: string,
-    subjectSlug: string
+    subjectSlug: string,
+    userId?: string
   ): Promise<ChapterItem[] | null> {
     const subject = await this.repository.findSubjectBySlug(
       classId,
@@ -154,7 +244,37 @@ export class CurriculumService {
       classId,
       subjectSlug
     )
-    return rows.map((row, index) => mapChapterItem(row, index, rows.length))
+
+    const noteIds = rows.flatMap((row) =>
+      row.topics.flatMap((topic) => topic.notes.map((note) => note.id))
+    )
+    const quizIds = rows.flatMap((row) => row.quizzes.map((quiz) => quiz.id))
+
+    const noteProgressMap = new Map<string, "VIEWED" | "COMPLETED">()
+    const completedQuizIds = new Set<string>()
+
+    if (userId) {
+      const [noteProgress, quizScores] = await Promise.all([
+        this.repository.findStudentNoteProgress(userId, noteIds),
+        this.repository.findStudentQuizScores(userId, quizIds),
+      ])
+
+      for (const progress of noteProgress) {
+        noteProgressMap.set(progress.noteId, progress.status)
+      }
+      for (const score of quizScores) {
+        completedQuizIds.add(score.quizId)
+      }
+    }
+
+    return rows.map((row, index) =>
+      mapChapterItem(
+        row,
+        resolveChapterProgress(row, noteProgressMap, completedQuizIds),
+        index,
+        rows.length
+      )
+    )
   }
 
   async getChapterDetail(
@@ -182,6 +302,7 @@ export class CurriculumService {
 
     const noteProgressMap = new Map<string, "VIEWED" | "COMPLETED">()
     const quizScoreMap = new Map<string, number>()
+    const completedQuizIds = new Set<string>()
 
     if (userId) {
       const [noteProgress, quizScores] = await Promise.all([
@@ -194,31 +315,27 @@ export class CurriculumService {
       }
       for (const score of quizScores) {
         quizScoreMap.set(score.quizId, score.scorePercent)
+        completedQuizIds.add(score.quizId)
       }
     }
 
     const topics = resolveTopicStatuses(row.topics, noteProgressMap)
-    const completedTopics = topics.filter(
-      (topic) => topic.status === "completed"
-    ).length
-    const completedQuizzes = row.quizzes.filter((quiz) =>
-      quizScoreMap.has(quiz.id)
-    ).length
-    const totalItems = topics.length + row.quizzes.length
-    const completedItems = completedTopics + completedQuizzes
+    const chapterProgress = resolveChapterProgress(
+      row,
+      noteProgressMap,
+      completedQuizIds
+    )
 
     const chapter: ChapterItem = {
       number: row.number,
       title: row.title,
       slug: row.slug,
-      status:
-        totalItems > 0 && completedItems === totalItems
-          ? "completed"
-          : completedItems > 0
-            ? "in_progress"
-            : "in_progress",
-      progressPercent:
-        totalItems === 0 ? 0 : Math.round((completedItems / totalItems) * 100),
+      status: chapterProgress.isCompleted
+        ? "completed"
+        : chapterProgress.hasProgress
+          ? "in_progress"
+          : "in_progress",
+      progressPercent: chapterProgress.progressPercent,
     }
 
     return {

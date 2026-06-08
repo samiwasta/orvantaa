@@ -26,9 +26,10 @@ export const loadActiveLearnerDashboard = cache(
       currentLesson: {
         subjectTitle: "Subjects",
         chapterLabel: "Start your first chapter",
-        completedLessons: 0,
-        totalLessons: 0,
+        completedItems: 0,
+        totalItems: 0,
         progressPercent: 0,
+        isCompleted: false,
         continueHref: quickLinks.firstReadingHref,
       },
       performance: {

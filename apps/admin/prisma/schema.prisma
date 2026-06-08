@@ -92,6 +92,21 @@ enum AiTutorMessageRole {
   ASSISTANT
 }
 
+enum StudentNotificationKind {
+  QUIZ_COMPLETED
+  LESSON_COMPLETED
+  PASSWORD_CHANGE_REQUIRED
+  MAINTENANCE_MODE
+  SYSTEM
+}
+
+enum StudentNotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
 // ─── Board / University ───────────────────────────────────────────────────────
 
 model Board {
@@ -454,6 +469,7 @@ model User {
 
   passwordResetTokens PasswordResetToken[]
   notificationReads   AdminNotificationRead[]
+  studentNotifications StudentNotification[]
   aiTutorChatSessions AiTutorChatSession[]
   quizAttempts        QuizAttempt[]
   noteProgress        NoteProgress[]
@@ -560,6 +576,27 @@ model NoteProgress {
   @@unique([userId, noteId])
   @@index([userId, lastViewedAt(sort: Desc)])
   @@map("note_progress")
+}
+
+model StudentNotification {
+  id        String                      @id @default(cuid())
+  userId    String
+  user      User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dedupeKey String
+  kind      StudentNotificationKind
+  priority  StudentNotificationPriority @default(NORMAL)
+  title     String
+  body      String
+  href      String?
+  metadata  Json?
+  readAt    DateTime?
+  createdAt DateTime                    @default(now())
+  updatedAt DateTime                    @updatedAt
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, readAt])
+  @@map("student_notifications")
 }
 
 model StudentReportCard {
