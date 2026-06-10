@@ -3,13 +3,21 @@ import type {
   StudentNotificationPriority as PrismaPriority,
 } from "@prisma/client"
 import type { LucideIcon } from "lucide-react"
-import { Bell, BookOpen, ClipboardCheck, KeyRound, Wrench } from "lucide-react"
+import {
+  Bell,
+  BookOpen,
+  ClipboardCheck,
+  KeyRound,
+  LifeBuoy,
+  Wrench,
+} from "lucide-react"
 
 export type NotificationKind =
   | "quiz_completed"
   | "lesson_completed"
   | "password_change_required"
   | "maintenance_mode"
+  | "support_ticket"
   | "system"
 
 export type NotificationPriority = "low" | "normal" | "high" | "urgent"
@@ -50,6 +58,7 @@ const KIND_MAP: Record<PrismaKind, NotificationKind> = {
   LESSON_COMPLETED: "lesson_completed",
   PASSWORD_CHANGE_REQUIRED: "password_change_required",
   MAINTENANCE_MODE: "maintenance_mode",
+  SUPPORT_TICKET: "support_ticket",
   SYSTEM: "system",
 }
 
@@ -58,6 +67,7 @@ const PRISMA_KIND_MAP: Record<NotificationKind, PrismaKind> = {
   lesson_completed: "LESSON_COMPLETED",
   password_change_required: "PASSWORD_CHANGE_REQUIRED",
   maintenance_mode: "MAINTENANCE_MODE",
+  support_ticket: "SUPPORT_TICKET",
   system: "SYSTEM",
 }
 
@@ -107,6 +117,8 @@ export function notificationIconForKind(kind: NotificationKind): LucideIcon {
       return KeyRound
     case "maintenance_mode":
       return Wrench
+    case "support_ticket":
+      return LifeBuoy
     default:
       return Bell
   }

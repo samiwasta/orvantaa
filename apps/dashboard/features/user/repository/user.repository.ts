@@ -1,3 +1,4 @@
+import type { UserGender } from "@/features/sidebar/model/user-gender"
 import { prisma } from "@/lib/db"
 
 import {
@@ -72,6 +73,88 @@ export class UserRepository {
       },
     })
     return mapPrismaUserToUser(row)
+  }
+
+  async findProfilePageDataById(id: string): Promise<{
+    user: User
+    phone: string | null
+    studentCode: string | null
+    classLabel: string | null
+    schoolName: string | null
+  } | null> {
+    const row = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        section: {
+          include: {
+            class: {
+              include: { school: true },
+            },
+          },
+        },
+      },
+    })
+    if (!row) {
+      return null
+    }
+
+    const role = mapPrismaRoleToAppRole(row.role)
+    const classLabel =
+      role === "student" && row.section
+        ? formatClassLabel(row.section.class.name, row.section.name)
+        : null
+    const schoolName =
+      role === "student" && row.section ? row.section.class.school.name : null
+
+    return {
+      user: mapPrismaUserToUser(row),
+      phone: row.phone,
+      studentCode: row.studentCode,
+      classLabel,
+      schoolName,
+    }
+  }
+
+  async isEmailTakenByOtherUser(
+    email: string,
+    excludeUserId: string
+  ): Promise<boolean> {
+    const row = await prisma.user.findUnique({
+      where: { email: email.trim().toLowerCase() },
+      select: { id: true },
+    })
+    return Boolean(row && row.id !== excludeUserId)
+  }
+
+  async updateProfile(
+    userId: string,
+    input: {
+      firstName: string
+      lastName: string
+      email: string
+      phone: string | null
+      gender: UserGender
+    }
+  ): Promise<User> {
+    const row = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        firstName: input.firstName.trim(),
+        lastName: input.lastName.trim(),
+        email: input.email.trim().toLowerCase(),
+        phone: input.phone,
+        gender: mapUserGenderToPrismaGender(input.gender),
+      },
+    })
+    return mapPrismaUserToUser(row)
+  }
+
+  async getPasswordHash(userId: string): Promise<string | null> {
+    const row = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true },
+    })
+    return row?.passwordHash ?? null
   }
 }
 

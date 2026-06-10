@@ -26,6 +26,14 @@ export function isAiTutorPath(pathname: string): boolean {
 }
 
 export function resolveDashboardPageTitle(pathname: string): string {
+  if (pathname === "/profile" || pathname.startsWith("/profile/")) {
+    return "My Profile"
+  }
+
+  if (pathname === "/help" || pathname.startsWith("/help/")) {
+    return "Help"
+  }
+
   if (pathname.match(/^\/subjects\/[^/]+\/[^/]+\/quiz\/[^/]+\/?$/)) {
     return "Quiz"
   }

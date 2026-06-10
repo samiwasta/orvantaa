@@ -1,9 +1,14 @@
+import type { SupportTicketStatus } from "@prisma/client"
+
+import { ticketStatusLabel } from "@/features/queries/model/support-ticket"
+
 import type {
   AdminNotificationItem,
   AdminNotificationSummary,
   UpsertNotificationInput,
 } from "../model/notification"
 import { notificationRepository } from "../repository/notification.repository"
+import { studentNotificationRepository } from "../repository/student-notification.repository"
 import { syncSmartNotifications } from "./smart-notification-sync"
 
 export class NotificationService {
@@ -76,6 +81,41 @@ export class NotificationService {
 
   private async createEventNotification(input: UpsertNotificationInput): Promise<void> {
     await notificationRepository.upsertNotification(input)
+  }
+
+  async notifyStudentSupportTicketStatusUpdated(input: {
+    userId: string
+    ticketId: string
+    ticketNumber: string
+    status: SupportTicketStatus
+    adminNote: string | null
+  }): Promise<void> {
+    await studentNotificationRepository.notifySupportTicketStatusUpdated(input)
+  }
+
+  async notifyAdminsSupportTicketStatusUpdated(input: {
+    ticketId: string
+    ticketNumber: string
+    status: SupportTicketStatus
+    studentName: string
+    actorName?: string
+  }): Promise<void> {
+    const statusLabel = ticketStatusLabel(input.status)
+    await this.createEventNotification({
+      dedupeKey: `support-ticket:status:${input.ticketId}:${input.status}`,
+      kind: "support_ticket",
+      priority: input.status === "OPEN" ? "high" : "normal",
+      title: `${input.ticketNumber} — ${statusLabel}`,
+      body: input.actorName
+        ? `${input.actorName} marked ${input.studentName}'s ticket as ${statusLabel.toLowerCase()}.`
+        : `${input.studentName}'s ticket is now ${statusLabel.toLowerCase()}.`,
+      href: `/queries/${input.ticketId}`,
+      metadata: {
+        ticketId: input.ticketId,
+        ticketNumber: input.ticketNumber,
+        status: input.status,
+      },
+    })
   }
 }
 

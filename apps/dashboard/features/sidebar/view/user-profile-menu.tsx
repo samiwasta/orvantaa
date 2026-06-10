@@ -11,7 +11,7 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 import { cn } from "@workspace/ui/lib/utils"
-import { LogOut, UserRound } from "lucide-react"
+import { CircleHelp, LogOut, UserRound } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -85,6 +85,17 @@ export function UserProfileMenu({ profile }: UserProfileMenuProps) {
         sideOffset={8}
         className="w-48 gap-0 p-1 shadow-lg"
       >
+        <Link
+          href="/help"
+          onClick={() => setOpen(false)}
+          className={cn(
+            "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium",
+            "text-foreground transition-colors hover:bg-muted"
+          )}
+        >
+          <CircleHelp className="size-4 text-[#6C5CE7]" strokeWidth={2} />
+          Help
+        </Link>
         <Link
           href="/profile"
           onClick={() => setOpen(false)}

@@ -55,3 +55,11 @@ export function buildSubscriptionCheckoutCompleteUrl(schoolCode: string): string
   const encoded = encodeURIComponent(schoolCode.trim())
   return `${getAdminAppUrl()}/subscribe/${encoded}/complete`
 }
+
+export function buildStudentTicketTrackUrl(ticketId: string): string {
+  return `${getStudentAppUrl()}/help/tickets/${ticketId}`
+}
+
+export function buildAdminQueryDetailUrl(ticketId: string): string {
+  return `${getAdminAppUrl()}/queries/${ticketId}`
+}

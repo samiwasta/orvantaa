@@ -7,6 +7,7 @@ import {
   Bell,
   Building2,
   CreditCard,
+  LifeBuoy,
   UserMinus,
   UserPlus,
   Users,
@@ -24,6 +25,7 @@ export type NotificationKind =
   | "school_subscription_blocked"
   | "students_unassigned"
   | "maintenance_mode"
+  | "support_ticket"
   | "system"
 
 export type NotificationPriority = "low" | "normal" | "high" | "urgent"
@@ -65,6 +67,7 @@ const KIND_MAP: Record<PrismaKind, NotificationKind> = {
   SCHOOL_SUBSCRIPTION_BLOCKED: "school_subscription_blocked",
   STUDENTS_UNASSIGNED: "students_unassigned",
   MAINTENANCE_MODE: "maintenance_mode",
+  SUPPORT_TICKET: "support_ticket",
   SYSTEM: "system",
 }
 
@@ -79,6 +82,7 @@ const PRISMA_KIND_MAP: Record<NotificationKind, PrismaKind> = {
   school_subscription_blocked: "SCHOOL_SUBSCRIPTION_BLOCKED",
   students_unassigned: "STUDENTS_UNASSIGNED",
   maintenance_mode: "MAINTENANCE_MODE",
+  support_ticket: "SUPPORT_TICKET",
   system: "SYSTEM",
 }
 
@@ -143,6 +147,8 @@ export function notificationIconForKind(kind: NotificationKind): LucideIcon {
       return Users
     case "maintenance_mode":
       return Wrench
+    case "support_ticket":
+      return LifeBuoy
     default:
       return Bell
   }

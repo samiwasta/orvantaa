@@ -14,6 +14,7 @@ import { notificationService } from "../service/notification.service"
 
 function revalidateShellPaths() {
   revalidatePath("/dashboard", "layout")
+  revalidatePath("/queries", "layout")
 }
 
 export async function refreshAdminNotificationsAction(): Promise<

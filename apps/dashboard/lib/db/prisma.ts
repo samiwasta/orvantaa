@@ -7,13 +7,15 @@ const globalForPrisma = globalThis as unknown as {
   prismaRevision: string | undefined
 }
 
-const PRISMA_CLIENT_REVISION = "20260608120000_student_notifications"
+const PRISMA_CLIENT_REVISION = "20260609130000_support_ticket_notifications"
 
 const REQUIRED_PRISMA_DELEGATES = [
   "aiTutorChatSession",
   "quizAttempt",
   "studentReportCard",
   "studentNotification",
+  "adminNotification",
+  "supportTicket",
 ] as const
 
 function createPrismaClient(): PrismaClient {

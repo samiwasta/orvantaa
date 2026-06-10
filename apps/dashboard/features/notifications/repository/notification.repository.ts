@@ -65,6 +65,9 @@ export class NotificationRepository {
         body: input.body,
         href: input.href ?? null,
         metadata,
+        ...(input.dedupeKey.startsWith("support-ticket:")
+          ? { readAt: null }
+          : {}),
       },
     })
   }

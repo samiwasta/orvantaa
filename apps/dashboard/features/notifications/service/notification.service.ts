@@ -1,4 +1,13 @@
+import {
+  AdminNotificationKind,
+  AdminNotificationPriority,
+} from "@prisma/client"
+
 import { quizHref } from "@/features/subjects/model/content-navigation"
+import {
+  studentTicketHref,
+  SUPPORT_RESPONSE_TIME_LABEL,
+} from "@/features/support/model/support-ticket"
 import { CHANGE_PASSWORD_PATH } from "@/lib/auth/constants"
 import { prisma } from "@/lib/db"
 
@@ -152,6 +161,61 @@ export class NotificationService {
       body: "Nice work finishing this lesson. Continue with the next topic or try a quiz.",
       href,
       metadata: { noteId },
+    })
+  }
+
+  async notifySupportTicketCreated(input: {
+    userId: string
+    ticketId: string
+    ticketNumber: string
+    issueAreaLabel: string
+  }): Promise<void> {
+    await notificationRepository.upsertForUser(input.userId, {
+      dedupeKey: `support-ticket:created:${input.ticketId}`,
+      kind: "support_ticket",
+      priority: "normal",
+      title: `Ticket ${input.ticketNumber} received`,
+      body: `We received your ${input.issueAreaLabel} request. Expected response: ${SUPPORT_RESPONSE_TIME_LABEL}.`,
+      href: studentTicketHref(input.ticketId),
+      metadata: {
+        ticketId: input.ticketId,
+        ticketNumber: input.ticketNumber,
+      },
+    })
+  }
+
+  async notifyAdminsOfSupportTicket(input: {
+    ticketId: string
+    ticketNumber: string
+    issueAreaLabel: string
+    studentName: string
+    messagePreview: string
+  }): Promise<void> {
+    await prisma.adminNotification.upsert({
+      where: { dedupeKey: `support-ticket:${input.ticketId}` },
+      create: {
+        dedupeKey: `support-ticket:${input.ticketId}`,
+        kind: AdminNotificationKind.SUPPORT_TICKET,
+        priority: AdminNotificationPriority.HIGH,
+        title: `New query ${input.ticketNumber}`,
+        body: `${input.studentName} raised a ${input.issueAreaLabel} ticket: ${input.messagePreview}`,
+        href: `/queries/${input.ticketId}`,
+        metadata: {
+          ticketId: input.ticketId,
+          ticketNumber: input.ticketNumber,
+        },
+      },
+      update: {
+        kind: AdminNotificationKind.SUPPORT_TICKET,
+        priority: AdminNotificationPriority.HIGH,
+        title: `New query ${input.ticketNumber}`,
+        body: `${input.studentName} raised a ${input.issueAreaLabel} ticket: ${input.messagePreview}`,
+        href: `/queries/${input.ticketId}`,
+        metadata: {
+          ticketId: input.ticketId,
+          ticketNumber: input.ticketNumber,
+        },
+      },
     })
   }
 }

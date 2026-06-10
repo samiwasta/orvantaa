@@ -1,5 +1,6 @@
 import "@workspace/ui/globals.css"
 
+import { Toaster } from "@workspace/ui/components/sonner"
 import { cn } from "@workspace/ui/lib/utils"
 import type { Metadata } from "next"
 import { Inter, Poppins } from "next/font/google"
@@ -36,6 +37,7 @@ export default function RootLayout({
     >
       <body suppressHydrationWarning className="min-h-dvh font-sans">
         <div className="min-h-dvh overflow-x-hidden">{children}</div>
+        <Toaster />
       </body>
     </html>
   )

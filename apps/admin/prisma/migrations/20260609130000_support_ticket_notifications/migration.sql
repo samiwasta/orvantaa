@@ -1,0 +1,2 @@
+ALTER TYPE "StudentNotificationKind" ADD VALUE 'SUPPORT_TICKET';
+ALTER TYPE "AdminNotificationKind" ADD VALUE 'SUPPORT_TICKET';

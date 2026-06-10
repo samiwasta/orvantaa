@@ -16,6 +16,7 @@ function revalidateShellPaths() {
   revalidatePath("/subjects", "layout")
   revalidatePath("/performance", "layout")
   revalidatePath("/ai-tutor", "layout")
+  revalidatePath("/help", "layout")
 }
 
 export async function refreshStudentNotificationsAction(): Promise<

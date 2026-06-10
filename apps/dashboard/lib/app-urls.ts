@@ -19,3 +19,15 @@ export function studentLoginUrl(): string {
 export function buildStudentPasswordResetUrl(rawToken: string): string {
   return `${getStudentAppUrl()}/reset-password?token=${rawToken}`
 }
+
+export function buildStudentTicketTrackUrl(ticketId: string): string {
+  return `${getStudentAppUrl()}/help/tickets/${ticketId}`
+}
+
+export function buildAdminQueryDetailUrl(ticketId: string): string {
+  const base =
+    process.env.ADMIN_APP_URL?.trim() ||
+    process.env.NEXT_PUBLIC_ADMIN_APP_URL?.trim() ||
+    "http://localhost:3001"
+  return `${base.replace(/\/$/, "")}/queries/${ticketId}`
+}

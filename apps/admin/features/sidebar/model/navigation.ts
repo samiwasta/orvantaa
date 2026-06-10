@@ -4,6 +4,7 @@ import {
   GraduationCap,
   Landmark,
   LayoutDashboard,
+  MessageCircleQuestion,
   School,
   UsersRound,
 } from "lucide-react"
@@ -22,6 +23,7 @@ export const dashboardNavItems: DashboardNavItemDefinition[] = [
   { title: "Classes", href: "/classes", icon: GraduationCap },
   { title: "Boards", href: "/boards", icon: Landmark },
   { title: "Management", mobileTitle: "Manage", href: "/management", icon: UsersRound },
+  { title: "Queries", href: "/queries", icon: MessageCircleQuestion },
 ]
 
 const PAGE_TITLES: Record<string, string> = {
@@ -31,6 +33,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/content": "Content",
   "/boards": "Boards",
   "/management": "Management",
+  "/queries": "Queries",
   "/profile": "My Profile",
 }
 
@@ -55,6 +58,10 @@ export function resolveDashboardPageTitle(pathname: string): string {
 
   if (pathname.startsWith("/schools/") && pathname !== "/schools") {
     return "Schools"
+  }
+
+  if (pathname.startsWith("/queries/") && pathname !== "/queries") {
+    return "Queries"
   }
 
   const exact = PAGE_TITLES[pathname]
