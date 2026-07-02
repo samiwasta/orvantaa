@@ -1,3 +1,4 @@
+import { messageHasImageContent } from "../attachments/build-multimodal-content"
 import { AI_TUTOR_SYSTEM_PROMPT } from "../prompts"
 import type { AiChatMessage, AiChatOptions } from "../types"
 import { getGroqConfig } from "./config"
@@ -44,6 +45,11 @@ export async function generateGroqChatResponse(
   }
 
   const config = getGroqConfig()
+  const usesVision = messages.some(
+    (message) =>
+      message.role === "user" && messageHasImageContent(message.content)
+  )
+  const model = usesVision ? config.visionModel : config.model
 
   const response = await fetch(
     "https://api.groq.com/openai/v1/chat/completions",
@@ -54,9 +60,9 @@ export async function generateGroqChatResponse(
         Authorization: `Bearer ${config.apiKey}`,
       },
       body: JSON.stringify({
-        model: config.model,
+        model,
         temperature: 0.7,
-        max_tokens: options?.maxTokens ?? 2048,
+        max_tokens: options?.maxTokens ?? 1024,
         messages: [
           {
             role: "system",

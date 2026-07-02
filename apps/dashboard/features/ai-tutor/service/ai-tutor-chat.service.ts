@@ -7,13 +7,32 @@ type AiTutorScope = NonNullable<AiTutorChatRequest["scope"]>
 
 export async function requestAiTutorReply(
   messages: AiTutorChatRequest["messages"],
-  scope?: AiTutorScope
+  scope?: AiTutorScope,
+  attachments?: File[]
 ): Promise<AiTutorChatResponse> {
+  const hasAttachments = Boolean(attachments && attachments.length > 0)
+
   const response = await fetch("/api/ai-tutor/chat", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     credentials: "same-origin",
-    body: JSON.stringify({ messages, scope }),
+    ...(hasAttachments
+      ? {
+          body: (() => {
+            const formData = new FormData()
+            formData.append("messages", JSON.stringify(messages))
+            if (scope) {
+              formData.append("scope", JSON.stringify(scope))
+            }
+            for (const file of attachments ?? []) {
+              formData.append("attachments", file)
+            }
+            return formData
+          })(),
+        }
+      : {
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages, scope }),
+        }),
   })
 
   const payload = (await response.json().catch(() => null)) as

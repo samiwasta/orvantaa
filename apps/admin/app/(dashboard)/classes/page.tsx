@@ -1,12 +1,8 @@
-import type { Metadata } from "next"
-
+import { classesPageMetadata } from "@/features/dashboard/model/page-metadata"
 import { loadClasses } from "@/features/classes/server/load-classes"
 import { ClassesCardsView } from "@/features/classes/view/classes-cards-view"
 
-export const metadata: Metadata = {
-  title: "Classes - Orvantaa Admin",
-  description: "View and manage classes and sections",
-}
+export const metadata = classesPageMetadata
 
 export default async function ClassesPage() {
   const { classes } = await loadClasses()

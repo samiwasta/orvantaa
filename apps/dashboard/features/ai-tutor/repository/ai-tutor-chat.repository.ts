@@ -1,7 +1,8 @@
-import type { AiTutorMessageRole } from "@prisma/client"
+import type { AiTutorMessageRole, Prisma } from "@prisma/client"
 
 import {
   type ChatMessage,
+  type ChatMessageAttachment,
   type ChatSession,
   DEFAULT_CHAT_TITLE,
   titleFromFirstMessage,
@@ -17,8 +18,41 @@ type SessionRow = {
     id: string
     role: AiTutorMessageRole
     content: string
+    attachments: Prisma.JsonValue | null
     createdAt: Date
   }>
+}
+
+function parseStoredAttachments(
+  value: Prisma.JsonValue | null
+): ChatMessageAttachment[] | undefined {
+  if (!Array.isArray(value)) return undefined
+
+  const attachments = value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+      return []
+    }
+
+    const record = entry as Record<string, unknown>
+    if (
+      typeof record.id !== "string" ||
+      typeof record.name !== "string" ||
+      (record.kind !== "image" && record.kind !== "document")
+    ) {
+      return []
+    }
+
+    return [
+      {
+        id: record.id,
+        name: record.name,
+        kind: record.kind,
+        previewUrl: null,
+      },
+    ]
+  })
+
+  return attachments.length > 0 ? attachments : undefined
 }
 
 function mapMessage(row: SessionRow["messages"][number]): ChatMessage {
@@ -27,6 +61,7 @@ function mapMessage(row: SessionRow["messages"][number]): ChatMessage {
     role: row.role === "USER" ? "user" : "assistant",
     content: row.content,
     timestamp: row.createdAt,
+    attachments: parseStoredAttachments(row.attachments),
   }
 }
 
@@ -116,6 +151,7 @@ export class AiTutorChatRepository {
       messages: Array<{
         role: "user" | "assistant"
         content: string
+        attachments?: ChatMessageAttachment[]
       }>
     }
   ): Promise<ChatSession | null> {
@@ -139,6 +175,14 @@ export class AiTutorChatRepository {
             sessionId,
             role: message.role === "user" ? "USER" : "ASSISTANT",
             content: message.content,
+            attachments:
+              message.attachments && message.attachments.length > 0
+                ? message.attachments.map((attachment) => ({
+                    id: attachment.id,
+                    name: attachment.name,
+                    kind: attachment.kind,
+                  }))
+                : undefined,
           })),
         })
       }
@@ -165,12 +209,15 @@ export class AiTutorChatRepository {
       )
 
       if (firstUserMessage) {
-        let generatedTitle = titleFromFirstMessage(firstUserMessage.content)
+        const titleSource =
+          firstUserMessage.content.trim() ||
+          firstUserMessage.attachments?.map((item) => item.name).join(", ") ||
+          DEFAULT_CHAT_TITLE
+
+        let generatedTitle = titleFromFirstMessage(titleSource)
 
         try {
-          generatedTitle = await generateAiTutorChatTitle(
-            firstUserMessage.content
-          )
+          generatedTitle = await generateAiTutorChatTitle(titleSource)
         } catch (error) {
           console.error("[ai-tutor] Title generation failed:", error)
         }

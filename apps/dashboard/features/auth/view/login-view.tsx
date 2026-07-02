@@ -8,6 +8,8 @@ import { cn } from "@workspace/ui/lib/utils"
 import { Eye, EyeOff, Loader2, LockKeyhole, UserRound } from "lucide-react"
 import Image from "next/image"
 
+import { AiSparkleIcon } from "@/features/ai-tutor/view/ai-sparkle-icon"
+
 import type { LoginController } from "../controller/use-login-controller"
 
 const features = [
@@ -27,9 +29,9 @@ const features = [
     placement: "left-[0%] bottom-[38%] sm:left-[-2%] sm:bottom-[25%]",
   },
   {
-    image: "/robot.svg",
     title: "AI Tutor support",
     placement: "right-[1%] bottom-[9%] sm:right-[-3%] sm:bottom-[11%]",
+    icon: <AiSparkleIcon size={18} className="size-4 lg:size-[18px]" />,
   },
 ] as const
 
@@ -76,13 +78,17 @@ export function LoginView({
                   )}
                 >
                   <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-white/35 ring-1 ring-white/30 backdrop-blur-sm lg:size-8">
-                    <Image
-                      src={feature.image}
-                      alt=""
-                      width={18}
-                      height={18}
-                      className="size-[14px] object-contain lg:size-4"
-                    />
+                    {"icon" in feature ? (
+                      feature.icon
+                    ) : (
+                      <Image
+                        src={feature.image}
+                        alt=""
+                        width={18}
+                        height={18}
+                        className="size-[14px] object-contain lg:size-4"
+                      />
+                    )}
                   </span>
                   <p className="text-[10px] leading-tight font-medium tracking-tight text-balance text-slate-900 sm:text-[11px] lg:text-xs lg:font-semibold">
                     {feature.title}

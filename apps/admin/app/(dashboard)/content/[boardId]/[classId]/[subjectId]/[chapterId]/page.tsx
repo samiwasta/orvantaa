@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 
+import { contentChapterPageMetadata } from "@/features/dashboard/model/page-metadata"
 import { contentHref } from "@/features/content/model/content-nav"
 import { loadContentTopics } from "@/features/content/server/load-content-topics"
 import { ContentBreadcrumbs } from "@/features/content/view/content-breadcrumbs"
@@ -17,8 +18,20 @@ type PageProps = {
   searchParams: Promise<{ tab?: string }>
 }
 
-export const metadata: Metadata = {
-  title: "Content - Orvantaa Admin",
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { boardId, classId, subjectId, chapterId } = await params
+  const data = await loadContentTopics(chapterId)
+
+  if (
+    !data ||
+    data.chapterRef.boardId !== boardId ||
+    data.chapterRef.classId !== classId ||
+    data.chapterRef.subjectId !== subjectId
+  ) {
+    return contentChapterPageMetadata("Content")
+  }
+
+  return contentChapterPageMetadata(data.chapterRef.title)
 }
 
 export default async function ContentChapterPage({

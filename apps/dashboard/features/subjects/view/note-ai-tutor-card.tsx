@@ -1,13 +1,17 @@
 "use client"
 
-import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
-import { Loader2, SendHorizontal, Sparkles, X } from "lucide-react"
-import Image from "next/image"
+import { Loader2, SendHorizontal, X } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 
+import { useChatAttachments } from "@/features/ai-tutor/hooks/use-chat-attachments"
+import { useSpeechDictation } from "@/features/ai-tutor/hooks/use-speech-dictation"
+import type { ChatMessageAttachment } from "@/features/ai-tutor/model/chat-data"
+import { registerMessageAttachmentPreview } from "@/features/ai-tutor/model/message-attachment-preview-registry"
 import { requestAiTutorReply } from "@/features/ai-tutor/service/ai-tutor-chat.service"
+import { AiTutorComposer } from "@/features/ai-tutor/view/ai-tutor-composer"
 import { AiTutorMarkdown } from "@/features/ai-tutor/view/ai-tutor-markdown"
+import { UserMessageAttachments } from "@/features/ai-tutor/view/user-message-attachments"
 
 import type { AiTutorWidgetScope } from "../model/ai-tutor-scope"
 
@@ -28,6 +32,7 @@ const quizQuickPrompts = [
 type ChatMessage = {
   role: "user" | "assistant"
   content: string
+  attachments?: ChatMessageAttachment[]
 }
 
 type NoteAiTutorCardProps = {
@@ -36,34 +41,14 @@ type NoteAiTutorCardProps = {
   className?: string
 }
 
-function TutorAvatar({ className }: { className?: string }) {
-  return (
-    <span
-      className={cn(
-        "flex size-7 shrink-0 items-center justify-center rounded-full bg-white/12 ring-1 ring-white/20",
-        className
-      )}
-      aria-hidden
-    >
-      <Image
-        src="/robot.svg"
-        alt=""
-        width={20}
-        height={20}
-        className="size-4 object-contain"
-      />
-    </span>
-  )
-}
-
 function TypingDots() {
   return (
-    <span className="flex items-center gap-1" aria-label="AI Tutor is typing">
+    <span className="flex items-center gap-1 px-0.5" aria-label="Typing">
       {[0, 1, 2].map((index) => (
         <span
           key={index}
-          className="size-1.5 animate-bounce rounded-full bg-[#6C5CE7]/70"
-          style={{ animationDelay: `${index * 150}ms` }}
+          className="size-1.5 animate-bounce rounded-full bg-[#6C5CE7]/55"
+          style={{ animationDelay: `${index * 140}ms` }}
         />
       ))}
     </span>
@@ -79,8 +64,30 @@ export function NoteAiTutorCard({
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [dictationError, setDictationError] = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const {
+    isListening,
+    isSupported,
+    toggle: toggleDictation,
+    stop: stopDictation,
+  } = useSpeechDictation({
+    onError: setDictationError,
+  })
+
+  const {
+    attachments: composerAttachments,
+    error: attachmentError,
+    isPreparing: isPreparingAttachments,
+    addFiles,
+    removeAttachment,
+    clearAttachments,
+    getUploadFiles,
+    getMessagePreviews,
+    setError: setAttachmentError,
+  } = useChatAttachments()
 
   const quickPrompts =
     scope.mode === "quiz" ? quizQuickPrompts : noteQuickPrompts
@@ -117,21 +124,56 @@ export function NoteAiTutorCard({
   }, [messages, isLoading])
 
   const submitMessage = async (rawMessage: string) => {
+    const uploadFiles = getUploadFiles()
     const trimmed = rawMessage.trim()
-    if (!trimmed || isLoading) return
+    const hasAttachments = uploadFiles.length > 0
+
+    if ((!trimmed && !hasAttachments) || isLoading || isPreparingAttachments) {
+      return
+    }
+
+    stopDictation()
+    setDictationError(null)
+    setAttachmentError(null)
+
+    const messageAttachments = getMessagePreviews().map((attachment) => ({
+      id: attachment.id,
+      name: attachment.name,
+      kind: attachment.kind,
+      previewUrl: attachment.previewUrl,
+    }))
+
+    for (const attachment of messageAttachments) {
+      if (attachment.kind === "image" && attachment.previewUrl) {
+        registerMessageAttachmentPreview(attachment.id, attachment.previewUrl)
+      }
+    }
+
+    setQuery("")
+    clearAttachments({ revokePreviews: false })
 
     const nextMessages: ChatMessage[] = [
       ...messages,
-      { role: "user", content: trimmed },
+      {
+        role: "user",
+        content: trimmed,
+        attachments: messageAttachments.length ? messageAttachments : undefined,
+      },
     ]
 
-    setQuery("")
     setError(null)
     setMessages(nextMessages)
     setIsLoading(true)
 
     try {
-      const { content } = await requestAiTutorReply(nextMessages, scope)
+      const { content } = await requestAiTutorReply(
+        nextMessages.map((message) => ({
+          role: message.role,
+          content: message.content,
+        })),
+        scope,
+        uploadFiles
+      )
       setMessages([...nextMessages, { role: "assistant", content }])
     } catch (submitError) {
       const message =
@@ -156,77 +198,54 @@ export function NoteAiTutorCard({
   return (
     <div
       className={cn(
-        "relative flex h-full flex-col overflow-hidden rounded-2xl bg-linear-to-b from-[#211d57] via-[#1b1850] to-[#141137] text-white shadow-[0_24px_48px_-20px_rgba(15,12,45,0.95)] ring-1 ring-white/10",
+        "relative flex h-full flex-col overflow-hidden rounded-2xl bg-white",
+        "shadow-[0_24px_60px_-24px_rgba(15,23,42,0.35)] ring-1 ring-black/[0.06]",
         className
       )}
     >
-      <div
-        className="pointer-events-none absolute -top-8 -left-8 size-32 rounded-full bg-[#7f54ee]/25 blur-3xl"
-        aria-hidden
-      />
-
-      <header className="relative flex shrink-0 items-center gap-2.5 border-b border-white/10 px-3.5 py-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-[#8b6cf6] to-[#6447dd] shadow-[0_8px_18px_-12px_rgba(127,84,238,0.95)]">
-          <Image
-            src="/robot.svg"
-            alt=""
-            width={22}
-            height={22}
-            className="size-5 object-contain"
-            aria-hidden
-          />
-        </span>
-        <div className="min-w-0 flex-1">
-          <h2 className="flex items-center gap-1 text-sm font-semibold tracking-tight text-white">
-            AI Tutor
-            <Sparkles
-              className="size-3 text-amber-300"
-              strokeWidth={2.5}
-              aria-hidden
-            />
-          </h2>
-          <p className="truncate text-[11px] text-white/55">{scope.title}</p>
+      <header className="relative shrink-0 overflow-hidden bg-linear-to-r from-[#6C5CE7] via-[#7158e8] to-[#5b4bc7] px-4 py-3.5">
+        <div
+          className="pointer-events-none absolute -top-10 -right-6 size-28 rounded-full bg-white/10 blur-2xl"
+          aria-hidden
+        />
+        <div className="relative flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-[15px] font-semibold tracking-tight text-white">
+              AI Tutor
+            </h2>
+            <p className="truncate text-xs text-white/75">{scope.title}</p>
+          </div>
+          {onClose ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white/75 transition-colors hover:bg-white/15 hover:text-white"
+              aria-label="Close AI Tutor"
+            >
+              <X className="size-4" strokeWidth={2} aria-hidden />
+            </button>
+          ) : null}
         </div>
-        {onClose ? (
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex size-7 shrink-0 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-            aria-label="Close AI Tutor"
-          >
-            <X className="size-3.5" strokeWidth={2} aria-hidden />
-          </button>
-        ) : null}
       </header>
 
-      <div className="relative min-h-0 flex-1 overflow-y-auto px-3.5 py-3">
+      <div className="relative min-h-0 flex-1 overflow-y-auto bg-[#f7f6fb] px-3.5 py-4">
         {isEmpty ? (
-          <div className="flex h-full flex-col items-center justify-center px-1 text-center">
-            <span className="flex size-11 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15">
-              <Image
-                src="/sparkle.svg"
-                alt=""
-                width={24}
-                height={24}
-                className="size-5 object-contain"
-                aria-hidden
-              />
-            </span>
-            <h3 className="mt-3 text-sm font-semibold text-white">
+          <div className="flex h-full flex-col items-center justify-center px-2 text-center">
+            <h3 className="text-[15px] font-semibold text-foreground">
               {emptyHeadline}
             </h3>
-            <p className="mt-1 max-w-[16rem] text-xs leading-relaxed text-white/65">
+            <p className="mt-1.5 max-w-[17rem] text-[13px] leading-relaxed text-muted-foreground">
               {emptyDescription}
             </p>
 
-            <div className="mt-4 flex w-full flex-col gap-1.5">
+            <div className="mt-5 flex w-full flex-col gap-2">
               {quickPrompts.map((prompt) => (
                 <button
                   key={prompt}
                   type="button"
                   disabled={isLoading}
                   onClick={() => void submitMessage(prompt)}
-                  className="rounded-xl bg-white/8 px-3 py-2.5 text-left text-xs font-medium text-white/90 ring-1 ring-white/12 transition-all hover:bg-white/15 disabled:opacity-50"
+                  className="rounded-xl border border-violet-100 bg-white px-3.5 py-3 text-left text-[13px] font-medium text-foreground shadow-sm transition-all hover:border-violet-200 hover:bg-violet-50/60 hover:shadow disabled:opacity-50"
                 >
                   {prompt}
                 </button>
@@ -234,22 +253,21 @@ export function NoteAiTutorCard({
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3.5">
             {messages.map((message, index) => (
               <div
                 key={`${message.role}-${index}`}
                 className={cn(
-                  "flex items-end gap-1.5",
+                  "flex",
                   message.role === "user" ? "justify-end" : "justify-start"
                 )}
               >
-                {message.role === "assistant" ? <TutorAvatar /> : null}
                 <div
                   className={cn(
-                    "max-w-[85%] px-3 py-2 text-[13px] leading-5 shadow-sm",
+                    "max-w-[88%] text-[13px] leading-[1.55] shadow-sm",
                     message.role === "user"
-                      ? "rounded-2xl rounded-br-md bg-linear-to-br from-[#8b6cf6] to-[#6447dd] text-white"
-                      : "rounded-2xl rounded-bl-md bg-white text-[#1f2937]"
+                      ? "rounded-2xl rounded-br-md bg-linear-to-br from-[#6C5CE7] to-[#5b4bc7] px-3.5 py-2.5 text-white"
+                      : "rounded-2xl rounded-bl-md border border-border/50 bg-white px-3.5 py-2.5 text-foreground"
                   )}
                 >
                   {message.role === "assistant" ? (
@@ -258,15 +276,22 @@ export function NoteAiTutorCard({
                       variant="compact"
                     />
                   ) : (
-                    <p className="whitespace-pre-wrap">{message.content}</p>
+                    <>
+                      <UserMessageAttachments
+                        attachments={message.attachments}
+                        compact
+                      />
+                      {message.content ? (
+                        <p className="whitespace-pre-wrap">{message.content}</p>
+                      ) : null}
+                    </>
                   )}
                 </div>
               </div>
             ))}
             {isLoading ? (
-              <div className="flex items-end gap-1.5">
-                <TutorAvatar />
-                <div className="rounded-2xl rounded-bl-md bg-white px-3 py-2 shadow-sm">
+              <div className="flex justify-start">
+                <div className="rounded-2xl rounded-bl-md border border-border/50 bg-white px-3.5 py-2.5 shadow-sm">
                   <TypingDots />
                 </div>
               </div>
@@ -276,25 +301,25 @@ export function NoteAiTutorCard({
         )}
       </div>
 
-      <div className="relative shrink-0 border-t border-white/10 px-3.5 py-3">
-        {error ? (
+      <div className="shrink-0 border-t border-border/60 bg-white px-3.5 py-3">
+        {error || dictationError || attachmentError ? (
           <p
-            className="mb-2 rounded-lg bg-rose-500/15 px-2.5 py-1.5 text-[11px] text-rose-200 ring-1 ring-rose-400/25"
+            className="mb-2.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700"
             role="alert"
           >
-            {error}
+            {error ?? dictationError ?? attachmentError}
           </p>
         ) : null}
 
         {!isEmpty ? (
-          <div className="mb-2 flex flex-wrap gap-1">
+          <div className="mb-2.5 flex flex-wrap gap-1.5">
             {quickPrompts.map((prompt) => (
               <button
                 key={prompt}
                 type="button"
                 disabled={isLoading}
                 onClick={() => void submitMessage(prompt)}
-                className="rounded-full bg-white/8 px-2.5 py-0.5 text-[10px] font-medium text-white/80 ring-1 ring-white/12 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-50"
+                className="rounded-full border border-violet-100 bg-violet-50/80 px-2.5 py-1 text-[11px] font-medium text-[#5d4ed6] transition-colors hover:border-violet-200 hover:bg-violet-100 disabled:opacity-50"
               >
                 {prompt}
               </button>
@@ -302,52 +327,58 @@ export function NoteAiTutorCard({
           </div>
         ) : null}
 
-        <form
-          className="flex items-end gap-1.5 rounded-xl bg-white p-1 pl-2.5 shadow-[0_10px_24px_-18px_rgba(8,10,30,0.9)]"
-          onSubmit={(event) => {
-            event.preventDefault()
-            void submitMessage(query)
+        <AiTutorComposer
+          value={query}
+          onChange={(value) => {
+            setDictationError(null)
+            setAttachmentError(null)
+            if (isListening) stopDictation()
+            setQuery(value)
           }}
-        >
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onInput={adjustTextareaHeight}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault()
-                void submitMessage(query)
-              }
-            }}
-            placeholder={
-              scope.mode === "quiz"
-                ? "Ask for a hint..."
-                : "Ask about this lesson..."
+          onSubmit={() => void submitMessage(query)}
+          placeholder={
+            scope.mode === "quiz"
+              ? "Ask for a hint..."
+              : "Ask about this lesson..."
+          }
+          disabled={isLoading}
+          sendDisabled={isLoading}
+          isListening={isListening}
+          dictationSupported={isSupported}
+          dictationError={dictationError}
+          onToggleDictation={() => {
+            setDictationError(null)
+            toggleDictation(query, setQuery)
+          }}
+          attachments={composerAttachments.map((attachment) => ({
+            id: attachment.id,
+            name: attachment.name,
+            kind: attachment.kind,
+            previewUrl: attachment.previewUrl,
+          }))}
+          attachmentError={attachmentError}
+          isPreparingAttachments={isPreparingAttachments}
+          onAddFiles={(files) => {
+            setAttachmentError(null)
+            void addFiles(files)
+          }}
+          onRemoveAttachment={removeAttachment}
+          textareaRef={textareaRef}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault()
+              void submitMessage(query)
             }
-            disabled={isLoading}
-            className={cn(
-              "min-h-8 min-w-0 flex-1 resize-none self-center border-0 bg-transparent py-1.5",
-              "text-[13px] leading-5 text-[#1f2937] shadow-none outline-none",
-              "placeholder:text-[#9ca3af] focus-visible:ring-0 disabled:opacity-60"
-            )}
-            aria-label={`Ask about ${scope.title}`}
-          />
-          <Button
-            type="submit"
-            size="icon"
-            disabled={!query.trim() || isLoading}
-            className="size-8 shrink-0 rounded-lg bg-linear-to-br from-[#8b6cf6] to-[#6447dd] text-white hover:from-[#7f5cf0] hover:to-[#5a3fd0] disabled:opacity-40"
-            aria-label="Send message"
-          >
-            {isLoading ? (
-              <Loader2 className="size-3.5 animate-spin" aria-hidden />
+          }}
+          compact
+          sendIcon={
+            isLoading ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
             ) : (
-              <SendHorizontal className="size-3.5" aria-hidden />
-            )}
-          </Button>
-        </form>
+              <SendHorizontal className="size-4" aria-hidden />
+            )
+          }
+        />
       </div>
     </div>
   )

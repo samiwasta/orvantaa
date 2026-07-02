@@ -1,10 +1,18 @@
 export type ChatRole = "user" | "assistant"
 
+export type ChatMessageAttachment = {
+  id: string
+  name: string
+  kind: "image" | "document"
+  previewUrl?: string | null
+}
+
 export type ChatMessage = {
   id: string
   role: ChatRole
   content: string
   timestamp: Date
+  attachments?: ChatMessageAttachment[]
 }
 
 export type ChatSession = {

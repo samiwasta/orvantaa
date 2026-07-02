@@ -534,12 +534,13 @@ model AiTutorChatSession {
 }
 
 model AiTutorChatMessage {
-  id        String             @id @default(cuid())
-  sessionId String
-  session   AiTutorChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  role      AiTutorMessageRole
-  content   String
-  createdAt DateTime           @default(now())
+  id          String             @id @default(cuid())
+  sessionId   String
+  session     AiTutorChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role        AiTutorMessageRole
+  content     String
+  attachments Json?
+  createdAt   DateTime           @default(now())
 
   @@index([sessionId, createdAt])
   @@map("ai_tutor_chat_messages")

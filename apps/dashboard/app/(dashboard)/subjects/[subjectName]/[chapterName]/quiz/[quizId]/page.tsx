@@ -1,6 +1,11 @@
+import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { loadQuizPage } from "@/features/curriculum/server/load-quiz-page"
+import {
+  quizPageMetadata,
+  titleFromSlug,
+} from "@/features/subjects/model/page-metadata"
 import { QuizView } from "@/features/subjects/view/quiz-view"
 
 type QuizPageProps = {
@@ -9,6 +14,19 @@ type QuizPageProps = {
     chapterName: string
     quizId: string
   }>
+}
+
+export async function generateMetadata({
+  params,
+}: QuizPageProps): Promise<Metadata> {
+  const { subjectName, chapterName, quizId } = await params
+
+  const resolved = await loadQuizPage(subjectName, chapterName, quizId)
+
+  return quizPageMetadata(
+    resolved?.session.quiz.title ?? "Quiz",
+    resolved?.chapter.title ?? titleFromSlug(chapterName)
+  )
 }
 
 export default async function QuizPage({ params }: QuizPageProps) {

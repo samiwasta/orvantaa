@@ -1,12 +1,8 @@
-import type { Metadata } from "next"
-
+import { schoolsPageMetadata } from "@/features/dashboard/model/page-metadata"
 import { loadSchools } from "@/features/schools/server/load-schools"
 import { SchoolsTable } from "@/features/schools/view/schools-table"
 
-export const metadata: Metadata = {
-  title: "Schools - Orvantaa Admin",
-  description: "View and manage schools",
-}
+export const metadata = schoolsPageMetadata
 
 export default async function SchoolsPage() {
   const { schools, boardOptions } = await loadSchools()

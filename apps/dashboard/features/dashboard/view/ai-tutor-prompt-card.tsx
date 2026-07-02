@@ -14,6 +14,7 @@ import {
   NEW_CHAT_ID,
 } from "@/features/ai-tutor/model/chat-data"
 import { setPendingChatMessage } from "@/features/ai-tutor/model/pending-chat-message"
+import { AiSparkleIcon } from "@/features/ai-tutor/view/ai-sparkle-icon"
 
 type AiTutorPromptCardProps = {
   title?: string
@@ -74,13 +75,7 @@ export function AiTutorPromptCard({
           className="mt-auto flex w-full items-center gap-2 rounded-2xl border border-white/60 bg-white/95 p-2 shadow-[0_10px_24px_-16px_rgba(10,12,29,0.7)]"
         >
           <div className="pointer-events-none flex shrink-0 items-center pl-1">
-            <Image
-              src="/robot.svg"
-              alt="Robot icon"
-              width={32}
-              height={32}
-              className="size-7 object-contain sm:size-8"
-            />
+            <AiSparkleIcon size={28} className="size-7 sm:size-8" />
           </div>
           <Input
             type="text"

@@ -6,8 +6,8 @@ import {
 } from "@/features/curriculum/model/assigned-content-filters"
 import { resolveChapterProgress } from "@/features/curriculum/model/chapter-progress"
 import {
+  chapterHref,
   quizHref,
-  topicFirstNoteHref,
 } from "@/features/subjects/model/content-navigation"
 import { prisma } from "@/lib/db"
 
@@ -359,7 +359,7 @@ export class ActiveLearnerDashboardRepository {
             currentLesson.chapterSlug,
             currentLesson.quizId
           )
-        : `/subjects/${currentLesson.subjectSlug}/${currentLesson.chapterSlug}`
+        : chapterHref(currentLesson.subjectSlug, currentLesson.chapterSlug)
 
     const weakArea = this.resolveWeakArea(quizAttemptsDetailed, currentLesson)
 
@@ -423,7 +423,7 @@ export class ActiveLearnerDashboardRepository {
         total: 0,
         count: 0,
         chapterTitle: chapter.title,
-        href: `/subjects/${chapter.subject.slug}/${chapter.slug}`,
+        href: chapterHref(chapter.subject.slug, chapter.slug),
       }
       current.total += attempt.scorePercent
       current.count += 1
@@ -457,7 +457,7 @@ export class ActiveLearnerDashboardRepository {
 
     return {
       title: `Revise ${fallback.chapterTitle}`,
-      href: `/subjects/${fallback.subjectSlug}/${fallback.chapterSlug}`,
+      href: chapterHref(fallback.subjectSlug, fallback.chapterSlug),
     }
   }
 
@@ -486,43 +486,6 @@ export class ActiveLearnerDashboardRepository {
       if (progress.totalItems === 0) continue
       if (progress.isCompleted) continue
 
-      const lessons = chapter.topics.flatMap((topic) =>
-        topic.notes.map((note) => ({
-          noteId: note.id,
-          topicSlug: topic.slug,
-        }))
-      )
-
-      const nextLesson = lessons.find(
-        (lesson) => progressByNoteId.get(lesson.noteId) !== "COMPLETED"
-      )
-
-      let continueHref: string | null = null
-
-      if (nextLesson) {
-        continueHref = topicFirstNoteHref(
-          chapter.subject.slug,
-          chapter.slug,
-          nextLesson.topicSlug,
-          nextLesson.noteId
-        )
-      } else {
-        const nextQuiz = chapter.quizzes.find(
-          (quiz) => !completedQuizIds.has(quiz.id)
-        )
-        if (nextQuiz) {
-          continueHref = quizHref(
-            chapter.subject.slug,
-            chapter.slug,
-            nextQuiz.id
-          )
-        } else {
-          continueHref = `/subjects/${chapter.subject.slug}/${chapter.slug}`
-        }
-      }
-
-      if (!continueHref) continue
-
       return {
         subjectTitle: chapter.subject.title,
         subjectSlug: chapter.subject.slug,
@@ -533,7 +496,7 @@ export class ActiveLearnerDashboardRepository {
         totalItems: progress.totalItems,
         progressPercent: progress.progressPercent,
         isCompleted: false,
-        continueHref,
+        continueHref: chapterHref(chapter.subject.slug, chapter.slug),
         quizId: chapter.quizzes[0]?.id ?? null,
       }
     }
@@ -564,7 +527,10 @@ export class ActiveLearnerDashboardRepository {
         totalItems: progress.totalItems,
         progressPercent: progress.progressPercent,
         isCompleted: true,
-        continueHref: `/subjects/${reviseChapter.subject.slug}/${reviseChapter.slug}`,
+        continueHref: chapterHref(
+          reviseChapter.subject.slug,
+          reviseChapter.slug
+        ),
         quizId: reviseChapter.quizzes[0]?.id ?? null,
       }
     }
@@ -578,17 +544,12 @@ export class ActiveLearnerDashboardRepository {
     const firstTopic = firstChapter.topics.find(
       (topic) => topic.notes.length > 0
     )
-    const firstNote = firstTopic?.notes[0]
-    if (!firstTopic || !firstNote) return null
+    if (!firstTopic?.notes[0]) return null
 
-    const continueHref = topicFirstNoteHref(
+    const continueHref = chapterHref(
       firstChapter.subject.slug,
-      firstChapter.slug,
-      firstTopic.slug,
-      firstNote.id
+      firstChapter.slug
     )
-
-    if (!continueHref) return null
 
     const progress = resolveChapterProgress(
       firstChapter,

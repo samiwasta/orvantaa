@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react"
-import { BookA, Bot, LayoutDashboard, LineChart } from "lucide-react"
+import { BookA, LayoutDashboard, LineChart, Sparkles } from "lucide-react"
 
 export type DashboardNavItemDefinition = {
   title: string
@@ -11,7 +11,7 @@ export const dashboardNavItems: DashboardNavItemDefinition[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { title: "Subjects", href: "/subjects", icon: BookA },
   { title: "Performance", href: "/performance", icon: LineChart },
-  { title: "AI Tutor", href: "/ai-tutor", icon: Bot },
+  { title: "AI Tutor", href: "/ai-tutor", icon: Sparkles },
 ]
 
 export function isDashboardNavPathActive(

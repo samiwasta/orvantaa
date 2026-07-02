@@ -1,15 +1,12 @@
 import { z } from "zod"
 
+export const aiTutorChatMessageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string().trim().max(8000),
+})
+
 export const aiTutorChatRequestSchema = z.object({
-  messages: z
-    .array(
-      z.object({
-        role: z.enum(["user", "assistant"]),
-        content: z.string().trim().min(1).max(8000),
-      })
-    )
-    .min(1)
-    .max(40),
+  messages: z.array(aiTutorChatMessageSchema).min(1).max(40),
   scope: z
     .object({
       title: z.string().trim().min(1).max(500),

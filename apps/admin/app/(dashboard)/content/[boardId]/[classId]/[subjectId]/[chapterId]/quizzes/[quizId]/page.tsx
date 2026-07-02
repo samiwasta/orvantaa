@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
+import { contentQuizPageMetadata } from "@/features/dashboard/model/page-metadata"
 import { contentHref } from "@/features/content/model/content-nav"
 import { loadContentQuiz } from "@/features/content/server/load-content-quiz"
 import { ContentBreadcrumbs } from "@/features/content/view/content-breadcrumbs"
@@ -16,8 +17,21 @@ type PageProps = {
   }>
 }
 
-export const metadata: Metadata = {
-  title: "Edit quiz - Orvantaa Admin",
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { boardId, classId, subjectId, chapterId, quizId } = await params
+  const data = await loadContentQuiz(quizId)
+
+  if (
+    !data ||
+    data.chapterRef.boardId !== boardId ||
+    data.chapterRef.classId !== classId ||
+    data.chapterRef.subjectId !== subjectId ||
+    data.chapterRef.id !== chapterId
+  ) {
+    return contentQuizPageMetadata("Edit quiz")
+  }
+
+  return contentQuizPageMetadata(data.quiz.title)
 }
 
 export default async function ContentQuizEditorPage({ params }: PageProps) {

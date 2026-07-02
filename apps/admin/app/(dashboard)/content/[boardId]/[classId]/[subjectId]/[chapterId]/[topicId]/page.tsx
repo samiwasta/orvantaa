@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
+import { contentTopicPageMetadata } from "@/features/dashboard/model/page-metadata"
 import { contentHref } from "@/features/content/model/content-nav"
 import { loadContentTopicDetail } from "@/features/content/server/load-content-topic-detail"
 import { ContentBreadcrumbs } from "@/features/content/view/content-breadcrumbs"
@@ -16,8 +17,21 @@ type PageProps = {
   }>
 }
 
-export const metadata: Metadata = {
-  title: "Content - Orvantaa Admin",
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { boardId, classId, subjectId, chapterId, topicId } = await params
+  const data = await loadContentTopicDetail(topicId)
+
+  if (
+    !data ||
+    data.topicRef.boardId !== boardId ||
+    data.topicRef.classId !== classId ||
+    data.topicRef.subjectId !== subjectId ||
+    data.topicRef.id !== chapterId
+  ) {
+    return contentTopicPageMetadata("Content")
+  }
+
+  return contentTopicPageMetadata(data.topicRef.topicTitle)
 }
 
 export default async function ContentTopicPage({ params }: PageProps) {

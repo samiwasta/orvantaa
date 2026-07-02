@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
+import { contentNotePageMetadata } from "@/features/dashboard/model/page-metadata"
 import { contentHref } from "@/features/content/model/content-nav"
 import { loadContentNote } from "@/features/content/server/load-content-note"
 import { ContentBreadcrumbs } from "@/features/content/view/content-breadcrumbs"
@@ -17,8 +18,23 @@ type PageProps = {
   }>
 }
 
-export const metadata: Metadata = {
-  title: "Edit note - Orvantaa Admin",
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { boardId, classId, subjectId, chapterId, topicId, noteId } =
+    await params
+  const data = await loadContentNote(noteId)
+
+  if (
+    !data ||
+    data.topicRef.boardId !== boardId ||
+    data.topicRef.classId !== classId ||
+    data.topicRef.subjectId !== subjectId ||
+    data.topicRef.id !== chapterId ||
+    data.topicRef.topicId !== topicId
+  ) {
+    return contentNotePageMetadata("Edit note")
+  }
+
+  return contentNotePageMetadata(data.note.title)
 }
 
 export default async function ContentNoteEditorPage({ params }: PageProps) {

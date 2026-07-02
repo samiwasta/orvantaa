@@ -141,7 +141,8 @@ export function DashboardShellView({
 
         <SidebarInset
           className={cn(
-            isAiTutorPage && "h-svh max-h-svh min-h-0 overflow-hidden"
+            isAiTutorPage &&
+              "h-svh max-h-svh min-h-0 overflow-x-hidden overflow-y-auto"
           )}
         >
           <SidebarInsetHeader
@@ -155,7 +156,7 @@ export function DashboardShellView({
               isMobile &&
                 !isAiTutorPage &&
                 "pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))]",
-              isAiTutorPage && "min-h-0 flex-1 gap-0 overflow-hidden p-0"
+              isAiTutorPage && "min-h-0 flex-1 gap-0 overflow-visible p-0"
             )}
           >
             {children}

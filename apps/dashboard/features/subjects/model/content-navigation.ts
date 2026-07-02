@@ -1,3 +1,7 @@
+export function chapterHref(subjectSlug: string, chapterSlugParam: string) {
+  return `/subjects/${subjectSlug}/${chapterSlugParam}`
+}
+
 export function noteHref(
   subjectSlug: string,
   chapterSlugParam: string,

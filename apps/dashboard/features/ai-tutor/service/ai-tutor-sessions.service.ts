@@ -80,6 +80,11 @@ export async function syncAiTutorSession(
       messages: input.messages.map((message) => ({
         role: message.role,
         content: message.content,
+        attachments: message.attachments?.map((attachment) => ({
+          id: attachment.id,
+          name: attachment.name,
+          kind: attachment.kind,
+        })),
       })),
     }),
     ...fetchOptions,

@@ -20,7 +20,10 @@ function r2ImageRemotePatterns(publicUrl) {
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ["@workspace/ui", "@workspace/transactional", "@workspace/rich-text"],
-  serverExternalPackages: ["@prisma/client", "prisma"],
+  serverExternalPackages: ["@prisma/client", "prisma", "pdf-parse"],
+  experimental: {
+    middlewareClientMaxBodySize: 55 * 1024 * 1024,
+  },
   images: {
     remotePatterns: r2ImageRemotePatterns(process.env.R2_PUBLIC_URL?.trim()),
   },

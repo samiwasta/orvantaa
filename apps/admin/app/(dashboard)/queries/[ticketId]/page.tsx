@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
+import { queryDetailPageMetadata } from "@/features/dashboard/model/page-metadata"
 import { loadQueryDetail } from "@/features/queries/server/load-query-detail"
 import { QueryDetailView } from "@/features/queries/view/query-detail-view"
 
@@ -11,11 +12,10 @@ type PageProps = {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { ticketId } = await params
   const ticket = await loadQueryDetail(ticketId)
-  return {
-    title: ticket
-      ? `${ticket.ticketNumber} - Queries - Orvantaa Admin`
-      : "Query - Orvantaa Admin",
-  }
+
+  return ticket
+    ? queryDetailPageMetadata(ticket.ticketNumber)
+    : queryDetailPageMetadata("Query")
 }
 
 export default async function QueryDetailPage({ params }: PageProps) {

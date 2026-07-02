@@ -1,5 +1,6 @@
+import { messageHasImageContent } from "../attachments/build-multimodal-content"
 import { AI_TUTOR_SYSTEM_PROMPT } from "../prompts"
-import type { AiChatMessage, AiChatOptions } from "../types"
+import type { AiChatMessage, AiChatOptions, AiContentPart } from "../types"
 import { getGeminiConfig, getGeminiModelCandidates } from "./config"
 import {
   assertGeminiConfigured,
@@ -12,7 +13,9 @@ import {
 
 export type GeminiChatMessage = AiChatMessage
 
-type GeminiContentPart = { text: string }
+type GeminiContentPart =
+  | { text: string }
+  | { inlineData: { mimeType: string; data: string } }
 
 type GeminiGenerateContentResponse = {
   candidates?: Array<{
@@ -27,11 +30,44 @@ type GeminiGenerateContentResponse = {
   }
 }
 
+function toGeminiParts(content: string | AiContentPart[]): GeminiContentPart[] {
+  if (typeof content === "string") {
+    return [{ text: content }]
+  }
+
+  const parts: GeminiContentPart[] = []
+  for (const part of content) {
+    if (part.type === "text") {
+      parts.push({ text: part.text })
+      continue
+    }
+
+    const match = part.image_url.url.match(/^data:([^;]+);base64,(.+)$/)
+    if (!match) continue
+
+    parts.push({
+      inlineData: {
+        mimeType: match[1]!,
+        data: match[2]!,
+      },
+    })
+  }
+
+  return parts
+}
+
 function buildContents(messages: GeminiChatMessage[]) {
   return messages.map((message) => ({
     role: message.role === "assistant" ? "model" : "user",
-    parts: [{ text: message.content }],
+    parts: toGeminiParts(message.content),
   }))
+}
+
+function messagesUseVision(messages: GeminiChatMessage[]): boolean {
+  return messages.some(
+    (message) =>
+      message.role === "user" && messageHasImageContent(message.content)
+  )
 }
 
 async function generateWithModel(
@@ -68,7 +104,7 @@ async function generateWithModel(
   }
 
   const text = payload?.candidates?.[0]?.content?.parts
-    ?.map((part) => part.text ?? "")
+    ?.map((part) => ("text" in part ? (part.text ?? "") : ""))
     .join("")
     .trim()
 
@@ -97,11 +133,15 @@ export async function generateGeminiChatResponse(
   const config = getGeminiConfig()
   const models = getGeminiModelCandidates(config)
   const systemPrompt = options?.systemPrompt ?? AI_TUTOR_SYSTEM_PROMPT
+  const usesVision = messagesUseVision(messages)
+  const candidateModels = usesVision
+    ? models.filter((model) => !model.includes("embedding"))
+    : models
   let lastError: unknown = null
 
-  for (let index = 0; index < models.length; index += 1) {
-    const modelName = models[index]!
-    const hasFallback = index < models.length - 1
+  for (let index = 0; index < candidateModels.length; index += 1) {
+    const modelName = candidateModels[index]!
+    const hasFallback = index < candidateModels.length - 1
 
     try {
       return await generateWithModel(

@@ -5,7 +5,8 @@ import {
   useBodyScrollLock,
 } from "@workspace/ui/hooks/use-body-scroll-lock"
 import { cn } from "@workspace/ui/lib/utils"
-import Image from "next/image"
+
+import { AnimatedSparklesIcon } from "@/features/ai-tutor/view/animated-sparkles-icon"
 
 import type { AiTutorWidgetScope } from "../model/ai-tutor-scope"
 import { NoteAiTutorCard } from "./note-ai-tutor-card"
@@ -30,7 +31,7 @@ export function NoteAiTutorFab({
       {open ? (
         <button
           type="button"
-          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px] md:bg-transparent md:backdrop-blur-none"
+          className="fixed inset-0 z-40 bg-slate-900/25 backdrop-blur-[2px] md:bg-transparent md:backdrop-blur-none"
           onClick={close}
           aria-label="Close AI Tutor"
         />
@@ -41,8 +42,8 @@ export function NoteAiTutorFab({
           "fixed z-50 transition-all duration-300 ease-out",
           "right-4 bottom-[calc(5.75rem+0.75rem)] md:right-6 md:bottom-6",
           open
-            ? "h-[min(calc(100dvh-9rem),34rem)] w-[min(calc(100vw-2rem),24rem)] md:h-[min(calc(100dvh-5rem),36rem)]"
-            : "size-14"
+            ? "h-[min(calc(100dvh-8rem),36rem)] w-[min(calc(100vw-1.5rem),26rem)] md:h-[min(calc(100dvh-4.5rem),38rem)]"
+            : "size-[3.75rem]"
         )}
       >
         {open ? (
@@ -54,20 +55,23 @@ export function NoteAiTutorFab({
             type="button"
             onClick={() => onOpenChange(true)}
             className={cn(
-              "flex size-14 items-center justify-center rounded-full",
-              "bg-linear-to-br from-[#232061] via-[#1f1b57] to-[#171446]",
-              "text-white shadow-[0_12px_32px_-8px_rgba(31,27,87,0.85)]",
-              "ring-4 ring-white/90 transition-transform hover:scale-105 active:scale-95"
+              "group relative flex size-[3.75rem] items-center justify-center rounded-full",
+              "bg-linear-to-br from-[#6C5CE7] via-[#7550ea] to-[#5b4bc7]",
+              "shadow-[0_14px_36px_-10px_rgba(108,92,231,0.75)]",
+              "ring-2 ring-white transition-all duration-200",
+              "hover:scale-[1.04] hover:shadow-[0_18px_40px_-10px_rgba(108,92,231,0.85)]",
+              "active:scale-[0.98]"
             )}
             aria-label="Open AI Tutor"
           >
-            <Image
-              src="/robot.svg"
-              alt=""
-              width={32}
-              height={32}
-              className="size-8 object-contain"
+            <span
+              className="pointer-events-none absolute inset-0 rounded-full bg-white/10 opacity-0 transition-opacity group-hover:opacity-100"
               aria-hidden
+            />
+            <AnimatedSparklesIcon
+              size={28}
+              strokeWidth={2.35}
+              className="relative"
             />
           </button>
         )}

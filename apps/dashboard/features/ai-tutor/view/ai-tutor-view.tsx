@@ -6,10 +6,12 @@ import {
   useBodyScrollLock,
 } from "@workspace/ui/hooks/use-body-scroll-lock"
 import { cn } from "@workspace/ui/lib/utils"
-import { ArrowUp, Bot, History, Plus } from "lucide-react"
+import { History, Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 
+import { useChatAttachments } from "../hooks/use-chat-attachments"
+import { useSpeechDictation } from "../hooks/use-speech-dictation"
 import {
   aiTutorChatHref,
   type ChatMessage,
@@ -20,44 +22,36 @@ import {
 } from "../model/chat-data"
 import { useChatSessions } from "../model/chat-sessions-context"
 import {
+  hydrateMessageAttachmentPreviews,
+  mergeMessageAttachmentPreviews,
+  registerMessageAttachmentPreview,
+} from "../model/message-attachment-preview-registry"
+import {
   clearPendingChatMessageProcessing,
   setPendingChatMessage,
   takePendingChatMessage,
 } from "../model/pending-chat-message"
+import {
+  stashChatUploads,
+  takeChatUploads,
+} from "../model/pending-chat-uploads"
 import { requestAiTutorReply } from "../service/ai-tutor-chat.service"
+import { AiTutorComposer } from "./ai-tutor-composer"
 import { AiTutorMarkdown } from "./ai-tutor-markdown"
 import {
   AssistantMessageActions,
   type MessageFeedback,
 } from "./assistant-message-actions"
 import { ChatHistorySheet } from "./chat-history-sheet"
+import { UserMessageAttachments } from "./user-message-attachments"
 
 const MAX_TEXTAREA_HEIGHT = 12 * 21 + 24
 const CHAT_MAX_WIDTH = "max-w-3xl"
 
-function AssistantAvatar({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn(
-        "flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#6C5CE7] to-[#8b5cf6] text-white shadow-sm shadow-[#6C5CE7]/25",
-        className
-      )}
-    >
-      <Bot className="size-4" strokeWidth={2} />
-    </div>
-  )
-}
-
 function TypingIndicator() {
   return (
     <div className="w-full px-3 py-4 md:px-6 md:py-6">
-      <div
-        className={cn(
-          "mx-auto flex w-full gap-3 max-md:pl-0 md:gap-4",
-          CHAT_MAX_WIDTH
-        )}
-      >
-        <AssistantAvatar className="max-md:hidden" />
+      <div className={cn("mx-auto w-full", CHAT_MAX_WIDTH)}>
         <div className="flex h-8 items-center gap-1.5">
           <span className="size-2 animate-bounce rounded-full bg-[#6C5CE7]/70 [animation-delay:0ms]" />
           <span className="size-2 animate-bounce rounded-full bg-[#6C5CE7]/70 [animation-delay:150ms]" />
@@ -68,12 +62,21 @@ function TypingIndicator() {
   )
 }
 
-function UserMessage({ content }: { content: string }) {
+function UserMessage({
+  content,
+  attachments,
+}: {
+  content: string
+  attachments?: ChatMessage["attachments"]
+}) {
   return (
     <div className="w-full px-3 py-2 md:px-6 md:py-3">
       <div className={cn("mx-auto flex w-full justify-end", CHAT_MAX_WIDTH)}>
         <div className="max-w-[92%] rounded-3xl rounded-br-lg bg-[#6C5CE7] px-3.5 py-2.5 text-[15px] leading-relaxed text-white shadow-sm sm:max-w-[80%] sm:px-4">
-          <p className="break-words whitespace-pre-wrap">{content}</p>
+          <UserMessageAttachments attachments={attachments} />
+          {content ? (
+            <p className="break-words whitespace-pre-wrap">{content}</p>
+          ) : null}
         </div>
       </div>
     </div>
@@ -97,12 +100,8 @@ function AssistantMessage({
 }) {
   return (
     <div className="w-full px-3 py-4 md:px-6 md:py-6">
-      <div className={cn("mx-auto flex w-full gap-3 md:gap-4", CHAT_MAX_WIDTH)}>
-        <AssistantAvatar className="max-md:hidden" />
-        <div className="min-w-0 flex-1">
-          <div className="mb-1 hidden text-sm font-semibold text-foreground md:block">
-            AI Tutor
-          </div>
+      <div className={cn("mx-auto w-full", CHAT_MAX_WIDTH)}>
+        <div className="min-w-0">
           <AiTutorMarkdown content={content} />
           <AssistantMessageActions
             content={content}
@@ -134,7 +133,12 @@ function ChatMessageRow({
   onRetry: () => void
 }) {
   if (message.role === "user") {
-    return <UserMessage content={message.content} />
+    return (
+      <UserMessage
+        content={message.content}
+        attachments={message.attachments}
+      />
+    )
   }
 
   return (
@@ -152,21 +156,20 @@ function ChatMessageRow({
 type AiTutorChatProps = {
   chatId: string
   session: ChatSession | undefined
+  userFirstName?: string
 }
 
-function AiTutorChat({ chatId, session }: AiTutorChatProps) {
+function AiTutorChat({ chatId, session, userFirstName }: AiTutorChatProps) {
   const router = useRouter()
   const { sessions, createSession, updateSessionMessages, deleteSession } =
     useChatSessions()
-  const [messages, setMessages] = useState<ChatMessage[]>(
-    () => session?.messages ?? []
+  const [messages, setMessages] = useState<ChatMessage[]>(() =>
+    hydrateMessageAttachmentPreviews(session?.messages ?? [])
   )
   const [input, setInput] = useState("")
+  const [dictationError, setDictationError] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
-  const [isTyping, setIsTyping] = useState(() => {
-    const last = session?.messages[session.messages.length - 1]
-    return last?.role === "user"
-  })
+  const [isTyping, setIsTyping] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [messageFeedback, setMessageFeedback] = useState<
     Record<string, MessageFeedback>
@@ -175,6 +178,28 @@ function AiTutorChat({ chatId, session }: AiTutorChatProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const pendingReplyRef = useRef(false)
   const pendingMessageHandledRef = useRef(false)
+  const resumedSessionIdRef = useRef<string | null>(null)
+
+  const {
+    attachments: composerAttachments,
+    error: attachmentError,
+    isPreparing: isPreparingAttachments,
+    addFiles,
+    removeAttachment,
+    clearAttachments,
+    getUploadFiles,
+    getMessagePreviews,
+    setError: setAttachmentError,
+  } = useChatAttachments()
+
+  const {
+    isListening,
+    isSupported,
+    toggle: toggleDictation,
+    stop: stopDictation,
+  } = useSpeechDictation({
+    onError: setDictationError,
+  })
 
   const isNewChat = chatId === NEW_CHAT_ID
   const hasMessages = messages.length > 0
@@ -184,80 +209,80 @@ function AiTutorChat({ chatId, session }: AiTutorChatProps) {
   useEffect(() => {
     if (!session) return
 
-    setMessages(session.messages)
-    const last = session.messages[session.messages.length - 1]
-    setIsTyping(last?.role === "user")
+    setMessages(hydrateMessageAttachmentPreviews(session.messages))
   }, [session?.id, session])
 
-  useEffect(() => {
-    if (!isTyping || pendingReplyRef.current) return
-    const last = messages[messages.length - 1]
-    if (last?.role !== "user") return
+  const requestAssistantReply = async (
+    threadMessages: ChatMessage[],
+    uploadFiles: File[],
+    targetChatId: string
+  ) => {
+    if (pendingReplyRef.current) return
 
     pendingReplyRef.current = true
-    let cancelled = false
+    setIsTyping(true)
 
-    const run = async () => {
-      try {
-        const { content } = await requestAiTutorReply(
-          messages.map((message) => ({
-            role: message.role,
-            content: message.content,
-          }))
-        )
+    try {
+      const { content } = await requestAiTutorReply(
+        threadMessages.map((message) => ({
+          role: message.role,
+          content: message.content,
+        })),
+        undefined,
+        uploadFiles
+      )
 
-        if (cancelled) return
-
-        const reply: ChatMessage = {
-          id: createMessageId(),
-          role: "assistant",
-          content,
-          timestamp: new Date(),
-        }
-        const withReply = [...messages, reply]
-        const saved = await updateSessionMessages(chatId, withReply)
-        if (!cancelled) {
-          setMessages(saved.messages)
-        }
-      } catch (error) {
-        if (cancelled) return
-
-        const reply: ChatMessage = {
-          id: createMessageId(),
-          role: "assistant",
-          content:
-            error instanceof Error
-              ? error.message
-              : "Something went wrong. Please try again.",
-          timestamp: new Date(),
-        }
-        const withReply = [...messages, reply]
-
-        setMessages(withReply)
-
-        try {
-          const saved = await updateSessionMessages(chatId, withReply)
-          if (!cancelled) {
-            setMessages(saved.messages)
-          }
-        } catch (saveError) {
-          console.error("[ai-tutor] Failed to save error response:", saveError)
-        }
-      } finally {
-        if (!cancelled) {
-          setIsTyping(false)
-          pendingReplyRef.current = false
-        }
+      const reply: ChatMessage = {
+        id: createMessageId(),
+        role: "assistant",
+        content,
+        timestamp: new Date(),
       }
-    }
+      const withReply = [...threadMessages, reply]
+      const saved = await updateSessionMessages(targetChatId, withReply)
+      setMessages(mergeMessageAttachmentPreviews(saved.messages, withReply))
+    } catch (error) {
+      const reply: ChatMessage = {
+        id: createMessageId(),
+        role: "assistant",
+        content:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong. Please try again.",
+        timestamp: new Date(),
+      }
+      const withReply = [...threadMessages, reply]
 
-    void run()
+      setMessages(withReply)
 
-    return () => {
-      cancelled = true
+      try {
+        const saved = await updateSessionMessages(targetChatId, withReply)
+        setMessages(mergeMessageAttachmentPreviews(saved.messages, withReply))
+      } catch (saveError) {
+        console.error("[ai-tutor] Failed to save error response:", saveError)
+      }
+    } finally {
+      setIsTyping(false)
       pendingReplyRef.current = false
     }
-  }, [chatId, isTyping, messages, updateSessionMessages])
+  }
+
+  useEffect(() => {
+    resumedSessionIdRef.current = null
+  }, [chatId])
+
+  useEffect(() => {
+    if (!session || isNewChat) return
+    if (resumedSessionIdRef.current === session.id) return
+
+    const last = session.messages[session.messages.length - 1]
+    resumedSessionIdRef.current = session.id
+
+    if (last?.role !== "user") return
+
+    const uploadFiles = takeChatUploads(chatId)
+    void requestAssistantReply(session.messages, uploadFiles, chatId)
+  }, [chatId, isNewChat, session])
 
   useEffect(() => {
     const container = messagesScrollRef.current
@@ -272,15 +297,38 @@ function AiTutorChat({ chatId, session }: AiTutorChatProps) {
   useEffect(() => {
     const el = inputRef.current
     if (!el) return
+    const minHeight = 24
     el.style.height = "auto"
-    el.style.height = `${Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`
+    el.style.height = `${Math.max(minHeight, Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT))}px`
   }, [input])
 
   const sendMessage = async (content: string) => {
-    if (!content.trim() || isTyping || isSending) return
+    const uploadFiles = getUploadFiles()
+    const hasContent = content.trim().length > 0
+    const hasAttachments = uploadFiles.length > 0
+
+    if ((!hasContent && !hasAttachments) || isTyping || isSending) return
+
+    stopDictation()
+    setDictationError(null)
+    setAttachmentError(null)
 
     const trimmed = content.trim()
+    const messageAttachments = getMessagePreviews().map((attachment) => ({
+      id: attachment.id,
+      name: attachment.name,
+      kind: attachment.kind,
+      previewUrl: attachment.previewUrl,
+    }))
+
+    for (const attachment of messageAttachments) {
+      if (attachment.kind === "image" && attachment.previewUrl) {
+        registerMessageAttachmentPreview(attachment.id, attachment.previewUrl)
+      }
+    }
+
     setInput("")
+    clearAttachments({ revokePreviews: false })
 
     if (isNewChat) {
       setIsSending(true)
@@ -291,7 +339,11 @@ function AiTutorChat({ chatId, session }: AiTutorChatProps) {
           role: "user",
           content: trimmed,
           timestamp: new Date(),
+          attachments: messageAttachments.length
+            ? messageAttachments
+            : undefined,
         }
+        stashChatUploads(created.id, uploadFiles)
         await updateSessionMessages(created.id, [userMsg])
         router.replace(aiTutorChatHref(created.id))
       } catch (error) {
@@ -310,18 +362,19 @@ function AiTutorChat({ chatId, session }: AiTutorChatProps) {
       role: "user",
       content: trimmed,
       timestamp: new Date(),
+      attachments: messageAttachments.length ? messageAttachments : undefined,
     }
 
     const withUser = [...messages, userMsg]
     setMessages(withUser)
-    setIsTyping(true)
 
     try {
       await updateSessionMessages(chatId, withUser)
+      setMessages(withUser)
+      await requestAssistantReply(withUser, uploadFiles, chatId)
     } catch (error) {
       console.error("[ai-tutor] Failed to save message:", error)
       setMessages(messages)
-      setIsTyping(false)
       setInput(trimmed)
     }
   }
@@ -352,15 +405,10 @@ function AiTutorChat({ chatId, session }: AiTutorChatProps) {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    sendMessage(input)
-  }
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      sendMessage(input)
+      void sendMessage(input)
     }
   }
 
@@ -393,14 +441,13 @@ function AiTutorChat({ chatId, session }: AiTutorChatProps) {
     })
 
     setMessages(truncated)
-    setIsTyping(true)
 
     try {
       const saved = await updateSessionMessages(chatId, truncated)
-      setMessages(saved.messages)
+      setMessages(mergeMessageAttachmentPreviews(saved.messages, truncated))
+      await requestAssistantReply(saved.messages, [], chatId)
     } catch (error) {
       console.error("[ai-tutor] Failed to retry:", error)
-      setIsTyping(false)
     }
   }
 
@@ -408,43 +455,95 @@ function AiTutorChat({ chatId, session }: AiTutorChatProps) {
 
   const activeSessionId = isNewChat ? null : chatId
 
+  const heroComposer = (
+    <AiTutorComposer
+      className="mx-auto w-full max-w-2xl"
+      variant="premium"
+      value={input}
+      onChange={(value) => {
+        setDictationError(null)
+        setAttachmentError(null)
+        if (isListening) stopDictation()
+        setInput(value)
+      }}
+      onSubmit={() => sendMessage(input)}
+      placeholder="Ask your tutor"
+      disabled={isTyping || isSending}
+      sendDisabled={isTyping || isSending}
+      isListening={isListening}
+      dictationSupported={isSupported}
+      dictationError={dictationError}
+      onToggleDictation={() => {
+        setDictationError(null)
+        toggleDictation(input, setInput)
+      }}
+      attachments={composerAttachments.map((attachment) => ({
+        id: attachment.id,
+        name: attachment.name,
+        kind: attachment.kind,
+        previewUrl: attachment.previewUrl,
+      }))}
+      attachmentError={attachmentError}
+      isPreparingAttachments={isPreparingAttachments}
+      onAddFiles={(files) => {
+        setAttachmentError(null)
+        void addFiles(files)
+      }}
+      onRemoveAttachment={removeAttachment}
+      textareaRef={inputRef}
+      onKeyDown={handleKeyDown}
+      maxTextareaHeight={MAX_TEXTAREA_HEIGHT}
+    />
+  )
+
   const composer = (
-    <form
-      onSubmit={handleSubmit}
+    <AiTutorComposer
       className={cn("mx-auto w-full", CHAT_MAX_WIDTH)}
-    >
-      <div className="flex items-end gap-2 rounded-[1.75rem] border border-border/60 bg-white p-2 pl-3 shadow-[0_2px_16px_-8px_rgba(15,15,40,0.18)] transition-all focus-within:border-[#6C5CE7]/50 focus-within:shadow-[0_4px_24px_-8px_rgba(108,92,231,0.3)] sm:pl-4">
-        <textarea
-          ref={inputRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask anything about your subjects..."
-          rows={1}
-          style={{
-            overflowY:
-              input.includes("\n") || input.length > 100 ? "auto" : "hidden",
-          }}
-          className="min-h-[36px] flex-1 resize-none self-center bg-transparent py-1.5 text-[15px] leading-[1.5] text-foreground outline-none placeholder:text-muted-foreground/50"
-        />
-        <Button
-          type="submit"
-          size="icon"
-          disabled={!input.trim() || isTyping || isSending}
-          className="size-9 shrink-0 rounded-full bg-[#6C5CE7] text-white shadow-sm transition-all hover:bg-[#5d4ed6] disabled:bg-muted disabled:text-muted-foreground disabled:opacity-60 disabled:shadow-none"
-          aria-label="Send message"
-        >
-          <ArrowUp className="size-5" strokeWidth={2.25} aria-hidden />
-        </Button>
-      </div>
-      <p className="mt-2 text-center text-[11px] text-muted-foreground/60">
-        AI Tutor may produce inaccurate responses. Verify important information.
-      </p>
-    </form>
+      value={input}
+      onChange={(value) => {
+        setDictationError(null)
+        setAttachmentError(null)
+        if (isListening) stopDictation()
+        setInput(value)
+      }}
+      onSubmit={() => sendMessage(input)}
+      placeholder="Ask anything about your subjects..."
+      disabled={isTyping || isSending}
+      sendDisabled={isTyping || isSending}
+      isListening={isListening}
+      dictationSupported={isSupported}
+      dictationError={dictationError}
+      onToggleDictation={() => {
+        setDictationError(null)
+        toggleDictation(input, setInput)
+      }}
+      attachments={composerAttachments.map((attachment) => ({
+        id: attachment.id,
+        name: attachment.name,
+        kind: attachment.kind,
+        previewUrl: attachment.previewUrl,
+      }))}
+      attachmentError={attachmentError}
+      isPreparingAttachments={isPreparingAttachments}
+      onAddFiles={(files) => {
+        setAttachmentError(null)
+        void addFiles(files)
+      }}
+      onRemoveAttachment={removeAttachment}
+      textareaRef={inputRef}
+      onKeyDown={handleKeyDown}
+      maxTextareaHeight={MAX_TEXTAREA_HEIGHT}
+      footerText="AI Tutor may produce inaccurate responses. Verify important information."
+    />
   )
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background max-md:pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))]">
+    <div
+      className={cn(
+        "relative flex min-h-0 flex-1 flex-col bg-background max-md:pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))]",
+        hasMessages ? "overflow-hidden" : "overflow-visible"
+      )}
+    >
       <header className="flex shrink-0 items-center justify-end gap-2 border-b border-border/40 bg-background px-3 py-2 md:px-6 md:py-2.5">
         <Button
           type="button"
@@ -510,27 +609,38 @@ function AiTutorChat({ chatId, session }: AiTutorChatProps) {
           </div>
         </>
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 md:px-6">
-          <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-7 py-8">
-            <div className="flex flex-col items-center gap-4 text-center">
-              <div className="relative">
-                <div className="flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#6C5CE7] to-[#8b5cf6] text-white shadow-lg shadow-[#6C5CE7]/25">
-                  <Bot className="size-8" strokeWidth={1.75} />
-                </div>
-                <div className="absolute -right-0.5 -bottom-0.5 size-4 rounded-full bg-emerald-400 ring-2 ring-background" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                  How can I help you today?
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
-                  Ask me about concepts, problems, quizzes, or chapter
-                  summaries.
+        <div className="flex min-h-0 flex-1 flex-col px-3 md:px-6">
+          <div className="relative isolate mx-auto flex w-full max-w-3xl flex-1 flex-col items-center overflow-visible">
+            <div
+              className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-visible"
+              aria-hidden
+            >
+              <div className="absolute h-[min(68vw,26rem)] w-[min(88vw,36rem)] -translate-y-6 rounded-full bg-gradient-to-r from-violet-300/25 via-sky-200/20 to-cyan-200/18 blur-[110px] sm:-translate-y-8" />
+              <div className="absolute h-52 w-72 -translate-x-[38%] translate-y-0 rounded-full bg-gradient-to-br from-[#6C5CE7]/20 to-indigo-200/16 blur-[96px] sm:translate-y-2" />
+              <div className="absolute h-48 w-64 translate-x-[42%] -translate-y-6 rounded-full bg-gradient-to-bl from-sky-300/18 to-violet-200/16 blur-[88px] sm:-translate-y-8" />
+              <div className="absolute h-36 w-[min(76vw,28rem)] translate-y-4 rounded-full bg-gradient-to-t from-cyan-100/14 via-transparent to-violet-100/12 blur-[80px] sm:translate-y-2" />
+            </div>
+
+            <div className="flex-[2] max-md:flex-[1.5]" aria-hidden />
+
+            <div className="relative z-10 flex w-full flex-col items-center gap-10 sm:gap-12">
+              <h1 className="max-w-xl text-center font-[family-name:var(--font-poppins)] text-[1.75rem] font-light tracking-[-0.02em] text-foreground/90 sm:text-[2.5rem] sm:leading-[1.15]">
+                {userFirstName
+                  ? `Hi ${userFirstName}, what would you like to learn?`
+                  : "What would you like to learn?"}
+              </h1>
+
+              <div className="w-full max-w-2xl">
+                {heroComposer}
+
+                <p className="mt-4 text-center text-[11px] font-light tracking-wide text-muted-foreground/55">
+                  AI Tutor may produce inaccurate responses. Verify important
+                  information.
                 </p>
               </div>
             </div>
 
-            <div className="w-full">{composer}</div>
+            <div className="flex-[3] max-md:flex-[2.5]" aria-hidden />
           </div>
         </div>
       )}
@@ -541,9 +651,14 @@ function AiTutorChat({ chatId, session }: AiTutorChatProps) {
 type AiTutorViewProps = {
   chatId: string
   initialSession?: ChatSession
+  userFirstName?: string
 }
 
-export function AiTutorView({ chatId, initialSession }: AiTutorViewProps) {
+export function AiTutorView({
+  chatId,
+  initialSession,
+  userFirstName,
+}: AiTutorViewProps) {
   const router = useRouter()
   const { loadSession, upsertSession } = useChatSessions()
   const isNewChat = chatId === NEW_CHAT_ID
@@ -601,5 +716,12 @@ export function AiTutorView({ chatId, initialSession }: AiTutorViewProps) {
     return null
   }
 
-  return <AiTutorChat key={chatId} chatId={chatId} session={session} />
+  return (
+    <AiTutorChat
+      key={chatId}
+      chatId={chatId}
+      session={session}
+      userFirstName={userFirstName}
+    />
+  )
 }

@@ -5,6 +5,8 @@ import type { Components } from "react-markdown"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 
+import { createMarkdownCodeBlockComponents } from "./markdown-code-blocks"
+
 type AiTutorMarkdownProps = {
   content: string
   className?: string
@@ -70,31 +72,7 @@ const defaultMarkdownComponents: Components = {
       {children}
     </a>
   ),
-  code: ({ className, children, ...props }) => {
-    const isBlock = Boolean(className?.includes("language-"))
-
-    if (isBlock) {
-      return (
-        <code className={cn("font-mono text-[13px]", className)} {...props}>
-          {children}
-        </code>
-      )
-    }
-
-    return (
-      <code
-        className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[13px] text-foreground"
-        {...props}
-      >
-        {children}
-      </code>
-    )
-  },
-  pre: ({ children }) => (
-    <pre className="mb-4 overflow-x-auto rounded-xl bg-muted/70 p-4 font-mono text-[13px] leading-6 text-foreground last:mb-0">
-      {children}
-    </pre>
-  ),
+  ...createMarkdownCodeBlockComponents({ compact: false }),
   table: ({ children }) => (
     <div className="mb-4 overflow-x-auto last:mb-0">
       <table className="w-full min-w-[28rem] border-collapse text-left text-sm">
@@ -176,31 +154,7 @@ const compactMarkdownComponents: Components = {
       {children}
     </a>
   ),
-  code: ({ className, children, ...props }) => {
-    const isBlock = Boolean(className?.includes("language-"))
-
-    if (isBlock) {
-      return (
-        <code className={cn("font-mono text-[11px]", className)} {...props}>
-          {children}
-        </code>
-      )
-    }
-
-    return (
-      <code
-        className="rounded bg-muted px-1 py-0.5 font-mono text-[11px] text-foreground"
-        {...props}
-      >
-        {children}
-      </code>
-    )
-  },
-  pre: ({ children }) => (
-    <pre className="mb-2 overflow-x-auto rounded-lg bg-muted/70 p-2.5 font-mono text-[11px] leading-5 text-foreground last:mb-0">
-      {children}
-    </pre>
-  ),
+  ...createMarkdownCodeBlockComponents({ compact: true }),
   table: ({ children }) => (
     <div className="mb-2 overflow-x-auto last:mb-0">
       <table className="w-full border-collapse text-left text-xs">

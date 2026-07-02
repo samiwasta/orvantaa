@@ -1,12 +1,8 @@
-import type { Metadata } from "next"
-
+import { boardsPageMetadata } from "@/features/dashboard/model/page-metadata"
 import { loadBoards } from "@/features/boards/server/load-boards"
 import { BoardsView } from "@/features/boards/view/boards-view"
 
-export const metadata: Metadata = {
-  title: "Boards - Orvantaa Admin",
-  description: "Manage boards and universities",
-}
+export const metadata = boardsPageMetadata
 
 export default async function BoardsPage() {
   const { boards } = await loadBoards()

@@ -1,5 +1,4 @@
-import type { Metadata } from "next"
-
+import { dashboardPageMetadata } from "@/features/dashboard/model/page-metadata"
 import { GenderChart, SignupsChart } from "@/features/dashboard/view/admin-charts"
 import { AdminQuickActions } from "@/features/dashboard/view/admin-quick-actions"
 import { AdminRecentUsers } from "@/features/dashboard/view/admin-recent-users"
@@ -8,10 +7,7 @@ import { DashboardGreeting } from "@/features/dashboard/view/dashboard-greeting"
 import { loadAdminDashboardStats } from "@/features/dashboard/server/load-admin-dashboard-stats"
 import { loadDashboardUserProfile } from "@/features/user/server/load-dashboard-user-profile"
 
-export const metadata: Metadata = {
-  title: "Dashboard - Orvantaa Admin",
-  description: "Orvantaa admin overview",
-}
+export const metadata = dashboardPageMetadata
 
 export default async function DashboardPage() {
   const [{ firstName }, stats] = await Promise.all([

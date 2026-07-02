@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 
+import { schoolDetailPageMetadata } from "@/features/dashboard/model/page-metadata"
 import { loadSchoolDetail } from "@/features/schools/server/load-school-detail"
 import { SchoolDetailView } from "@/features/schools/view/school-detail-view"
 
@@ -12,9 +13,11 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { schoolCode } = await params
-  return {
-    title: `${schoolCode} - Orvantaa Admin`,
-  }
+  const data = await loadSchoolDetail(schoolCode, "all")
+
+  return data
+    ? schoolDetailPageMetadata(data.school.name, schoolCode)
+    : schoolDetailPageMetadata("School", schoolCode)
 }
 
 export default async function SchoolDetailPage({ params, searchParams }: PageProps) {

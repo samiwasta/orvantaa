@@ -1,12 +1,8 @@
-import type { Metadata } from "next"
-
+import { contentPageMetadata } from "@/features/dashboard/model/page-metadata"
 import { loadContentBoards } from "@/features/content/server/load-content-boards"
 import { ContentBoardsView } from "@/features/content/view/content-boards-view"
 
-export const metadata: Metadata = {
-  title: "Content - Orvantaa Admin",
-  description: "Manage subjects, chapters, notes, and quizzes",
-}
+export const metadata = contentPageMetadata
 
 export default async function ContentPage() {
   const { boards } = await loadContentBoards()

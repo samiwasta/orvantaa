@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import { managementPageMetadata } from "@/features/dashboard/model/page-metadata"
 import { Suspense } from "react"
 
 import {
@@ -7,10 +7,7 @@ import {
 } from "@/features/management/server/load-management-page"
 import { ManagementView } from "@/features/management/view/management-view"
 
-export const metadata: Metadata = {
-  title: "Management - Orvantaa Admin",
-  description: "Admin team and subscription settings",
-}
+export const metadata = managementPageMetadata
 
 type ManagementPageProps = {
   searchParams: Promise<{ tab?: string }>
