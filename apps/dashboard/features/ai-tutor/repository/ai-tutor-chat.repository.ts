@@ -33,16 +33,17 @@ function parseStoredAttachments(
 ): ChatMessageAttachment[] | undefined {
   if (!Array.isArray(value)) return undefined
 
-  const attachments = value.flatMap((entry) => {
+  const attachments: ChatMessageAttachment[] = value.flatMap((entry) => {
     if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
       return []
     }
 
     const record = entry as Record<string, unknown>
+    const kind = record.kind
     if (
       typeof record.id !== "string" ||
       typeof record.name !== "string" ||
-      (record.kind !== "image" && record.kind !== "document")
+      (kind !== "image" && kind !== "document")
     ) {
       return []
     }
@@ -51,7 +52,7 @@ function parseStoredAttachments(
       {
         id: record.id,
         name: record.name,
-        kind: record.kind,
+        kind,
         previewUrl: null,
       },
     ]

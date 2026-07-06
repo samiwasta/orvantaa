@@ -34,7 +34,7 @@ const fadeUp = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const },
   },
 }
 
@@ -118,7 +118,11 @@ function HeroCard({
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            transition={{
+              delay: 0.2,
+              duration: 0.6,
+              ease: [0.22, 1, 0.36, 1] as const,
+            }}
             className="hidden h-auto w-full max-w-[280px] @[540px]/hero:order-last @[540px]/hero:block @[540px]/hero:max-w-[320px] @[540px]/hero:self-end"
           >
             <Image
@@ -146,7 +150,7 @@ function HeroCard({
               transition={{
                 delay: 0.12,
                 duration: 0.45,
-                ease: [0.22, 1, 0.36, 1],
+                ease: [0.22, 1, 0.36, 1] as const,
               }}
               className="mt-2.5 font-heading text-xl font-semibold tracking-tight text-foreground xl:mt-4 @[540px]/hero:text-2xl @[540px]/hero:whitespace-nowrap"
             >

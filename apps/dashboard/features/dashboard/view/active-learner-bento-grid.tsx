@@ -126,7 +126,7 @@ const staggerItem = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as const },
   },
 }
 
@@ -260,7 +260,7 @@ function CurrentLessonCard({
             animate={{ opacity: 1, y: 0 }}
             transition={{
               duration: 0.35,
-              ease: [0.22, 1, 0.36, 1],
+              ease: [0.22, 1, 0.36, 1] as const,
               delay: 0.05,
             }}
             className="mt-3 font-heading text-xl leading-snug font-semibold tracking-tight text-white sm:text-[1.25rem]"
