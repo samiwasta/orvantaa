@@ -7,6 +7,10 @@ import {
   DEFAULT_CHAT_TITLE,
   titleFromFirstMessage,
 } from "@/features/ai-tutor/model/chat-data"
+import {
+  mapDbFeedback,
+  toDbFeedback,
+} from "@/features/ai-tutor/repository/ai-tutor-feedback.repository"
 import { generateAiTutorChatTitle } from "@/lib/ai/generate-chat-title"
 import { prisma } from "@/lib/db"
 
@@ -19,6 +23,7 @@ type SessionRow = {
     role: AiTutorMessageRole
     content: string
     attachments: Prisma.JsonValue | null
+    feedback: import("@prisma/client").AiTutorMessageFeedback | null
     createdAt: Date
   }>
 }
@@ -62,6 +67,10 @@ function mapMessage(row: SessionRow["messages"][number]): ChatMessage {
     content: row.content,
     timestamp: row.createdAt,
     attachments: parseStoredAttachments(row.attachments),
+    feedback:
+      row.role === "ASSISTANT"
+        ? mapDbFeedback(row.feedback ?? null)
+        : undefined,
   }
 }
 
@@ -149,9 +158,11 @@ export class AiTutorChatRepository {
     input: {
       title?: string
       messages: Array<{
+        id?: string
         role: "user" | "assistant"
         content: string
         attachments?: ChatMessageAttachment[]
+        feedback?: ChatMessage["feedback"]
       }>
     }
   ): Promise<ChatSession | null> {
@@ -165,25 +176,65 @@ export class AiTutorChatRepository {
     }
 
     const row = await prisma.$transaction(async (tx) => {
+      const incomingIds = input.messages
+        .map((message) => message.id)
+        .filter((id): id is string => Boolean(id))
+
       await tx.aiTutorChatMessage.deleteMany({
-        where: { sessionId },
+        where: {
+          sessionId,
+          ...(incomingIds.length > 0 ? { id: { notIn: incomingIds } } : {}),
+        },
       })
 
-      if (input.messages.length > 0) {
-        await tx.aiTutorChatMessage.createMany({
-          data: input.messages.map((message) => ({
-            sessionId,
-            role: message.role === "user" ? "USER" : "ASSISTANT",
-            content: message.content,
-            attachments:
-              message.attachments && message.attachments.length > 0
-                ? message.attachments.map((attachment) => ({
-                    id: attachment.id,
-                    name: attachment.name,
-                    kind: attachment.kind,
-                  }))
-                : undefined,
-          })),
+      for (const message of input.messages) {
+        const role: AiTutorMessageRole =
+          message.role === "user" ? "USER" : "ASSISTANT"
+        const attachments =
+          message.attachments && message.attachments.length > 0
+            ? message.attachments.map((attachment) => ({
+                id: attachment.id,
+                name: attachment.name,
+                kind: attachment.kind,
+              }))
+            : undefined
+
+        const baseData = {
+          sessionId,
+          role,
+          content: message.content,
+          attachments,
+        }
+
+        if (message.id) {
+          await tx.aiTutorChatMessage.upsert({
+            where: { id: message.id },
+            create: {
+              id: message.id,
+              ...baseData,
+              feedback:
+                message.role === "assistant"
+                  ? toDbFeedback(message.feedback ?? null)
+                  : null,
+            },
+            update: {
+              ...baseData,
+              ...(message.role === "assistant" && message.feedback !== undefined
+                ? { feedback: toDbFeedback(message.feedback) }
+                : {}),
+            },
+          })
+          continue
+        }
+
+        await tx.aiTutorChatMessage.create({
+          data: {
+            ...baseData,
+            feedback:
+              message.role === "assistant"
+                ? toDbFeedback(message.feedback ?? null)
+                : null,
+          },
         })
       }
 

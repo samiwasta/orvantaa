@@ -7,7 +7,8 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 import { cn } from "@workspace/ui/lib/utils"
-import { BellIcon, CheckCheck } from "lucide-react"
+import { CheckCheck } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useState, useTransition } from "react"
@@ -95,16 +96,23 @@ export function NotificationBell({ initialSummary }: NotificationBellProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="relative size-9 shrink-0 cursor-pointer rounded-full bg-white shadow-sm"
+          className="relative flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#E5E7EB] bg-white shadow-none hover:bg-[#F8FAFF]"
           aria-label={
             summary.unreadCount > 0
               ? `Notifications, ${summary.unreadCount} unread`
               : "Notifications"
           }
         >
-          <BellIcon className="size-4 text-[#6C5CE7]" strokeWidth={2.5} />
+          <Image
+            src="/notification.svg"
+            alt=""
+            width={24}
+            height={24}
+            className="size-6 shrink-0"
+            aria-hidden
+          />
           {badgeLabel ? (
-            <span className="absolute -top-0.5 -right-0.5 inline-flex min-w-4 items-center justify-center rounded-full bg-[#6C5CE7] px-1 text-[10px] font-semibold text-white">
+            <span className="absolute -top-0.5 -right-0.5 inline-flex min-w-4 items-center justify-center rounded-full bg-[#4169E1] px-1 text-[10px] font-semibold text-white">
               {badgeLabel}
             </span>
           ) : null}

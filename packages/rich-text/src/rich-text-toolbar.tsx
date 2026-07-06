@@ -2,11 +2,11 @@
 
 import { useState } from "react"
 import type { Editor } from "@tiptap/react"
-import { FlaskConical, List, ListOrdered, Sigma } from "lucide-react"
 
 import { EquationInsertDialog } from "./equation-insert-dialog"
 import type { EquationDialogMode } from "./katex-render"
 import type { RichTextVariant } from "./extensions"
+import { FlaskConical, List, ListOrdered, Sigma } from "lucide-react"
 
 type RichTextToolbarProps = {
   editor: Editor | null

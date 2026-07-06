@@ -1,13 +1,14 @@
 "use client"
 
 import { Button } from "@workspace/ui/components/button"
-import { Loader2 } from "lucide-react"
+
 import Image from "next/image"
 import Script from "next/script"
 import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 
 import type { SubscriptionCheckoutScreenProps } from "./subscription-checkout-types"
+import { Loader2 } from "lucide-react"
 
 export function SubscriptionCheckoutScreen({
   session,

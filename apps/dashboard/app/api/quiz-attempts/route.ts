@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { loadStudentClassId } from "@/features/curriculum/server/load-student-class-id"
+import { goalService } from "@/features/goals/service/goal.service"
 import { notificationService } from "@/features/notifications/service/notification.service"
 import { parseSubmitQuizAttempt } from "@/features/performance/model/activity-request"
 import { quizAttemptRepository } from "@/features/performance/repository/quiz-attempt.repository"
@@ -60,6 +61,8 @@ export async function POST(request: Request) {
         scorePercent: attempt.scorePercent,
       }
     )
+
+    await goalService.reconcileForUser(authSession.sub, classId)
 
     return NextResponse.json({
       attempt: {

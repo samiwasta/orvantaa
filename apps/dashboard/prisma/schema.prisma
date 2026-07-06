@@ -93,6 +93,31 @@ enum AiTutorMessageRole {
   ASSISTANT
 }
 
+enum AiTutorMessageFeedback {
+  LIKE
+  DISLIKE
+}
+
+enum StudentGoalType {
+  COMPLETE_CHAPTERS
+  REVISE_CHAPTER
+  PASS_QUIZ
+  IMPROVE_WEAK_AREA
+  MAINTAIN_STREAK
+}
+
+enum StudentGoalStatus {
+  ACTIVE
+  COMPLETED
+  EXPIRED
+  DISMISSED
+}
+
+enum StudentGoalSource {
+  AI
+  SYSTEM
+}
+
 enum StudentNotificationKind {
   QUIZ_COMPLETED
   LESSON_COMPLETED
@@ -496,6 +521,8 @@ model User {
   noteProgress        NoteProgress[]
   reportCard          StudentReportCard?
   supportTickets      SupportTicket[]
+  examTarget          StudentExamTarget?
+  goals               StudentGoal[]
 
   @@index([sectionId])
   @@index([role])
@@ -534,16 +561,56 @@ model AiTutorChatSession {
 }
 
 model AiTutorChatMessage {
-  id          String             @id @default(cuid())
+  id          String                  @id @default(cuid())
   sessionId   String
-  session     AiTutorChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session     AiTutorChatSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   role        AiTutorMessageRole
   content     String
   attachments Json?
-  createdAt   DateTime           @default(now())
+  feedback    AiTutorMessageFeedback?
+  createdAt   DateTime                @default(now())
 
   @@index([sessionId, createdAt])
+  @@index([feedback])
   @@map("ai_tutor_chat_messages")
+}
+
+model StudentExamTarget {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  examName  String
+  examDate  DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("student_exam_targets")
+}
+
+model StudentGoal {
+  id            String            @id @default(cuid())
+  userId        String
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          StudentGoalType
+  title         String
+  description   String?
+  rationale     String?
+  targetCount   Int               @default(1)
+  progressCount Int               @default(0)
+  status        StudentGoalStatus @default(ACTIVE)
+  periodStart   DateTime
+  periodEnd     DateTime
+  priority      Int               @default(0)
+  href          String?
+  metadata      Json?
+  source        StudentGoalSource
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  completedAt   DateTime?
+
+  @@index([userId, status, periodEnd])
+  @@index([userId, status, priority])
+  @@map("student_goals")
 }
 
 // ─── Student performance tracking ─────────────────────────────────────────────

@@ -3,7 +3,7 @@
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
-import { BookOpen, GraduationCap, Plus, Search, Trash2, Users } from "lucide-react"
+
 import { useMemo, useState } from "react"
 
 import { ConfirmDialog } from "@/features/shared/view/confirm-dialog"
@@ -19,6 +19,7 @@ import {
 } from "../server/actions"
 import { ClassFormDialog } from "./class-form-dialog"
 import { ClassManageDialog } from "./class-manage-dialog"
+import { BookOpen, GraduationCap, Plus, Search, Trash2, Users } from "lucide-react"
 
 type ClassesCardsViewProps = {
   classes: ClassListItem[]

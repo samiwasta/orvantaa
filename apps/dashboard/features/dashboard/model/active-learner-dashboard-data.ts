@@ -17,11 +17,16 @@ export type PerformanceSummaryStat = {
 export type DashboardActionCard = {
   badge: string
   title: string
+  subtitle?: string
   buttonLabel: string
   href: string
+  secondaryButtonLabel?: string
+  secondaryHref?: string
   imageSrc: string
   imageAlt: string
   variant: "purple" | "white" | "blue"
+  progressPercent?: number
+  progressLabel?: string
 }
 
 export type DashboardPerformanceInsights = {

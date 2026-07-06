@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { loadStudentClassId } from "@/features/curriculum/server/load-student-class-id"
+import { goalService } from "@/features/goals/service/goal.service"
 import { notificationService } from "@/features/notifications/service/notification.service"
 import { parseNoteProgress } from "@/features/performance/model/activity-request"
 import { noteProgressRepository } from "@/features/performance/repository/note-progress.repository"
@@ -59,6 +60,8 @@ export async function POST(request: Request, context: RouteContext) {
         noteId
       )
     }
+
+    await goalService.reconcileForUser(authSession.sub, classId)
 
     return NextResponse.json({ success: true })
   } catch {

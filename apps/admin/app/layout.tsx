@@ -1,6 +1,7 @@
 import "@workspace/ui/globals.css"
 
 import { Toaster } from "@workspace/ui/components/sonner"
+import { AppIconlyProvider } from "@workspace/ui/icons"
 import { cn } from "@workspace/ui/lib/utils"
 import type { Metadata } from "next"
 import { Inter, Poppins } from "next/font/google"
@@ -36,8 +37,10 @@ export default function RootLayout({
       className={cn(inter.variable, poppins.variable, "font-sans antialiased")}
     >
       <body className="min-h-dvh font-sans" suppressHydrationWarning>
-        <div className="min-h-dvh overflow-x-hidden">{children}</div>
-        <Toaster />
+        <AppIconlyProvider>
+          <div className="min-h-dvh overflow-x-hidden">{children}</div>
+          <Toaster />
+        </AppIconlyProvider>
       </body>
     </html>
   )

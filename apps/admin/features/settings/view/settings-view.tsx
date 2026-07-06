@@ -13,7 +13,7 @@ import {
 } from "@workspace/ui/components/select"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
-import { CreditCard, Globe, Mail, Save, Settings2, Shield } from "lucide-react"
+
 import { type ReactNode,useState } from "react"
 
 import { useActionRunner } from "@/lib/actions/use-action-runner"
@@ -25,6 +25,7 @@ import type {
 import { TIMEZONE_OPTIONS } from "../model/platform-settings"
 import { savePlatformSettingsAction } from "../server/settings-actions"
 import { IntegrationStatusPanel } from "./integration-status-panel"
+import { CreditCard, Globe, Mail, Save, Settings2, Shield } from "lucide-react"
 
 type SettingsViewProps = {
   initialSettings: PlatformSettingsData

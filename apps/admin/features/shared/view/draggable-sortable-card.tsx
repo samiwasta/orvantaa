@@ -18,8 +18,9 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { cn } from "@workspace/ui/lib/utils"
-import { GripVertical } from "lucide-react"
+
 import type { ReactNode } from "react"
+import { GripVertical } from "lucide-react"
 
 export type DraggableSortableCardProps = {
   id: string

@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react"
+import type { LucideIcon } from "@workspace/ui/icons"
 import {
   BookOpen,
   GraduationCap,
@@ -7,7 +7,7 @@ import {
   MessageCircleQuestion,
   School,
   UsersRound,
-} from "lucide-react"
+} from "@workspace/ui/icons"
 
 export type DashboardNavItemDefinition = {
   title: string

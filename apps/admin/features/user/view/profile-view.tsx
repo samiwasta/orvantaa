@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select"
 import { cn } from "@workspace/ui/lib/utils"
-import { Eye, EyeOff, LockKeyhole, UserCog } from "lucide-react"
+
 import { useState } from "react"
 
 import { avatarSrcForUserGender } from "@/features/sidebar/model/user-gender"
@@ -27,6 +27,7 @@ import {
   formatRoleLabel,
   formatUserFullName,
 } from "../model/user"
+import { Eye, EyeOff, LockKeyhole, UserCog } from "lucide-react"
 import {
   changeProfilePasswordAction,
   updateProfileAction,

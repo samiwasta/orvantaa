@@ -1,12 +1,7 @@
 import { cn } from "@workspace/ui/lib/utils"
-import {
-  BookOpen,
-  GraduationCap,
-  Landmark,
-  PlusCircle,
-  School,
-} from "lucide-react"
+
 import Link from "next/link"
+import { BookOpen, GraduationCap, Landmark, PlusCircle, School } from "lucide-react"
 
 const actions = [
   {

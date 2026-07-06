@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
-import { ChevronRight, FileText, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
+
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 
@@ -19,6 +19,7 @@ import { contentHref } from "../model/content-nav"
 import type { ContentChapterRef, ContentTopicItem } from "../model/content-models"
 import { deleteTopicAction, reorderTopicsAction } from "../server/topic-actions"
 import { TopicFormDialog } from "./topic-form-dialog"
+import { ChevronRight, FileText, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
 
 type ContentTopicsViewProps = {
   chapterRef: ContentChapterRef

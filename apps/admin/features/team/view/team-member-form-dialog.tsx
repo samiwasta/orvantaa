@@ -18,12 +18,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
-import { RefreshCw } from "lucide-react"
+
 import { useEffect, useState } from "react"
 
 import type { UserGender } from "@/features/user/model/user"
 import { useActionRunner } from "@/lib/actions/use-action-runner"
 
+import { RefreshCw } from "lucide-react"
 import {
   createTeamMemberAction,
   generateTeamPasswordAction,

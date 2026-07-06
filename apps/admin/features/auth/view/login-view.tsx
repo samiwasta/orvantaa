@@ -4,10 +4,11 @@ import { Button } from "@workspace/ui/components/button"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
-import { Eye, EyeOff, Loader2, LockKeyhole, ShieldCheck, UserRound } from "lucide-react"
+
 import Image from "next/image"
 
 import type { LoginController } from "../controller/use-login-controller"
+import { Eye, EyeOff, Loader2, LockKeyhole, ShieldCheck, UserRound } from "lucide-react"
 
 export type LoginViewProps = LoginController & {
   initialFormError?: string | null

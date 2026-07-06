@@ -62,20 +62,24 @@ export function UserProfileMenu({ profile }: UserProfileMenuProps) {
         <button
           type="button"
           className={cn(
-            "flex items-center gap-2 rounded-lg px-1 py-1 text-left outline-none",
-            "transition-colors hover:bg-muted/80",
-            "focus-visible:ring-2 focus-visible:ring-[#6C5CE7]/40"
+            "flex min-w-0 items-center gap-2.5 rounded-full border border-[#E5E7EB] bg-white px-2.5 py-1.5 text-left outline-none sm:px-3 sm:py-2",
+            "transition-colors hover:bg-[#F8FAFF]",
+            "focus-visible:ring-2 focus-visible:ring-[#4169E1]/30"
           )}
           aria-label="Open account menu"
         >
-          <Avatar className="size-9">
+          <Avatar className="size-9 shrink-0">
             <AvatarImage src={avatarSrc} alt="" />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
-          <div className="hidden flex-col items-start justify-center sm:flex">
-            <p className="text-sm font-medium">{displayName}</p>
+          <div className="hidden min-w-0 flex-col items-start justify-center pr-1 sm:flex">
+            <p className="max-w-[9rem] truncate text-sm font-semibold text-foreground md:max-w-[11rem]">
+              {displayName}
+            </p>
             {subtitle ? (
-              <p className="text-xs text-muted-foreground">{subtitle}</p>
+              <p className="max-w-[9rem] truncate text-xs text-muted-foreground md:max-w-[11rem]">
+                {subtitle}
+              </p>
             ) : null}
           </div>
         </button>

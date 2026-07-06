@@ -1,10 +1,10 @@
 "use client"
 
-import { BookOpen, ChevronRight, GraduationCap, School } from "lucide-react"
 import Link from "next/link"
 
 import { contentHref } from "../model/content-nav"
 import type { ContentBoardRef, ContentClassItem } from "../model/content-models"
+import { BookOpen, ChevronRight, GraduationCap, School } from "lucide-react"
 
 type ContentClassesViewProps = {
   board: ContentBoardRef

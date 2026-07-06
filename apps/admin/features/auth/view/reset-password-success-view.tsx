@@ -1,9 +1,10 @@
 "use client"
 
 import { Button } from "@workspace/ui/components/button"
-import { CheckCircle2, ShieldCheck } from "lucide-react"
+
 import Image from "next/image"
 import Link from "next/link"
+import { CheckCircle2, ShieldCheck } from "lucide-react"
 
 export function ResetPasswordSuccessView() {
   return (

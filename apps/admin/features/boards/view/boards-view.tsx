@@ -3,7 +3,7 @@
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import { Landmark, Pencil, Plus, Search, Trash2 } from "lucide-react"
+
 import { useMemo, useState } from "react"
 
 import { useActionRunner } from "@/lib/actions/use-action-runner"
@@ -12,6 +12,7 @@ import { ConfirmDialog } from "@/features/shared/view/confirm-dialog"
 import type { BoardListItem } from "../model/board-list-item"
 import { deleteBoardAction } from "../server/actions"
 import { BoardFormDialog } from "./board-form-dialog"
+import { Landmark, Pencil, Plus, Search, Trash2 } from "lucide-react"
 
 type BoardsViewProps = {
   boards: BoardListItem[]

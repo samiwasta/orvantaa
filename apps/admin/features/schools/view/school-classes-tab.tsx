@@ -2,7 +2,7 @@
 
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
-import { Pencil, Plus, Trash2, Users } from "lucide-react"
+
 import { useState } from "react"
 
 import type { ClassListItem, ClassSectionItem } from "@/features/classes/model/class-list-item"
@@ -17,6 +17,7 @@ import { useActionRunner } from "@/lib/actions/use-action-runner"
 
 import type { BoardClassOption } from "../model/board-class-option"
 import { SchoolAddClassesDialog } from "./school-add-classes-dialog"
+import { Pencil, Plus, Trash2, Users } from "lucide-react"
 
 type SchoolClassesTabProps = {
   schoolId: string

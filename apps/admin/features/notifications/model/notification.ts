@@ -3,16 +3,7 @@ import type {
   AdminNotificationPriority as PrismaPriority,
 } from "@prisma/client"
 import type { LucideIcon } from "lucide-react"
-import {
-  Bell,
-  Building2,
-  CreditCard,
-  LifeBuoy,
-  UserMinus,
-  UserPlus,
-  Users,
-  Wrench,
-} from "lucide-react"
+import { Bell, Building2, CreditCard, LifeBuoy, UserMinus, UserPlus, Users, Wrench } from "lucide-react"
 
 export type NotificationKind =
   | "team_member_added"

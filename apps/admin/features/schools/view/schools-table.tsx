@@ -2,7 +2,7 @@
 
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import { Eye, Pencil, Plus, Search, Trash2 } from "lucide-react"
+
 import Link from "next/link"
 import { useMemo, useState } from "react"
 
@@ -17,6 +17,7 @@ import {
 import { deleteSchoolAction } from "../server/actions"
 import { SchoolFormDialog } from "./school-form-dialog"
 import { SubscriptionStatusBadge, SyllabusStatusBadge } from "./school-status-badges"
+import { Eye, Pencil, Plus, Search, Trash2 } from "lucide-react"
 
 type SchoolsTableProps = {
   schools: SchoolListItem[]

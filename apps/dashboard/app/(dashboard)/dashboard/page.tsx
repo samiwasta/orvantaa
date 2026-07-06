@@ -8,7 +8,6 @@ import { loadActiveLearnerDashboard } from "@/features/dashboard/server/load-act
 import { loadDashboardPageData } from "@/features/dashboard/server/load-dashboard-page-data"
 import { ActiveLearnerDashboard } from "@/features/dashboard/view/active-learner-dashboard"
 import { NewLearnerDashboard } from "@/features/dashboard/view/dashboard-bento-grid"
-import { DashboardGreeting } from "@/features/dashboard/view/dashboard-greeting"
 
 export const metadata: Metadata = {
   title: "Dashboard - Orvantaa",
@@ -37,21 +36,20 @@ export default async function DashboardPage({
     ? await loadActiveLearnerDashboard()
     : null
 
-  const serverHour = new Date().getHours()
-
   return (
-    <div className="flex flex-1 flex-col gap-6">
-      <DashboardGreeting
-        firstName={firstName}
-        serverHour={serverHour}
-        hasLearningActivity={showActiveLearner}
-      />
-
+    <>
       {showActiveLearner && activeLearnerData ? (
-        <ActiveLearnerDashboard data={activeLearnerData} />
+        <ActiveLearnerDashboard
+          data={activeLearnerData}
+          userFirstName={firstName}
+        />
       ) : (
-        <NewLearnerDashboard userGender={userGender} quickLinks={quickLinks} />
+        <NewLearnerDashboard
+          userGender={userGender}
+          quickLinks={quickLinks}
+          userFirstName={firstName}
+        />
       )}
-    </div>
+    </>
   )
 }

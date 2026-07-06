@@ -14,16 +14,10 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select"
 import { cn } from "@workspace/ui/lib/utils"
-import {
-  ArrowDown,
-  ArrowUp,
-  Layers,
-  Plus,
-  Trash2,
-} from "lucide-react"
 
 import { ImageUploadField } from "@/features/shared/view/image-upload-field"
 
+import { ArrowDown, ArrowUp, Layers, Plus, Trash2 } from "lucide-react"
 import {
   createEmptyBlock,
   NOTE_BLOCK_LABELS,

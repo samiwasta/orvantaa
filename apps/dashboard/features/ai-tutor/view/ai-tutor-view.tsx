@@ -6,12 +6,13 @@ import {
   useBodyScrollLock,
 } from "@workspace/ui/hooks/use-body-scroll-lock"
 import { cn } from "@workspace/ui/lib/utils"
-import { History, Plus } from "lucide-react"
+import { History } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 
 import { useChatAttachments } from "../hooks/use-chat-attachments"
 import { useSpeechDictation } from "../hooks/use-speech-dictation"
+import { buildAiTutorGreetingMessage } from "../model/ai-tutor-greeting"
 import {
   aiTutorChatHref,
   type ChatMessage,
@@ -36,6 +37,7 @@ import {
   takeChatUploads,
 } from "../model/pending-chat-uploads"
 import { requestAiTutorReply } from "../service/ai-tutor-chat.service"
+import { submitAiTutorMessageFeedback } from "../service/ai-tutor-feedback.service"
 import { AiTutorComposer } from "./ai-tutor-composer"
 import { AiTutorMarkdown } from "./ai-tutor-markdown"
 import {
@@ -47,6 +49,8 @@ import { UserMessageAttachments } from "./user-message-attachments"
 
 const MAX_TEXTAREA_HEIGHT = 12 * 21 + 24
 const CHAT_MAX_WIDTH = "max-w-3xl"
+const DASHBOARD_NAV_CLEARANCE =
+  "pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))] lg:pb-[calc(6.25rem+env(safe-area-inset-bottom,0px))]"
 
 function TypingIndicator() {
   return (
@@ -209,7 +213,15 @@ function AiTutorChat({ chatId, session, userFirstName }: AiTutorChatProps) {
   useEffect(() => {
     if (!session) return
 
-    setMessages(hydrateMessageAttachmentPreviews(session.messages))
+    const hydrated = hydrateMessageAttachmentPreviews(session.messages)
+    setMessages(hydrated)
+    setMessageFeedback(
+      Object.fromEntries(
+        hydrated
+          .filter((message) => message.role === "assistant" && message.feedback)
+          .map((message) => [message.id, message.feedback as MessageFeedback])
+      )
+    )
   }, [session?.id, session])
 
   const requestAssistantReply = async (
@@ -303,7 +315,12 @@ function AiTutorChat({ chatId, session, userFirstName }: AiTutorChatProps) {
   }, [input])
 
   const sendMessage = async (content: string) => {
-    const uploadFiles = getUploadFiles()
+    const uploadFiles =
+      getUploadFiles().length > 0
+        ? getUploadFiles()
+        : isNewChat
+          ? takeChatUploads(NEW_CHAT_ID)
+          : []
     const hasContent = content.trim().length > 0
     const hasAttachments = uploadFiles.length > 0
 
@@ -416,10 +433,46 @@ function AiTutorChat({ chatId, session, userFirstName }: AiTutorChatProps) {
     messageId: string,
     feedback: MessageFeedback
   ) => {
+    const previousFeedback = messageFeedback[messageId] ?? null
+
     setMessageFeedback((current) => ({
       ...current,
       [messageId]: feedback,
     }))
+    setMessages((current) =>
+      current.map((message) =>
+        message.id === messageId ? { ...message, feedback } : message
+      )
+    )
+
+    void submitAiTutorMessageFeedback(messageId, feedback)
+      .then((savedFeedback) => {
+        setMessageFeedback((current) => ({
+          ...current,
+          [messageId]: savedFeedback,
+        }))
+        setMessages((current) =>
+          current.map((message) =>
+            message.id === messageId
+              ? { ...message, feedback: savedFeedback }
+              : message
+          )
+        )
+      })
+      .catch((error) => {
+        console.error("[ai-tutor] Failed to save feedback:", error)
+        setMessageFeedback((current) => ({
+          ...current,
+          [messageId]: previousFeedback,
+        }))
+        setMessages((current) =>
+          current.map((message) =>
+            message.id === messageId
+              ? { ...message, feedback: previousFeedback }
+              : message
+          )
+        )
+      })
   }
 
   const handleRetry = async (assistantMessageId: string) => {
@@ -457,7 +510,7 @@ function AiTutorChat({ chatId, session, userFirstName }: AiTutorChatProps) {
 
   const heroComposer = (
     <AiTutorComposer
-      className="mx-auto w-full max-w-2xl"
+      className={cn("mx-auto w-full", CHAT_MAX_WIDTH)}
       variant="premium"
       value={input}
       onChange={(value) => {
@@ -540,22 +593,12 @@ function AiTutorChat({ chatId, session, userFirstName }: AiTutorChatProps) {
   return (
     <div
       className={cn(
-        "relative flex min-h-0 flex-1 flex-col bg-background max-md:pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))]",
+        "relative flex min-h-0 flex-1 flex-col bg-background",
+        DASHBOARD_NAV_CLEARANCE,
         hasMessages ? "overflow-hidden" : "overflow-visible"
       )}
     >
-      <header className="flex shrink-0 items-center justify-end gap-2 border-b border-border/40 bg-background px-3 py-2 md:px-6 md:py-2.5">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-8 gap-1.5 rounded-lg border-border/60 px-2.5 text-sm font-medium hover:border-[#6C5CE7]/40 hover:bg-violet-50/80 sm:px-3"
-          onClick={handleNewChat}
-        >
-          <Plus className="size-4 text-[#6C5CE7]" strokeWidth={2} />
-          <span className="max-sm:sr-only">New chat</span>
-        </Button>
-
+      <header className="flex shrink-0 items-center justify-start border-b border-border/40 bg-background px-3 py-2 md:px-6 md:py-2.5">
         <Button
           type="button"
           variant="outline"
@@ -604,7 +647,7 @@ function AiTutorChat({ chatId, session, userFirstName }: AiTutorChatProps) {
             </div>
           </div>
 
-          <div className="shrink-0 bg-gradient-to-t from-background via-background to-transparent px-3 pt-2 pb-3 md:px-6 md:pb-5">
+          <div className="shrink-0 bg-gradient-to-t from-background via-background to-transparent px-3 pt-2 md:px-6">
             {composer}
           </div>
         </>
@@ -625,12 +668,10 @@ function AiTutorChat({ chatId, session, userFirstName }: AiTutorChatProps) {
 
             <div className="relative z-10 flex w-full flex-col items-center gap-10 sm:gap-12">
               <h1 className="max-w-xl text-center font-[family-name:var(--font-poppins)] text-[1.75rem] font-light tracking-[-0.02em] text-foreground/90 sm:text-[2.5rem] sm:leading-[1.15]">
-                {userFirstName
-                  ? `Hi ${userFirstName}, what would you like to learn?`
-                  : "What would you like to learn?"}
+                {buildAiTutorGreetingMessage(userFirstName)}
               </h1>
 
-              <div className="w-full max-w-2xl">
+              <div className={cn("w-full", CHAT_MAX_WIDTH)}>
                 {heroComposer}
 
                 <p className="mt-4 text-center text-[11px] font-light tracking-wide text-muted-foreground/55">

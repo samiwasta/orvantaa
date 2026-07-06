@@ -12,7 +12,7 @@ import {
 import { Field, FieldError, FieldHint, FieldLabel } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
-import { ImageIcon, Loader2, Trash2, Upload } from "lucide-react"
+
 import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
 
@@ -24,6 +24,7 @@ import {
   type SubjectInput,
 } from "../model/content-models"
 import { createSubjectAction, updateSubjectAction } from "../server/subject-actions"
+import { ImageIcon, Loader2, Trash2, Upload } from "lucide-react"
 
 type SubjectFormDialogProps = {
   open: boolean

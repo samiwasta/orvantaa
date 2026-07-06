@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@workspace/ui/components/button"
-import { Plus, Trash2 } from "lucide-react"
+
 import Link from "next/link"
 import { useState } from "react"
 
@@ -13,6 +13,7 @@ import { useActionRunner } from "@/lib/actions/use-action-runner"
 import type { BoardClassOption } from "../model/board-class-option"
 import type { SchoolSyllabusClassRow } from "../model/school-student-list-item"
 import { SchoolAddClassesDialog } from "./school-add-classes-dialog"
+import { Plus, Trash2 } from "lucide-react"
 
 type SchoolSyllabusSchoolProps = {
   schoolId: string

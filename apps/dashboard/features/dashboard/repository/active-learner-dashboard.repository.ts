@@ -6,6 +6,12 @@ import {
 } from "@/features/curriculum/model/assigned-content-filters"
 import { resolveChapterProgress } from "@/features/curriculum/model/chapter-progress"
 import {
+  getGoalActionLabel,
+  goalProgressPercent,
+} from "@/features/goals/model/goal-instructions"
+import type { StudentGoal } from "@/features/goals/model/student-goal"
+import { goalService } from "@/features/goals/service/goal.service"
+import {
   chapterHref,
   quizHref,
 } from "@/features/subjects/model/content-navigation"
@@ -160,11 +166,14 @@ export class ActiveLearnerDashboardRepository {
     )
     if (!currentLesson) return null
 
+    const primaryGoal = await goalService.getPrimaryGoal(userId, classId)
+
     const actionCards = this.buildActionCards(
       chapters,
       progressByNoteId,
       currentLesson,
-      quizAttemptsDetailed
+      quizAttemptsDetailed,
+      primaryGoal
     )
 
     const performanceInsights = this.resolvePerformanceInsights(
@@ -332,7 +341,8 @@ export class ActiveLearnerDashboardRepository {
           subject: { title: string; slug: string }
         }
       }
-    }>
+    }>,
+    primaryGoal?: StudentGoal | null
   ): DashboardActionCard[] {
     let incompleteChapters = 0
     for (const chapter of chapters) {
@@ -362,12 +372,14 @@ export class ActiveLearnerDashboardRepository {
         : chapterHref(currentLesson.subjectSlug, currentLesson.chapterSlug)
 
     const weakArea = this.resolveWeakArea(quizAttemptsDetailed, currentLesson)
+    const goalTarget = primaryGoal?.metadata?.targets?.[0]
 
     return [
       {
         badge: "Based on your progress",
         title: `Take ${currentLesson.subjectTitle} Quiz`,
-        buttonLabel: "Start",
+        subtitle: `${currentLesson.chapterTitle} · ${currentLesson.subjectTitle}`,
+        buttonLabel: "See How You Score",
         href: quizHrefValue,
         imageSrc: "/quiz.svg",
         imageAlt: "Quiz illustration",
@@ -375,17 +387,32 @@ export class ActiveLearnerDashboardRepository {
       },
       {
         badge: "Today's Goal",
-        title: `Complete ${goalCount} chapter${goalCount === 1 ? "" : "s"}`,
-        buttonLabel: "Start Now",
-        href: currentLesson.continueHref,
+        title: goalTarget
+          ? `${getGoalActionLabel(primaryGoal.type)} ${goalTarget.chapterTitle}`
+          : (primaryGoal?.title ??
+            `Complete ${goalCount} chapter${goalCount === 1 ? "" : "s"}`),
+        subtitle: goalTarget
+          ? `${goalTarget.chapterTitle} · ${goalTarget.subjectTitle}`
+          : primaryGoal?.metadata?.subjectTitle,
+        buttonLabel: primaryGoal?.href ? "Continue Goal" : "Start Goal",
+        href: primaryGoal?.href ?? "/dashboard/goals",
+        secondaryButtonLabel: "View All Goals",
+        secondaryHref: "/dashboard/goals",
         imageSrc: "/open-book.svg",
         imageAlt: "Book illustration",
         variant: "white",
+        progressPercent: primaryGoal
+          ? goalProgressPercent(primaryGoal)
+          : undefined,
+        progressLabel: primaryGoal
+          ? `${primaryGoal.progressCount}/${primaryGoal.targetCount}`
+          : undefined,
       },
       {
         badge: "Weak area in recent tests",
         title: weakArea.title,
-        buttonLabel: "Start",
+        subtitle: weakArea.subtitle,
+        buttonLabel: "Practice Until Strong",
         href: weakArea.href,
         imageSrc: "/graph.svg",
         imageAlt: "Calculator illustration",
@@ -413,7 +440,13 @@ export class ActiveLearnerDashboardRepository {
   ) {
     const grouped = new Map<
       string,
-      { total: number; count: number; chapterTitle: string; href: string }
+      {
+        total: number
+        count: number
+        chapterTitle: string
+        subjectTitle: string
+        href: string
+      }
     >()
 
     for (const attempt of attempts) {
@@ -423,6 +456,7 @@ export class ActiveLearnerDashboardRepository {
         total: 0,
         count: 0,
         chapterTitle: chapter.title,
+        subjectTitle: chapter.subject.title,
         href: chapterHref(chapter.subject.slug, chapter.slug),
       }
       current.total += attempt.scorePercent
@@ -433,6 +467,7 @@ export class ActiveLearnerDashboardRepository {
     let weakest: {
       average: number
       chapterTitle: string
+      subjectTitle: string
       href: string
     } | null = null
 
@@ -443,6 +478,7 @@ export class ActiveLearnerDashboardRepository {
         weakest = {
           average,
           chapterTitle: entry.chapterTitle,
+          subjectTitle: entry.subjectTitle,
           href: entry.href,
         }
       }
@@ -451,12 +487,14 @@ export class ActiveLearnerDashboardRepository {
     if (weakest) {
       return {
         title: `Revise ${weakest.chapterTitle}`,
+        subtitle: `${weakest.chapterTitle} · ${weakest.subjectTitle}`,
         href: weakest.href,
       }
     }
 
     return {
       title: `Revise ${fallback.chapterTitle}`,
+      subtitle: fallback.chapterTitle,
       href: chapterHref(fallback.subjectSlug, fallback.chapterSlug),
     }
   }

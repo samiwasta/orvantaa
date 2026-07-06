@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import { cn } from "@workspace/ui/lib/utils"
-import { BookOpen, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
+
 import Image from "next/image"
 import Link from "next/link"
 import { useState } from "react"
@@ -20,6 +20,7 @@ import { contentHref } from "../model/content-nav"
 import type { ContentClassRef, ContentSubjectItem } from "../model/content-models"
 import { deleteSubjectAction } from "../server/subject-actions"
 import { SubjectFormDialog } from "./subject-form-dialog"
+import { BookOpen, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
 
 type ContentSubjectsViewProps = {
   classRef: ContentClassRef

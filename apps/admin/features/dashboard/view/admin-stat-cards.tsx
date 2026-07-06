@@ -1,8 +1,10 @@
 import { cn } from "@workspace/ui/lib/utils"
-import { Landmark, type LucideIcon, School, UserCheck, Users } from "lucide-react"
+
 import Link from "next/link"
 
 import type { DashboardCounts } from "../model/admin-dashboard-stats"
+import type { LucideIcon } from "lucide-react"
+import { Landmark, School, UserCheck, Users } from "lucide-react"
 
 type StatCardProps = {
   label: string

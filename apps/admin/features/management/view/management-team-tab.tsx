@@ -2,7 +2,7 @@
 
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
-import { Mail, Plus, Trash2, UserCog } from "lucide-react"
+
 import { useState } from "react"
 
 import { ConfirmDialog } from "@/features/shared/view/confirm-dialog"
@@ -10,6 +10,7 @@ import { TeamMemberFormDialog } from "@/features/team/view/team-member-form-dial
 import type { TeamMember } from "@/features/team/model/team-member"
 import { deleteTeamMemberAction } from "@/features/team/server/team-actions"
 import { useActionRunner } from "@/lib/actions/use-action-runner"
+import { Mail, Plus, Trash2, UserCog } from "lucide-react"
 
 function initials(fullName: string): string {
   return fullName

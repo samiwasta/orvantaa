@@ -81,7 +81,7 @@ export function ChatHistorySheet({
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
-          side="right"
+          side="left"
           className="w-[min(100vw-2rem,20rem)] gap-0 p-0 sm:max-w-xs"
         >
           <SheetHeader className="border-b border-border/50 px-4 py-4 text-left">

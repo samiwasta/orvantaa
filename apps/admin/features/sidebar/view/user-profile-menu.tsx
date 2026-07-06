@@ -11,7 +11,7 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 import { cn } from "@workspace/ui/lib/utils"
-import { LogOut, UserRound } from "lucide-react"
+
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -23,6 +23,7 @@ import {
 } from "@/features/user/model/user"
 
 import { avatarSrcForUserGender } from "../model/user-gender"
+import { LogOut, UserRound } from "lucide-react"
 
 type UserProfileMenuProps = {
   profile: DashboardUserProfile

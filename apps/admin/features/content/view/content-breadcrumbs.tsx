@@ -1,8 +1,9 @@
 import { cn } from "@workspace/ui/lib/utils"
-import { ChevronRight } from "lucide-react"
+
 import Link from "next/link"
 
 import type { ContentBreadcrumb } from "../model/content-nav"
+import { ChevronRight } from "lucide-react"
 
 type ContentBreadcrumbsProps = {
   items: ContentBreadcrumb[]

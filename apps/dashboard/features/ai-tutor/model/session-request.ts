@@ -12,9 +12,11 @@ export const syncAiTutorSessionSchema = z.object({
     .array(
       z
         .object({
+          id: z.string().trim().min(1).max(80).optional(),
           role: z.enum(["user", "assistant"]),
           content: z.string().trim().max(8000),
           attachments: z.array(chatMessageAttachmentSchema).max(5).optional(),
+          feedback: z.enum(["like", "dislike"]).nullable().optional(),
         })
         .superRefine((message, context) => {
           if (

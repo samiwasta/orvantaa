@@ -1,5 +1,7 @@
 export type ChatRole = "user" | "assistant"
 
+export type ChatMessageFeedback = "like" | "dislike" | null
+
 export type ChatMessageAttachment = {
   id: string
   name: string
@@ -13,6 +15,7 @@ export type ChatMessage = {
   content: string
   timestamp: Date
   attachments?: ChatMessageAttachment[]
+  feedback?: ChatMessageFeedback
 }
 
 export type ChatSession = {

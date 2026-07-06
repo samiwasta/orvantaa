@@ -1,6 +1,6 @@
 "use client"
 
-import type { LucideIcon } from "lucide-react"
+import type { IconComponent } from "@workspace/icons"
 import { usePathname } from "next/navigation"
 import * as React from "react"
 
@@ -14,7 +14,8 @@ import {
 export type DashboardNavItemVM = {
   title: string
   href: string
-  icon: LucideIcon
+  icon: IconComponent
+  activeIcon?: IconComponent
   isActive: boolean
 }
 

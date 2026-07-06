@@ -4,7 +4,7 @@ import { Button } from "@workspace/ui/components/button"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Field, FieldError, FieldHint, FieldLabel } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
-import { CreditCard, Mail, Save } from "lucide-react"
+
 import { type ReactNode, useState } from "react"
 
 import { StatusBadge } from "@/features/settings/view/integration-status-panel"
@@ -14,6 +14,7 @@ import type {
 } from "@/features/settings/model/platform-settings"
 import { savePlatformSettingsAction } from "@/features/settings/server/settings-actions"
 import { useActionRunner } from "@/lib/actions/use-action-runner"
+import { CreditCard, Mail, Save } from "lucide-react"
 
 type SubscriptionSettingsTabProps = {
   initialSettings: PlatformSettingsData

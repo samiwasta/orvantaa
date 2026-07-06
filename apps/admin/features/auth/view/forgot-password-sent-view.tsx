@@ -1,10 +1,11 @@
 "use client"
 
 import { Button } from "@workspace/ui/components/button"
-import { CheckCircle2, MoveLeft } from "lucide-react"
+
 import Link from "next/link"
 
 import { AuthMarketingColumn } from "./auth-marketing-column"
+import { CheckCircle2, MoveLeft } from "lucide-react"
 
 export function ForgotPasswordSentView() {
   return (

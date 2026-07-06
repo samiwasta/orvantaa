@@ -78,8 +78,11 @@ export async function syncAiTutorSession(
     body: JSON.stringify({
       title: input.title,
       messages: input.messages.map((message) => ({
+        id: message.id,
         role: message.role,
         content: message.content,
+        feedback:
+          message.role === "assistant" ? (message.feedback ?? null) : undefined,
         attachments: message.attachments?.map((attachment) => ({
           id: attachment.id,
           name: attachment.name,

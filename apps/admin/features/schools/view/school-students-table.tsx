@@ -3,7 +3,7 @@
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
-import { Mail, Pencil, Search, Trash2 } from "lucide-react"
+
 import Link from "next/link"
 import { useMemo, useState } from "react"
 
@@ -25,6 +25,7 @@ import { SchoolAddStudentMenu } from "./school-add-student-menu"
 import { MailStatusBadge } from "./school-status-badges"
 import { SchoolStudentCsvImportDialog } from "./school-student-csv-import-dialog"
 import { SchoolStudentFormDialog } from "./school-student-form-dialog"
+import { Mail, Pencil, Search, Trash2 } from "lucide-react"
 
 type SchoolStudentsTableProps = {
   school: SchoolListItem

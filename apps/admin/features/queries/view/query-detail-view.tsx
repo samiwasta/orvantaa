@@ -9,16 +9,7 @@ import {
 } from "@workspace/ui/components/field"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
-import {
-  ArrowLeft,
-  CheckCircle2,
-  Mail,
-  PlayCircle,
-  RotateCcw,
-  School,
-  UserRound,
-  XCircle,
-} from "lucide-react"
+
 import Link from "next/link"
 import { useState } from "react"
 
@@ -26,6 +17,7 @@ import { useActionRunner } from "@/lib/actions/use-action-runner"
 
 import type { QueryDetail } from "../model/support-ticket"
 import { updateQueryStatusAction } from "../server/query-actions"
+import { ArrowLeft, CheckCircle2, Mail, PlayCircle, RotateCcw, School, UserRound, XCircle } from "lucide-react"
 
 type QueryDetailViewProps = {
   ticket: QueryDetail

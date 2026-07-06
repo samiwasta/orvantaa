@@ -3,10 +3,11 @@
 import { Badge } from "@workspace/ui/components/badge"
 import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
-import { Search } from "lucide-react"
+
 import Link from "next/link"
 import { useMemo, useState } from "react"
 
+import { Search } from "lucide-react"
 import {
   type QueryListItem,
   queryDetailHref,

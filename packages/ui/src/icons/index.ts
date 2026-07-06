@@ -1,0 +1,5 @@
+export * from "./catalog"
+export { createIcon, parsePixelSize } from "./create-icon"
+export { AppIconlyProvider, IconlyProvider } from "./iconly-provider"
+export { Loader2 } from "./loader"
+export type { IconComponent, IconProps, LucideIcon, LucideProps } from "./types"

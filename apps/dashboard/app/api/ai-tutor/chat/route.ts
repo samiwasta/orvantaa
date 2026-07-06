@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server"
 
 import { parseAiTutorChatRequest } from "@/features/ai-tutor/model/chat-request"
+import { aiTutorFeedbackRepository } from "@/features/ai-tutor/repository/ai-tutor-feedback.repository"
 import { buildMultimodalUserContent } from "@/lib/ai/attachments/build-multimodal-content"
 import { processChatAttachments } from "@/lib/ai/attachments/process-chat-attachments"
+import { buildPersonalizedAiTutorSystemPrompt } from "@/lib/ai/build-personalized-system-prompt"
 import { getAiTutorSetupHint, isAiTutorConfigured } from "@/lib/ai/config"
 import { generateAiTutorChatResponse } from "@/lib/ai/generate-chat-response"
 import { buildWidgetScopedSystemPrompt } from "@/lib/ai/prompts"
@@ -30,8 +32,10 @@ export async function POST(request: Request) {
     )
   }
 
+  let authUserId: string
   try {
-    await requireStudentSession()
+    const authSession = await requireStudentSession()
+    authUserId = authSession.sub
   } catch {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 })
   }
@@ -158,12 +162,20 @@ export async function POST(request: Request) {
   ]
 
   try {
+    const feedbackProfile =
+      await aiTutorFeedbackRepository.getUserFeedbackProfile(authUserId)
+
     const chatOptions = parsed.data.scope
       ? {
-          systemPrompt: buildWidgetScopedSystemPrompt(parsed.data.scope),
+          systemPrompt: buildPersonalizedAiTutorSystemPrompt(
+            feedbackProfile,
+            buildWidgetScopedSystemPrompt(parsed.data.scope)
+          ),
           maxTokens: 512,
         }
-      : undefined
+      : {
+          systemPrompt: buildPersonalizedAiTutorSystemPrompt(feedbackProfile),
+        }
 
     const content = await generateAiTutorChatResponse(aiMessages, chatOptions)
     return NextResponse.json({ content })

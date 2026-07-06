@@ -3,7 +3,7 @@
 import { Button } from "@workspace/ui/components/button"
 import { Field, FieldError, FieldHint, FieldLabel } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
-import { Plus, Trash2, Pencil } from "lucide-react"
+
 import { useEffect, useState } from "react"
 
 import { ConfirmDialog } from "@/features/shared/view/confirm-dialog"
@@ -15,6 +15,7 @@ import {
   updateSchoolBillingEmailAction,
 } from "../server/management-actions"
 import { SchoolContactFormDialog } from "./school-contact-form-dialog"
+import { Plus, Trash2, Pencil } from "lucide-react"
 
 type SchoolManagementTabProps = {
   schoolId: string

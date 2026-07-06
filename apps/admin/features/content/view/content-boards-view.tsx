@@ -1,12 +1,13 @@
 "use client"
 
 import { Input } from "@workspace/ui/components/input"
-import { BookOpen, ChevronRight, GraduationCap, Landmark, Search } from "lucide-react"
+
 import Link from "next/link"
 import { useMemo, useState } from "react"
 
 import { contentHref } from "../model/content-nav"
 import type { ContentBoardItem } from "../model/content-models"
+import { BookOpen, ChevronRight, GraduationCap, Landmark, Search } from "lucide-react"
 
 type ContentBoardsViewProps = {
   boards: ContentBoardItem[]

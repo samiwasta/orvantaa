@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select"
 import { cn } from "@workspace/ui/lib/utils"
-import { Copy, ExternalLink, RefreshCw, Repeat } from "lucide-react"
+
 import Link from "next/link"
 import { useState } from "react"
 import { toast } from "@workspace/ui/components/sonner"
@@ -38,6 +38,7 @@ import {
 import { updateSchoolSubscriptionAction } from "../server/student-actions"
 import { SubscriptionStatusBadge } from "./school-status-badges"
 import { SubscriptionPaymentStatusChip } from "./subscription-payment-status-chip"
+import { Copy, ExternalLink, RefreshCw, Repeat } from "lucide-react"
 
 type SchoolSubscriptionTabProps = {
   school: SchoolListItem

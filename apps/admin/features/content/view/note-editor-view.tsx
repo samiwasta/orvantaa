@@ -3,7 +3,7 @@
 import { Button } from "@workspace/ui/components/button"
 import { Field, FieldError, FieldLabel } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
-import { ArrowLeft, FileText, Save } from "lucide-react"
+
 import Link from "next/link"
 import { useState } from "react"
 
@@ -15,6 +15,7 @@ import type { NoteBlock } from "../model/note-blocks"
 import { saveNoteAction } from "../server/note-actions"
 import { NoteBlockEditor } from "./note-block-editor"
 import { NoteBlockPreview } from "./note-block-preview"
+import { ArrowLeft, FileText, Save } from "lucide-react"
 
 type NoteEditorViewProps = {
   topicRef: ContentTopicDetailRef

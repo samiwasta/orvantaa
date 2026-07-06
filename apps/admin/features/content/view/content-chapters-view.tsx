@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
-import { ChevronRight, Layers, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
+
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 
@@ -22,6 +22,7 @@ import {
   reorderChaptersAction,
 } from "../server/chapter-actions"
 import { ChapterFormDialog } from "./chapter-form-dialog"
+import { ChevronRight, Layers, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
 
 type ContentChaptersViewProps = {
   subjectRef: ContentSubjectRef

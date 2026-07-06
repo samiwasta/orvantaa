@@ -2,11 +2,12 @@
 
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import { AtSign, Loader2, MoveLeft } from "lucide-react"
+
 import Link from "next/link"
 
 import type { ForgotPasswordController } from "../controller/use-forgot-password-controller"
 import { AuthMarketingColumn } from "./auth-marketing-column"
+import { AtSign, Loader2, MoveLeft } from "lucide-react"
 
 export type ForgotPasswordViewProps = ForgotPasswordController
 

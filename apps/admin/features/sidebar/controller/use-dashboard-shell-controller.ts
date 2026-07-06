@@ -1,9 +1,9 @@
 "use client"
 
-import type { LucideIcon } from "lucide-react"
 import { usePathname } from "next/navigation"
 import * as React from "react"
 
+import type { LucideIcon } from "@workspace/ui/icons"
 import {
   dashboardNavItems,
   isDashboardNavPathActive,

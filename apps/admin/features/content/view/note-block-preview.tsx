@@ -1,17 +1,11 @@
 "use client"
 
 import { isRichContentEmpty, RichTextContent } from "@workspace/rich-text"
-import {
-  BookMarked,
-  Eye,
-  Lightbulb,
-  Pencil,
-  Sparkles,
-  Star,
-} from "lucide-react"
+
 import Image from "next/image"
 
 import type { NoteBlock } from "../model/note-blocks"
+import { BookMarked, Eye, Lightbulb, Pencil, Sparkles, Star } from "lucide-react"
 
 function DefinitionBox({ title, content }: { title: string; content: string }) {
   const empty = isRichContentEmpty(title) && isRichContentEmpty(content)

@@ -45,7 +45,7 @@ export const loadActiveLearnerDashboard = cache(
         {
           badge: "Based on your progress",
           title: "Take your first quiz",
-          buttonLabel: "Start",
+          buttonLabel: "See How You Score",
           href: quickLinks.firstQuizHref,
           imageSrc: "/quiz.svg",
           imageAlt: "Quiz illustration",
@@ -54,8 +54,8 @@ export const loadActiveLearnerDashboard = cache(
         {
           badge: "Today's Goal",
           title: "Complete 2 chapters",
-          buttonLabel: "Start Now",
-          href: quickLinks.firstReadingHref,
+          buttonLabel: "View All Goals",
+          href: "/dashboard/goals",
           imageSrc: "/open-book.svg",
           imageAlt: "Book illustration",
           variant: "white",
@@ -63,7 +63,7 @@ export const loadActiveLearnerDashboard = cache(
         {
           badge: "Weak area in recent tests",
           title: "Revise your chapters",
-          buttonLabel: "Start",
+          buttonLabel: "Practice Until Strong",
           href: quickLinks.subjectsHref,
           imageSrc: "/graph.svg",
           imageAlt: "Calculator illustration",

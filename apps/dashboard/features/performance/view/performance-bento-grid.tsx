@@ -109,6 +109,11 @@ function PerformanceOverTimeChart({
     .map((point) => point.value)
     .filter((value): value is number => value !== null)
   const minValue = values.length > 0 ? Math.max(0, Math.min(...values) - 10) : 0
+  const yTicks = Array.from(
+    new Set(
+      [minValue, 50, 75, 100].filter((tick) => tick >= minValue && tick <= 100)
+    )
+  ).sort((a, b) => a - b)
 
   if (!hasActivity) {
     return (
@@ -154,7 +159,7 @@ function PerformanceOverTimeChart({
           />
           <YAxis
             domain={[minValue, 100]}
-            ticks={[minValue, 50, 75, 100]}
+            ticks={yTicks}
             tickLine={false}
             axisLine={false}
             tick={{ fill: "#b0b7c3", fontSize: 11 }}

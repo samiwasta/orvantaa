@@ -11,8 +11,9 @@ import { Check, Copy, RotateCcw, ThumbsDown, ThumbsUp } from "lucide-react"
 import { useState } from "react"
 
 import { markdownToPlainText } from "../model/markdown-to-plain-text"
+import type { MessageFeedback } from "../model/message-feedback"
 
-export type MessageFeedback = "like" | "dislike" | null
+export type { MessageFeedback }
 
 type AssistantMessageActionsProps = {
   content: string

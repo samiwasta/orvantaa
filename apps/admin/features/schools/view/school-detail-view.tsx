@@ -1,6 +1,5 @@
 "use client"
 
-import { ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 
@@ -33,6 +32,7 @@ import { SchoolManagementTab } from "./school-management-tab"
 import { SchoolStudentsTable } from "./school-students-table"
 import { SchoolSubscriptionTab } from "./school-subscription-tab"
 import { SchoolSyllabusTab } from "./school-syllabus-tab"
+import { ChevronRight } from "lucide-react"
 
 type SchoolDetailViewProps = {
   school: SchoolListItem

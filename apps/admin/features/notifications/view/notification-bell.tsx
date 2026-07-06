@@ -7,7 +7,8 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 import { cn } from "@workspace/ui/lib/utils"
-import { BellIcon, CheckCheck } from "lucide-react"
+import { IconlyNotification } from "@workspace/icons"
+
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useState, useTransition } from "react"
@@ -20,6 +21,7 @@ import {
   type AdminNotificationItem,
   type AdminNotificationSummary,
 } from "../model/notification"
+import { CheckCheck } from "lucide-react"
 import {
   markAdminNotificationReadAction,
   markAllAdminNotificationsReadAction,
@@ -102,7 +104,7 @@ export function NotificationBell({ initialSummary }: NotificationBellProps) {
               : "Notifications"
           }
         >
-          <BellIcon className="size-4 text-[#6C5CE7]" strokeWidth={2.5} />
+          <IconlyNotification className="size-6 text-[#4169E1]" />
           {badgeLabel ? (
             <span className="absolute -top-0.5 -right-0.5 inline-flex min-w-4 items-center justify-center rounded-full bg-[#6C5CE7] px-1 text-[10px] font-semibold text-white">
               {badgeLabel}

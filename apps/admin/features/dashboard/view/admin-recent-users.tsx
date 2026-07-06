@@ -1,6 +1,7 @@
 import { cn } from "@workspace/ui/lib/utils"
-import { GraduationCap, UserCog } from "lucide-react"
+
 import type { RecentUser } from "../model/admin-dashboard-stats"
+import { GraduationCap, UserCog } from "lucide-react"
 
 function initials(fullName: string): string {
   return fullName

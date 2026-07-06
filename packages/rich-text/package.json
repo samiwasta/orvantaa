@@ -8,14 +8,14 @@
     "./styles.css": "./src/styles.css"
   },
   "dependencies": {
-    "@workspace/ui": "workspace:*",
     "@tiptap/extension-mathematics": "^3.21.0",
     "@tiptap/extension-placeholder": "^3.21.0",
     "@tiptap/pm": "^3.21.0",
     "@tiptap/react": "^3.21.0",
     "@tiptap/starter-kit": "^3.21.0",
+    "@workspace/ui": "workspace:*",
     "katex": "^0.16.22",
-    "lucide-react": "^1.8.0"
+    "lucide-react": "^1.23.0"
   },
   "peerDependencies": {
     "react": "^19.0.0",

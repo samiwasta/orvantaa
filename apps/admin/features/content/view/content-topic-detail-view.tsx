@@ -17,7 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
-import { ChevronRight, FileText, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
+
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -28,6 +28,7 @@ import { ConfirmDialog } from "@/features/shared/view/confirm-dialog"
 import { contentHref } from "../model/content-nav"
 import type { ContentNoteItem, ContentTopicDetailRef } from "../model/content-models"
 import { createNoteAction, deleteNoteAction } from "../server/note-actions"
+import { ChevronRight, FileText, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
 
 type ContentTopicDetailViewProps = {
   topicRef: ContentTopicDetailRef

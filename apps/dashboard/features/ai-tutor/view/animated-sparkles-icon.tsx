@@ -98,8 +98,7 @@ export function AnimatedSparklesIcon({
       <Sparkles
         size={size}
         strokeWidth={strokeWidth}
-        stroke={`url(#${gradientId})`}
-        className="drop-shadow-[0_2px_8px_rgba(237,233,254,0.45)]"
+        className="text-violet-300 drop-shadow-[0_2px_8px_rgba(237,233,254,0.45)]"
       />
     </span>
   )

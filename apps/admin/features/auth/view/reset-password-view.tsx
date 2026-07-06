@@ -3,10 +3,11 @@
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
-import { Eye, EyeOff, Loader2, LockKeyhole, ShieldCheck } from "lucide-react"
+
 import Image from "next/image"
 
 import type { ResetPasswordController } from "../controller/use-reset-password-controller"
+import { Eye, EyeOff, Loader2, LockKeyhole, ShieldCheck } from "lucide-react"
 
 export type ResetPasswordViewProps = ResetPasswordController
 
