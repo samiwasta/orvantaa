@@ -8,12 +8,14 @@ import { DashboardShellView } from "../view/dashboard-shell-view"
 
 type DashboardShellScreenProps = {
   children: React.ReactNode
+  defaultSidebarOpen?: boolean
   userProfile: DashboardUserProfile
   notifications: StudentNotificationSummary
 }
 
 export function DashboardShellScreen({
   children,
+  defaultSidebarOpen = true,
   userProfile,
   notifications,
 }: DashboardShellScreenProps) {
@@ -22,6 +24,7 @@ export function DashboardShellScreen({
   return (
     <DashboardShellView
       {...controller}
+      defaultSidebarOpen={defaultSidebarOpen}
       userProfile={userProfile}
       notifications={notifications}
     >

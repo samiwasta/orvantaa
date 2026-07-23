@@ -11,7 +11,7 @@ export function DashboardBottomNav({
   navItems: DashboardNavItemVM[]
 }) {
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 lg:hidden">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 md:hidden">
       <div
         className={cn(
           "pointer-events-auto mx-auto w-full max-w-lg px-3",
@@ -40,14 +40,14 @@ export function DashboardBottomNav({
                       "focus-visible:ring-2 focus-visible:ring-[#4169E1]/30 focus-visible:outline-none",
                       "active:scale-[0.97]",
                       item.isActive
-                        ? "bg-gradient-to-b from-[#4169E1] to-[#5B7FE8] font-bold text-white shadow-[0_8px_20px_-8px_rgba(65,105,225,0.55)] [&_svg]:text-white"
+                        ? "font-bold text-[#4169E1] [&_svg]:text-[#4169E1]"
                         : "text-[#3D5CC9] hover:bg-[#F0F4FF] hover:text-[#4169E1] [&_svg]:text-[#7B96ED] hover:[&_svg]:text-[#4169E1]"
                     )}
                   >
                     <Icon
                       className={cn(
                         "size-7 shrink-0 transition-colors duration-200",
-                        item.isActive ? "text-white" : "text-[#7B96ED]"
+                        item.isActive ? "text-[#4169E1]" : "text-[#7B96ED]"
                       )}
                       strokeWidth={item.isActive ? 2.5 : 2}
                     />

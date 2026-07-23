@@ -213,7 +213,7 @@ export class ActiveLearnerDashboardRepository {
         stats: [
           {
             label: "Accuracy",
-            value: accuracy === null ? "—" : `${accuracy}%`,
+            value: accuracy === null ? "0%" : `${accuracy}%`,
             tone: "purple",
           },
           {
@@ -378,8 +378,8 @@ export class ActiveLearnerDashboardRepository {
       {
         badge: "Based on your progress",
         title: `Take ${currentLesson.subjectTitle} Quiz`,
-        subtitle: `${currentLesson.chapterTitle} · ${currentLesson.subjectTitle}`,
-        buttonLabel: "See How You Score",
+        subtitle: currentLesson.chapterTitle,
+        buttonLabel: "Start",
         href: quizHrefValue,
         imageSrc: "/quiz.svg",
         imageAlt: "Quiz illustration",
@@ -391,10 +391,8 @@ export class ActiveLearnerDashboardRepository {
           ? `${getGoalActionLabel(primaryGoal.type)} ${goalTarget.chapterTitle}`
           : (primaryGoal?.title ??
             `Complete ${goalCount} chapter${goalCount === 1 ? "" : "s"}`),
-        subtitle: goalTarget
-          ? `${goalTarget.chapterTitle} · ${goalTarget.subjectTitle}`
-          : primaryGoal?.metadata?.subjectTitle,
-        buttonLabel: primaryGoal?.href ? "Continue Goal" : "Start Goal",
+        subtitle: goalTarget ? goalTarget.subjectTitle : undefined,
+        buttonLabel: "Continue",
         href: primaryGoal?.href ?? "/dashboard/goals",
         secondaryButtonLabel: "View All Goals",
         secondaryHref: "/dashboard/goals",
@@ -412,7 +410,7 @@ export class ActiveLearnerDashboardRepository {
         badge: "Weak area in recent tests",
         title: weakArea.title,
         subtitle: weakArea.subtitle,
-        buttonLabel: "Practice Until Strong",
+        buttonLabel: "Practice",
         href: weakArea.href,
         imageSrc: "/graph.svg",
         imageAlt: "Calculator illustration",
@@ -436,6 +434,7 @@ export class ActiveLearnerDashboardRepository {
       subjectSlug: string
       chapterSlug: string
       chapterTitle: string
+      subjectTitle: string
     }
   ) {
     const grouped = new Map<
@@ -487,14 +486,14 @@ export class ActiveLearnerDashboardRepository {
     if (weakest) {
       return {
         title: `Revise ${weakest.chapterTitle}`,
-        subtitle: `${weakest.chapterTitle} · ${weakest.subjectTitle}`,
+        subtitle: weakest.subjectTitle,
         href: weakest.href,
       }
     }
 
     return {
       title: `Revise ${fallback.chapterTitle}`,
-      subtitle: fallback.chapterTitle,
+      subtitle: fallback.subjectTitle,
       href: chapterHref(fallback.subjectSlug, fallback.chapterSlug),
     }
   }

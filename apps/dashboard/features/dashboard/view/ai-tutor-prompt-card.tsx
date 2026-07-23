@@ -229,7 +229,7 @@ export function AiTutorPromptCard({
     <Card
       ref={cardRef}
       className={cn(
-        "flex h-full min-h-[280px] flex-col gap-0 overflow-hidden rounded-2xl border border-[#E8EEFF]/90 bg-white py-0 shadow-[0_6px_24px_-10px_rgba(65,105,225,0.12)]",
+        "flex h-full min-h-[280px] flex-col gap-0 overflow-hidden rounded-[1.5rem] border border-[#E8EEFF]/90 bg-white py-0 shadow-[0_6px_24px_-10px_rgba(65,105,225,0.12)]",
         className
       )}
     >

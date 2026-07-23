@@ -62,22 +62,24 @@ export function UserProfileMenu({ profile }: UserProfileMenuProps) {
         <button
           type="button"
           className={cn(
-            "flex min-w-0 items-center gap-2.5 rounded-full border border-[#E5E7EB] bg-white px-2.5 py-1.5 text-left outline-none sm:px-3 sm:py-2",
+            "flex shrink-0 items-center rounded-full border border-[#E5E7EB] bg-white text-left outline-none",
             "transition-colors hover:bg-[#F8FAFF]",
-            "focus-visible:ring-2 focus-visible:ring-[#4169E1]/30"
+            "focus-visible:ring-2 focus-visible:ring-[#4169E1]/30",
+            "size-9 justify-center p-0",
+            "md:h-9 md:w-auto md:gap-1.5 md:px-1 md:py-0 md:pr-2.5"
           )}
           aria-label="Open account menu"
         >
-          <Avatar className="size-9 shrink-0">
+          <Avatar className="size-9 shrink-0 md:size-7">
             <AvatarImage src={avatarSrc} alt="" />
-            <AvatarFallback>{initials}</AvatarFallback>
+            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
           </Avatar>
-          <div className="hidden min-w-0 flex-col items-start justify-center pr-1 sm:flex">
-            <p className="max-w-[9rem] truncate text-sm font-semibold text-foreground md:max-w-[11rem]">
+          <div className="hidden min-w-0 flex-col items-start justify-center md:flex">
+            <p className="max-w-[8rem] truncate text-[13px] leading-tight font-medium text-foreground lg:max-w-[10rem]">
               {displayName}
             </p>
             {subtitle ? (
-              <p className="max-w-[9rem] truncate text-xs text-muted-foreground md:max-w-[11rem]">
+              <p className="max-w-[8rem] truncate text-[11px] leading-tight text-muted-foreground lg:max-w-[10rem]">
                 {subtitle}
               </p>
             ) : null}

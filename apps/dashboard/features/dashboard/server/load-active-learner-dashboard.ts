@@ -35,7 +35,7 @@ export const loadActiveLearnerDashboard = cache(
       performance: {
         gradePaceLabel: "Start Strong",
         stats: [
-          { label: "Accuracy", value: "—", tone: "purple" },
+          { label: "Accuracy", value: "0%", tone: "purple" },
           { label: "Tests Taken", value: "0", tone: "orange" },
           { label: "Study Streak", value: "0 days", tone: "amber" },
           { label: "Time Spent", value: "0m", tone: "teal" },
@@ -45,7 +45,7 @@ export const loadActiveLearnerDashboard = cache(
         {
           badge: "Based on your progress",
           title: "Take your first quiz",
-          buttonLabel: "See How You Score",
+          buttonLabel: "Start",
           href: quickLinks.firstQuizHref,
           imageSrc: "/quiz.svg",
           imageAlt: "Quiz illustration",
@@ -54,8 +54,10 @@ export const loadActiveLearnerDashboard = cache(
         {
           badge: "Today's Goal",
           title: "Complete 2 chapters",
-          buttonLabel: "View All Goals",
+          buttonLabel: "Continue",
           href: "/dashboard/goals",
+          secondaryButtonLabel: "View All Goals",
+          secondaryHref: "/dashboard/goals",
           imageSrc: "/open-book.svg",
           imageAlt: "Book illustration",
           variant: "white",
@@ -63,7 +65,7 @@ export const loadActiveLearnerDashboard = cache(
         {
           badge: "Weak area in recent tests",
           title: "Revise your chapters",
-          buttonLabel: "Practice Until Strong",
+          buttonLabel: "Practice",
           href: quickLinks.subjectsHref,
           imageSrc: "/graph.svg",
           imageAlt: "Calculator illustration",

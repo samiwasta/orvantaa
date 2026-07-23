@@ -8,15 +8,14 @@ import { motion, useInView, useMotionValue, useSpring } from "framer-motion"
 import type { LucideIcon } from "lucide-react"
 import {
   ArrowRight,
-  BookOpen,
   ClipboardCheck,
   Clock3,
   Flame,
   Lightbulb,
-  LineChart,
   Target,
   TrendingUp,
 } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 
@@ -31,81 +30,78 @@ import { AiTutorPromptCard } from "./ai-tutor-prompt-card"
 const actionCardConfig: Record<
   DashboardActionCard["variant"],
   {
-    accent: string
-    icon: LucideIcon
-    iconBg: string
+    shell: string
     badge: string
-    body: string
-    footer: string
-    arrowWrap: string
-    shadow: string
+    title: string
+    subtitle: string
+    secondary: string
+    cta: string
+    glow: string
+    progressTrack: string
   }
 > = {
   purple: {
-    accent: "bg-[#6C5CE7]",
-    icon: ClipboardCheck,
-    iconBg: "bg-violet-50 text-[#6C5CE7] ring-1 ring-violet-100",
-    badge: "text-[#7B6AE8]",
-    body: "bg-gradient-to-br from-white via-white to-violet-50/40",
-    footer:
-      "border-t border-violet-100/90 bg-violet-50/40 text-[#6C5CE7] group-hover/footer:bg-violet-50/80",
-    arrowWrap:
-      "bg-violet-100/90 text-[#6C5CE7] group-hover/footer:bg-[#6C5CE7] group-hover/footer:text-white",
-    shadow: "hover:shadow-[0_14px_36px_-14px_rgba(108,92,231,0.28)]",
+    shell:
+      "border-0 bg-gradient-to-br from-[#8B5CF6] via-[#7C5CE8] to-[#6C5CE7] shadow-[0_18px_40px_-18px_rgba(108,92,231,0.75)]",
+    badge: "border-white/70 bg-white/95 text-[#5B5B7A]",
+    title: "text-white",
+    subtitle: "text-white/80",
+    secondary: "text-white/85",
+    cta: "bg-white text-[#6C5CE7] hover:bg-[#F5F3FF]",
+    glow: "bg-white/15",
+    progressTrack: "bg-white/25 **:data-[slot=progress-indicator]:bg-white",
   },
   white: {
-    accent: "bg-[#4169E1]",
-    icon: BookOpen,
-    iconBg: "bg-[#F0F4FF] text-[#4169E1] ring-1 ring-[#E0E7FF]",
-    badge: "text-[#6B85E8]",
-    body: "bg-gradient-to-br from-white via-white to-[#F8FAFF]",
-    footer:
-      "border-t border-[#E8EEFF] bg-[#FAFBFF] text-[#4169E1] group-hover/footer:bg-[#F0F4FF]",
-    arrowWrap:
-      "bg-[#E8EEFF] text-[#4169E1] group-hover/footer:bg-[#4169E1] group-hover/footer:text-white",
-    shadow: "hover:shadow-[0_14px_36px_-14px_rgba(65,105,225,0.2)]",
+    shell:
+      "border-0 bg-gradient-to-br from-[#FF9B4A] via-[#FF8A3D] to-[#F97316] shadow-[0_18px_40px_-18px_rgba(249,115,22,0.7)]",
+    badge: "border-white/70 bg-white/95 text-[#9A4B12]",
+    title: "text-white",
+    subtitle: "text-white/85",
+    secondary: "text-white/90",
+    cta: "bg-white text-[#E8722A] hover:bg-[#FFF7F0]",
+    glow: "bg-white/18",
+    progressTrack: "bg-white/30 **:data-[slot=progress-indicator]:bg-white",
   },
   blue: {
-    accent: "bg-[#0EA5B7]",
-    icon: LineChart,
-    iconBg: "bg-cyan-50 text-cyan-700 ring-1 ring-cyan-100",
-    badge: "text-cyan-600",
-    body: "bg-gradient-to-br from-white via-white to-cyan-50/35",
-    footer:
-      "border-t border-cyan-100/90 bg-cyan-50/40 text-cyan-800 group-hover/footer:bg-cyan-50/75",
-    arrowWrap:
-      "bg-cyan-100/90 text-cyan-700 group-hover/footer:bg-cyan-600 group-hover/footer:text-white",
-    shadow: "hover:shadow-[0_14px_36px_-14px_rgba(14,165,183,0.22)]",
+    shell:
+      "border-0 bg-gradient-to-br from-[#22C3D6] via-[#14B8C9] to-[#0EA5B7] shadow-[0_18px_40px_-18px_rgba(14,165,183,0.7)]",
+    badge: "border-white/70 bg-white/95 text-[#0B6F7C]",
+    title: "text-white",
+    subtitle: "text-white/85",
+    secondary: "text-white/90",
+    cta: "bg-white text-[#0E8FA0] hover:bg-[#F0FBFD]",
+    glow: "bg-white/18",
+    progressTrack: "bg-white/30 **:data-[slot=progress-indicator]:bg-white",
   },
 }
 
 const statToneStyles: Record<
   PerformanceSummaryStat["tone"],
-  { card: string; icon: string; value: string; bg: string }
+  { card: string; icon: string; value: string; label: string }
 > = {
   purple: {
-    card: "border-violet-100/80",
-    icon: "bg-white/90 text-[#6C5CE7] ring-1 ring-violet-100",
+    card: "bg-[#F3F0FF]",
+    icon: "text-[#7C6BF0]",
     value: "text-[#6C5CE7]",
-    bg: "bg-violet-50/40",
+    label: "text-[#5B5B7A]",
   },
   orange: {
-    card: "border-orange-100/80",
-    icon: "bg-white/90 text-[#FF8A3D] ring-1 ring-orange-100",
-    value: "text-[#FF8A3D]",
-    bg: "bg-orange-50/40",
+    card: "bg-[#FFF1EB]",
+    icon: "text-[#FF8A3D]",
+    value: "text-[#F97316]",
+    label: "text-[#7A5B4A]",
   },
   amber: {
-    card: "border-amber-100/80",
-    icon: "bg-white/90 text-amber-600 ring-1 ring-amber-100",
-    value: "text-amber-600",
-    bg: "bg-amber-50/40",
+    card: "bg-[#FFF8DC]",
+    icon: "text-[#E5A100]",
+    value: "text-[#D97706]",
+    label: "text-[#7A6A3A]",
   },
   teal: {
-    card: "border-cyan-100/80",
-    icon: "bg-white/90 text-cyan-600 ring-1 ring-cyan-100",
-    value: "text-cyan-700",
-    bg: "bg-cyan-50/40",
+    card: "bg-[#EAFBFF]",
+    icon: "text-[#0EA5B7]",
+    value: "text-[#0E8FA0]",
+    label: "text-[#3A6A72]",
   },
 }
 
@@ -155,6 +151,8 @@ export function ActiveLearnerBentoGrid({
         </motion.div>
       </motion.div>
 
+      <div className="h-px w-full bg-[#E0E7FF]/90" aria-hidden />
+
       <motion.div
         className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 lg:grid-cols-3"
         variants={staggerContainer}
@@ -167,6 +165,8 @@ export function ActiveLearnerBentoGrid({
           </motion.div>
         ))}
       </motion.div>
+
+      <div className="h-px w-full bg-[#E0E7FF]/90" aria-hidden />
 
       <motion.div
         className="grid grid-cols-1 gap-5 md:gap-6 xl:grid-cols-2 xl:items-stretch"
@@ -313,8 +313,8 @@ function PerformanceSummaryCard({
   performance: ActiveLearnerDashboardData["performance"]
 }) {
   return (
-    <Card className="flex h-full flex-col gap-0 overflow-hidden rounded-2xl border border-[#E8EEFF]/80 bg-white py-0 shadow-[0_10px_40px_-12px_rgba(65,105,225,0.12)]">
-      <div className="flex items-center justify-between gap-3 border-b border-[#f0f4ff] bg-[#fafbff] px-6 py-4 sm:px-7">
+    <Card className="flex h-full flex-col gap-0 overflow-hidden rounded-2xl border border-[#E8EEFF]/90 bg-white py-0 shadow-[0_8px_30px_-14px_rgba(65,105,225,0.12)]">
+      <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-4 sm:px-6 sm:pt-6">
         <h3 className="font-heading text-lg font-semibold tracking-tight text-foreground">
           Performance
         </h3>
@@ -322,7 +322,7 @@ function PerformanceSummaryCard({
           initial={{ opacity: 0, x: 10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3, duration: 0.4, ease: "easeOut" }}
-          className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200/80"
+          className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100"
         >
           <TrendingUp className="size-3.5" strokeWidth={2.5} />
           {performance.gradePaceLabel}
@@ -330,7 +330,7 @@ function PerformanceSummaryCard({
       </div>
 
       <motion.div
-        className="grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-3 p-5 sm:grid-cols-4 sm:gap-4 sm:p-6"
+        className="grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-3 px-5 pb-5 sm:grid-cols-4 sm:gap-3.5 sm:px-6 sm:pb-6"
         variants={staggerContainer}
         initial="hidden"
         animate="visible"
@@ -356,37 +356,36 @@ function PerformanceStatTile({ stat }: { stat: PerformanceSummaryStat }) {
       ref={ref}
       whileHover={{ y: -2, transition: { duration: 0.18 } }}
       className={cn(
-        "relative flex h-full min-h-[116px] cursor-default flex-col overflow-hidden rounded-xl border",
-        styles.card,
-        styles.bg
+        "relative flex h-full min-h-[108px] cursor-default flex-col justify-between rounded-2xl p-3.5 sm:min-h-[118px] sm:p-4",
+        styles.card
       )}
     >
-      <div className="flex flex-1 flex-col justify-between p-4">
-        <div
+      <div className="flex items-center gap-2">
+        <Icon
+          className={cn("size-4 shrink-0 sm:size-[1.05rem]", styles.icon)}
+          strokeWidth={2.25}
+        />
+        <p
           className={cn(
-            "flex size-8 items-center justify-center rounded-full",
-            styles.icon
+            "truncate text-xs font-medium sm:text-[13px]",
+            styles.label
           )}
         >
-          <Icon className="size-4 shrink-0" strokeWidth={2.25} />
-        </div>
-        <div>
-          <motion.p
-            initial={{ opacity: 0, y: 8 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
-            className={cn(
-              "text-[1.5rem] leading-none font-bold tracking-tight sm:text-[1.65rem]",
-              styles.value
-            )}
-          >
-            {stat.value}
-          </motion.p>
-          <p className="mt-1.5 text-xs font-medium text-muted-foreground">
-            {stat.label}
-          </p>
-        </div>
+          {stat.label}
+        </p>
       </div>
+
+      <motion.p
+        initial={{ opacity: 0, y: 8 }}
+        animate={inView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
+        className={cn(
+          "mt-4 text-[1.55rem] leading-none font-bold tracking-tight sm:mt-5 sm:text-[1.75rem]",
+          styles.value
+        )}
+      >
+        {stat.value}
+      </motion.p>
     </motion.div>
   )
 }
@@ -399,30 +398,30 @@ function PerformanceInsightsCard({
   const { strength, growthArea, tip } = insights
 
   return (
-    <Card className="flex h-full flex-col gap-0 overflow-hidden rounded-2xl border border-[#D4DFFF] bg-gradient-to-b from-[#F3F6FF] via-white to-[#F8FAFF] py-0 shadow-[0_14px_44px_-18px_rgba(65,105,225,0.22)]">
-      <div className="border-b border-[#DCE6FF] bg-gradient-to-r from-[#E8EEFF]/90 via-[#F4F7FF] to-[#FAFBFF] px-6 py-4 sm:px-7">
+    <Card className="flex h-full flex-col gap-0 overflow-hidden rounded-[1.5rem] border border-[#E8EEFF]/90 bg-white py-0 shadow-[0_10px_32px_-16px_rgba(108,92,231,0.16)]">
+      <div className="px-5 pt-5 pb-4 sm:px-6 sm:pt-6">
         <h3 className="font-heading text-lg font-semibold tracking-tight text-foreground">
           Performance Insights
         </h3>
-        <p className="mt-0.5 text-xs font-medium text-[#6B85E8]">
+        <p className="mt-0.5 text-xs font-medium text-[#7B6AE8]">
           Based on your recent activity
         </p>
       </div>
 
-      <div className="flex flex-1 flex-col gap-4 bg-gradient-to-b from-[#FAFBFF]/80 to-[#F0F4FF]/50 p-5 sm:gap-5 sm:p-6">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+      <div className="flex flex-1 flex-col gap-3.5 px-5 pb-5 sm:gap-4 sm:px-6 sm:pb-6">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3.5">
           <motion.div
             whileHover={{ y: -2, transition: { duration: 0.18 } }}
-            className="flex items-center gap-3.5 rounded-xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-emerald-50/80 p-4 shadow-[0_6px_18px_-8px_rgba(16,185,129,0.28)]"
+            className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-[#ECFDF5] p-4"
           >
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-[0_4px_12px_-4px_rgba(16,185,129,0.45)]">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#10B981] text-white">
               <TrendingUp className="size-4.5" strokeWidth={2.25} />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold tracking-[0.08em] text-emerald-700/80 uppercase">
+              <p className="text-[10px] font-semibold tracking-[0.08em] text-emerald-700/75 uppercase">
                 {strength.label}
               </p>
-              <p className="truncate font-heading text-base leading-tight font-semibold text-foreground">
+              <p className="mt-0.5 truncate font-heading text-base leading-tight font-semibold text-foreground">
                 {strength.subject}
               </p>
             </div>
@@ -430,16 +429,16 @@ function PerformanceInsightsCard({
 
           <motion.div
             whileHover={{ y: -2, transition: { duration: 0.18 } }}
-            className="flex items-center gap-3.5 rounded-xl border border-[#C5D4FA] bg-gradient-to-br from-[#E8EEFF] via-white to-[#EDF2FF] p-4 shadow-[0_6px_18px_-8px_rgba(65,105,225,0.28)]"
+            className="flex items-center gap-3 rounded-2xl border border-[#E4DEFF] bg-[#F3F0FF] p-4"
           >
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#4169E1] to-[#5B7FE8] text-white shadow-[0_4px_12px_-4px_rgba(65,105,225,0.45)]">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#7C5CE8] text-white">
               <Target className="size-4.5" strokeWidth={2.25} />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold tracking-[0.08em] text-[#5B7FE8] uppercase">
+              <p className="text-[10px] font-semibold tracking-[0.08em] text-[#7B6AE8]/80 uppercase">
                 {growthArea.label}
               </p>
-              <p className="truncate font-heading text-base leading-tight font-semibold text-foreground">
+              <p className="mt-0.5 truncate font-heading text-base leading-tight font-semibold text-foreground">
                 {growthArea.subject}
               </p>
             </div>
@@ -450,12 +449,12 @@ function PerformanceInsightsCard({
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35, duration: 0.4 }}
-          className="mt-auto flex gap-3 rounded-xl border border-[#DCE6FF] bg-white/90 p-4 shadow-[0_4px_16px_-10px_rgba(65,105,225,0.12)] backdrop-blur-sm"
+          className="mt-auto flex items-center gap-3 rounded-2xl border border-[#FFE0C8] bg-[#FFF7F0] p-4"
         >
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-100 to-amber-50 text-amber-600 ring-1 ring-amber-200/70">
-            <Lightbulb className="size-4" strokeWidth={2} />
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#FF8A3D] text-white">
+            <Lightbulb className="size-4" strokeWidth={2.25} />
           </div>
-          <p className="text-sm leading-relaxed text-foreground/75">{tip}</p>
+          <p className="text-sm leading-relaxed text-foreground/80">{tip}</p>
         </motion.div>
       </div>
     </Card>
@@ -464,120 +463,130 @@ function PerformanceInsightsCard({
 
 function DashboardActionCardView({ card }: { card: DashboardActionCard }) {
   const config = actionCardConfig[card.variant]
-  const Icon = config.icon
   const hasSplitFooter = Boolean(
     card.secondaryButtonLabel && card.secondaryHref
   )
 
   return (
     <motion.div
-      whileHover={{ y: -2, transition: { duration: 0.18, ease: "easeOut" } }}
+      whileHover={{ y: -3, transition: { duration: 0.18, ease: "easeOut" } }}
       className="h-full"
     >
       <Card
         className={cn(
-          "group flex h-full min-h-[148px] flex-col overflow-hidden rounded-2xl border border-[#E8EEFF]/90 bg-white p-0 shadow-[0_6px_24px_-10px_rgba(65,105,225,0.12)] transition-shadow duration-200",
-          config.shadow
+          "group relative flex h-full min-h-[168px] flex-col overflow-hidden rounded-[1.5rem] p-0",
+          config.shell
         )}
       >
-        <div className="flex min-h-0 flex-1">
-          <div className={cn("w-1.5 shrink-0", config.accent)} aria-hidden />
-          <div className={cn("flex min-w-0 flex-1 flex-col", config.body)}>
-            <div className="flex flex-1 items-start gap-3 p-4">
-              <div
-                className={cn(
-                  "flex size-10 shrink-0 items-center justify-center rounded-xl",
-                  config.iconBg
-                )}
-              >
-                <Icon className="size-[1.05rem] shrink-0" strokeWidth={2.25} />
-              </div>
-              <div className="flex min-h-[72px] min-w-0 flex-1 flex-col pt-0.5">
-                <p
+        <div
+          className={cn(
+            "pointer-events-none absolute -top-10 -right-8 size-36 rounded-full blur-2xl",
+            config.glow
+          )}
+          aria-hidden
+        />
+        <div
+          className={cn(
+            "pointer-events-none absolute -bottom-12 -left-10 size-32 rounded-full blur-2xl",
+            config.glow
+          )}
+          aria-hidden
+        />
+
+        <div className="relative flex min-h-0 flex-1 items-stretch gap-2 p-4 sm:p-5">
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span
+              className={cn(
+                "inline-flex w-fit max-w-full items-center rounded-full border px-2.5 py-1 text-[11px] font-medium tracking-tight",
+                config.badge
+              )}
+            >
+              <span className="truncate">{card.badge}</span>
+            </span>
+
+            <h3
+              className={cn(
+                "mt-3 line-clamp-2 font-heading text-[1.15rem] leading-snug font-bold tracking-tight sm:text-[1.25rem]",
+                config.title
+              )}
+            >
+              {card.title}
+            </h3>
+
+            {card.progressPercent !== undefined ? (
+              <div className="mt-3 max-w-[12rem] space-y-1">
+                <div
                   className={cn(
-                    "text-[10px] font-semibold tracking-[0.08em] uppercase",
-                    config.badge
+                    "flex items-center justify-between text-[10px] font-semibold",
+                    config.subtitle
                   )}
                 >
-                  {card.badge}
-                </p>
-                <h3 className="mt-1 line-clamp-2 font-heading text-[0.98rem] leading-snug font-semibold tracking-tight text-foreground">
-                  {card.title}
-                </h3>
-
-                <div className="mt-2 min-h-[28px] flex-1">
-                  {card.progressPercent !== undefined ? (
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-[10px] font-semibold">
-                        <span className="text-muted-foreground">Progress</span>
-                        {card.progressLabel ? (
-                          <span className={config.badge}>
-                            {card.progressLabel}
-                          </span>
-                        ) : null}
-                      </div>
-                      <Progress
-                        value={card.progressPercent}
-                        className="h-1.5 bg-[#E8EEFF] **:data-[slot=progress-indicator]:bg-[#4169E1]"
-                      />
-                    </div>
-                  ) : card.subtitle ? (
-                    <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                      {card.subtitle}
-                    </p>
+                  <span>Progress</span>
+                  {card.progressLabel ? (
+                    <span>{card.progressLabel}</span>
                   ) : null}
                 </div>
+                <Progress
+                  value={card.progressPercent}
+                  className={cn("h-1.5", config.progressTrack)}
+                />
               </div>
-            </div>
-
-            {hasSplitFooter ? (
-              <div
+            ) : card.subtitle ? (
+              <p
                 className={cn(
-                  "mt-auto flex items-center justify-between gap-2 border-t px-4 py-2.5 text-sm font-semibold",
-                  config.footer
+                  "mt-2 line-clamp-2 max-w-[18ch] text-xs leading-relaxed sm:text-[13px]",
+                  config.subtitle
                 )}
               >
+                {card.subtitle}
+              </p>
+            ) : null}
+
+            <div className="mt-auto flex flex-wrap items-center gap-2 pt-4">
+              {hasSplitFooter ? (
                 <Link
                   href={card.secondaryHref!}
-                  className="shrink-0 text-xs font-semibold text-[#6B85E8] hover:underline"
+                  className={cn(
+                    "text-xs font-semibold underline-offset-2 hover:underline",
+                    config.secondary
+                  )}
                 >
                   {card.secondaryButtonLabel}
                 </Link>
-                <Link
-                  href={card.href}
-                  className="group/footer inline-flex min-w-0 items-center justify-end gap-2 transition-colors duration-200"
-                >
-                  <span className="truncate">{card.buttonLabel}</span>
-                  <span
-                    className={cn(
-                      "flex size-6 shrink-0 items-center justify-center rounded-full transition-colors duration-200",
-                      config.arrowWrap
-                    )}
-                  >
-                    <ArrowRight className="size-3" strokeWidth={2.5} />
-                  </span>
-                </Link>
-              </div>
-            ) : (
-              <Link
-                href={card.href}
+              ) : null}
+              <Button
+                asChild
+                size="sm"
                 className={cn(
-                  "group/footer mt-auto flex items-center justify-between gap-2 border-t px-4 py-2.5 text-sm font-semibold transition-colors duration-200",
-                  config.footer
+                  "h-9 rounded-xl px-4 text-sm font-semibold shadow-none",
+                  config.cta
                 )}
               >
-                <span className="min-w-0 truncate">{card.buttonLabel}</span>
-                <span
-                  className={cn(
-                    "flex size-6 shrink-0 items-center justify-center rounded-full transition-colors duration-200",
-                    config.arrowWrap
-                  )}
-                >
-                  <ArrowRight className="size-3" strokeWidth={2.5} />
-                </span>
-              </Link>
-            )}
+                <Link href={card.href}>
+                  {card.buttonLabel}
+                  <ArrowRight className="size-3.5" strokeWidth={2.5} />
+                </Link>
+              </Button>
+            </div>
           </div>
+
+          <motion.div
+            className="relative hidden w-[42%] max-w-[140px] shrink-0 self-end sm:block"
+            animate={{ y: [0, -5, 0], rotate: [0, -2, 0] }}
+            transition={{
+              duration: 4.5,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          >
+            <Image
+              src={card.imageSrc}
+              alt={card.imageAlt}
+              width={160}
+              height={160}
+              className="h-auto w-full object-contain drop-shadow-[0_12px_20px_rgba(0,0,0,0.18)]"
+            />
+          </motion.div>
         </div>
       </Card>
     </motion.div>

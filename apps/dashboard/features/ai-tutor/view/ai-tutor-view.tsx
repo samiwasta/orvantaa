@@ -50,7 +50,7 @@ import { UserMessageAttachments } from "./user-message-attachments"
 const MAX_TEXTAREA_HEIGHT = 12 * 21 + 24
 const CHAT_MAX_WIDTH = "max-w-3xl"
 const DASHBOARD_NAV_CLEARANCE =
-  "pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))] lg:pb-[calc(6.25rem+env(safe-area-inset-bottom,0px))]"
+  "pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))] md:pb-0"
 
 function TypingIndicator() {
   return (

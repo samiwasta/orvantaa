@@ -96,7 +96,7 @@ export function NotificationBell({ initialSummary }: NotificationBellProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="relative flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#E5E7EB] bg-white shadow-none hover:bg-[#F8FAFF]"
+          className="relative flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#E5E7EB] bg-white shadow-none hover:bg-[#F8FAFF]"
           aria-label={
             summary.unreadCount > 0
               ? `Notifications, ${summary.unreadCount} unread`
@@ -108,7 +108,7 @@ export function NotificationBell({ initialSummary }: NotificationBellProps) {
             alt=""
             width={24}
             height={24}
-            className="size-6 shrink-0"
+            className="size-5 shrink-0"
             aria-hidden
           />
           {badgeLabel ? (
