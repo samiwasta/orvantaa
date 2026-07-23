@@ -1,16 +1,19 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
 
-import { LoginScreen } from "@/features/auth/screens/login-screen"
+import {
+  LoginScreen,
+  LoginScreenFallback,
+} from "@/features/auth/screens/login-screen"
 
 export const metadata: Metadata = {
-  title: "Login - Orvantaa",
-  description: "Login to your Orvantaa account",
+  title: "Sign in - Orvantaa",
+  description: "Sign in or create your Orvantaa student account",
 }
 
 export default function AuthPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<LoginScreenFallback />}>
       <LoginScreen />
     </Suspense>
   )

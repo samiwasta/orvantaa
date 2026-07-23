@@ -17,9 +17,9 @@ import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile"
 import { cn } from "@workspace/ui/lib/utils"
 import { Menu } from "lucide-react"
-import Image from "next/image"
 import Link from "next/link"
 
+import { BrandLogo } from "@/features/brand/view/brand-logo"
 import type { StudentNotificationSummary } from "@/features/notifications/model/notification"
 import type { DashboardUserProfile } from "@/features/user/model/user"
 
@@ -63,14 +63,7 @@ function DashboardSidebarHeader() {
           href="/dashboard"
           className="flex h-full min-w-0 flex-1 items-center"
         >
-          <Image
-            src="/orvantaa-logo.png"
-            alt="Orvantaa"
-            width={120}
-            height={32}
-            className="h-7 w-auto max-w-[120px] shrink-0 object-contain object-left sm:max-w-[132px]"
-            priority
-          />
+          <BrandLogo size="sm" priority className="shrink-0 object-left" />
         </Link>
       ) : null}
     </div>

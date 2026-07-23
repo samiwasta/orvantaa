@@ -2,10 +2,12 @@
 
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
+import { Label } from "@workspace/ui/components/label"
+import { cn } from "@workspace/ui/lib/utils"
 import { Eye, EyeOff, Loader2, LockKeyhole } from "lucide-react"
 
 import type { ResetPasswordController } from "../controller/use-reset-password-controller"
-import { AuthMarketingColumn } from "./auth-marketing-column"
+import { AuthBrandMark, AuthCard, AuthPageShell } from "./auth-page-shell"
 
 export type ResetPasswordViewProps = ResetPasswordController & {
   title?: string
@@ -13,6 +15,9 @@ export type ResetPasswordViewProps = ResetPasswordController & {
   submitLabel?: string
   pendingLabel?: string
 }
+
+const inputClassName =
+  "h-11 rounded-xl border border-[#E2E8F5] bg-[#F7F9FD] pr-10 pl-10 text-sm shadow-none placeholder:text-slate-400 focus-visible:border-[#4169E1]/45 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-[#4169E1]/20"
 
 export function ResetPasswordView({
   showPassword,
@@ -26,160 +31,162 @@ export function ResetPasswordView({
   isResettingPassword,
   canSubmit,
   title = "Set a new password",
-  description = "Enter your new password",
-  submitLabel = "Reset Password",
+  description = "Choose a new password for your account.",
+  submitLabel = "Reset password",
   pendingLabel = "Resetting password...",
 }: ResetPasswordViewProps) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F3F3FF] p-4 lg:p-6 xl:p-8">
-      <div className="flex w-full max-w-[960px] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] ring-1 ring-black/5 md:flex-row md:rounded-3xl">
-        <AuthMarketingColumn />
+    <AuthPageShell>
+      <AuthCard>
+        <AuthBrandMark className="mb-6" />
+        <div className="space-y-6">
+          <div className="space-y-1.5 text-center">
+            <h1 className="font-heading text-2xl font-semibold tracking-tight text-slate-900">
+              {title}
+            </h1>
+            <p className="text-sm text-slate-500">{description}</p>
+          </div>
 
-        <section className="flex w-full flex-col justify-center bg-white px-4 py-6 sm:px-5 sm:py-8 md:w-1/2 md:px-5 md:py-8 lg:px-10 lg:py-10 xl:px-12">
-          <div className="mx-auto w-full max-w-md space-y-6 sm:space-y-8 md:space-y-8 lg:space-y-12">
-            <div className="space-y-1 text-center sm:space-y-1.5">
-              <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-[1.35rem] lg:text-2xl">
-                {title}
-              </h1>
-              <p className="text-sm text-muted-foreground lg:text-base">
-                {description}
-              </p>
-            </div>
-
-            <form
-              className="space-y-4 sm:space-y-5 md:space-y-5 lg:space-y-6"
-              noValidate
-              onSubmit={onSubmit}
-            >
-              <div className="space-y-3 sm:space-y-3.5 md:space-y-3.5 lg:space-y-4">
-                <div className="space-y-1.5">
-                  <div className="relative">
-                    <LockKeyhole
-                      className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground lg:left-3 lg:size-5"
-                      aria-hidden
-                    />
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      name="newPassword"
-                      autoComplete="new-password"
-                      placeholder="New Password"
-                      aria-invalid={fieldErrors.newPassword ? true : undefined}
-                      aria-describedby={
-                        fieldErrors.newPassword
-                          ? "reset-password-new-error"
-                          : undefined
-                      }
-                      onChange={() => clearFieldError("newPassword")}
-                      className="h-12 border-0 bg-[#F6F5F8] pr-10 pl-10 text-sm shadow-none placeholder:text-muted-foreground focus-visible:bg-[#F6F5F8] focus-visible:ring-2 focus-visible:ring-[#6366f1] lg:h-16 lg:pr-11 lg:pl-12 lg:text-base"
-                    />
-                    <button
-                      type="button"
-                      onClick={toggleShowPassword}
-                      className="absolute top-1/2 right-2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-slate-200/80 hover:text-foreground lg:right-2.5 lg:size-8"
-                      aria-label={
-                        showPassword ? "Hide new password" : "Show new password"
-                      }
-                    >
-                      {showPassword ? (
-                        <EyeOff className="size-4 lg:size-5" />
-                      ) : (
-                        <Eye className="size-4 lg:size-5" />
-                      )}
-                    </button>
-                  </div>
-                  {fieldErrors.newPassword ? (
-                    <p
-                      id="reset-password-new-error"
-                      className="text-sm text-destructive"
-                      role="alert"
-                    >
-                      {fieldErrors.newPassword}
-                    </p>
-                  ) : null}
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="relative">
-                    <LockKeyhole
-                      className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground lg:left-3 lg:size-5"
-                      aria-hidden
-                    />
-                    <Input
-                      type={showConfirmPassword ? "text" : "password"}
-                      name="confirmNewPassword"
-                      autoComplete="new-password"
-                      placeholder="Confirm New Password"
-                      aria-invalid={
-                        fieldErrors.confirmNewPassword ? true : undefined
-                      }
-                      aria-describedby={
-                        fieldErrors.confirmNewPassword
-                          ? "reset-password-confirm-error"
-                          : undefined
-                      }
-                      onChange={() => clearFieldError("confirmNewPassword")}
-                      className="h-12 border-0 bg-[#F6F5F8] pr-10 pl-10 text-sm shadow-none placeholder:text-muted-foreground focus-visible:bg-[#F6F5F8] focus-visible:ring-2 focus-visible:ring-[#6366f1] lg:h-16 lg:pr-11 lg:pl-12 lg:text-base"
-                    />
-                    <button
-                      type="button"
-                      onClick={toggleShowConfirmPassword}
-                      className="absolute top-1/2 right-2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-slate-200/80 hover:text-foreground lg:right-2.5 lg:size-8"
-                      aria-label={
-                        showConfirmPassword
-                          ? "Hide confirm password"
-                          : "Show confirm password"
-                      }
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="size-4 lg:size-5" />
-                      ) : (
-                        <Eye className="size-4 lg:size-5" />
-                      )}
-                    </button>
-                  </div>
-                  {fieldErrors.confirmNewPassword ? (
-                    <p
-                      id="reset-password-confirm-error"
-                      className="text-sm text-destructive"
-                      role="alert"
-                    >
-                      {fieldErrors.confirmNewPassword}
-                    </p>
-                  ) : null}
-                </div>
+          <form className="space-y-4" noValidate onSubmit={onSubmit}>
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="newPassword"
+                className="text-sm font-medium text-slate-700"
+              >
+                New password
+              </Label>
+              <div className="relative">
+                <LockKeyhole
+                  className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400"
+                  aria-hidden
+                />
+                <Input
+                  id="newPassword"
+                  type={showPassword ? "text" : "password"}
+                  name="newPassword"
+                  autoComplete="new-password"
+                  placeholder="New password"
+                  aria-invalid={fieldErrors.newPassword ? true : undefined}
+                  aria-describedby={
+                    fieldErrors.newPassword
+                      ? "reset-password-new-error"
+                      : undefined
+                  }
+                  onChange={() => clearFieldError("newPassword")}
+                  className={inputClassName}
+                />
+                <button
+                  type="button"
+                  onClick={toggleShowPassword}
+                  className="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                  aria-label={
+                    showPassword ? "Hide new password" : "Show new password"
+                  }
+                >
+                  {showPassword ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
+                </button>
               </div>
-
-              {formError ? (
+              {fieldErrors.newPassword ? (
                 <p
-                  className="text-sm font-medium text-destructive"
+                  id="reset-password-new-error"
+                  className="text-sm text-red-600"
                   role="alert"
                 >
-                  {formError}
+                  {fieldErrors.newPassword}
                 </p>
               ) : null}
+            </div>
 
-              <Button
-                type="submit"
-                disabled={isResettingPassword || !canSubmit}
-                aria-busy={isResettingPassword}
-                className="h-11 w-full rounded-lg bg-[#ff8c42] text-sm font-semibold text-white shadow-sm hover:bg-[#ff8c42]/92 disabled:opacity-90 lg:h-14 lg:text-base"
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="confirmNewPassword"
+                className="text-sm font-medium text-slate-700"
               >
-                {isResettingPassword ? (
-                  <span className="inline-flex items-center justify-center gap-2">
-                    <Loader2
-                      className="size-4 shrink-0 animate-spin lg:size-5"
-                      aria-hidden
-                    />
-                    {pendingLabel}
-                  </span>
-                ) : (
-                  submitLabel
-                )}
-              </Button>
-            </form>
-          </div>
-        </section>
-      </div>
-    </div>
+                Confirm password
+              </Label>
+              <div className="relative">
+                <LockKeyhole
+                  className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400"
+                  aria-hidden
+                />
+                <Input
+                  id="confirmNewPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  name="confirmNewPassword"
+                  autoComplete="new-password"
+                  placeholder="Confirm new password"
+                  aria-invalid={
+                    fieldErrors.confirmNewPassword ? true : undefined
+                  }
+                  aria-describedby={
+                    fieldErrors.confirmNewPassword
+                      ? "reset-password-confirm-error"
+                      : undefined
+                  }
+                  onChange={() => clearFieldError("confirmNewPassword")}
+                  className={inputClassName}
+                />
+                <button
+                  type="button"
+                  onClick={toggleShowConfirmPassword}
+                  className="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                  aria-label={
+                    showConfirmPassword
+                      ? "Hide confirm password"
+                      : "Show confirm password"
+                  }
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
+                </button>
+              </div>
+              {fieldErrors.confirmNewPassword ? (
+                <p
+                  id="reset-password-confirm-error"
+                  className="text-sm text-red-600"
+                  role="alert"
+                >
+                  {fieldErrors.confirmNewPassword}
+                </p>
+              ) : null}
+            </div>
+
+            {formError ? (
+              <p className="text-sm font-medium text-red-600" role="alert">
+                {formError}
+              </p>
+            ) : null}
+
+            <Button
+              type="submit"
+              disabled={isResettingPassword || !canSubmit}
+              aria-busy={isResettingPassword}
+              className={cn(
+                "h-11 w-full rounded-xl bg-[#4169E1] text-sm font-semibold text-white hover:bg-[#3558C8] disabled:opacity-80"
+              )}
+            >
+              {isResettingPassword ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2
+                    className="size-4 shrink-0 animate-spin"
+                    aria-hidden
+                  />
+                  {pendingLabel}
+                </span>
+              ) : (
+                submitLabel
+              )}
+            </Button>
+          </form>
+        </div>
+      </AuthCard>
+    </AuthPageShell>
   )
 }

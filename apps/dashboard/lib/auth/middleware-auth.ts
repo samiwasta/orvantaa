@@ -39,3 +39,9 @@ export function sessionMustChangePassword(
 ): boolean {
   return session?.mustChangePassword === true
 }
+
+export function sessionNeedsOnboarding(
+  session: AccessTokenPayload | null
+): boolean {
+  return session?.needsOnboarding === true
+}

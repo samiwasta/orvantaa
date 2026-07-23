@@ -164,7 +164,8 @@ model Board {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  schools School[]
+  schools             School[]
+  onboardedStudents   User[]    @relation("UserOnboardingBoard")
 
   @@map("boards")
 }
@@ -177,6 +178,8 @@ model School {
   code               String?                  @unique
   boardId            String
   board              Board                    @relation(fields: [boardId], references: [id], onDelete: Restrict)
+  city               String?
+  state              String?
   subscriptionStatus SchoolSubscriptionStatus @default(INACTIVE)
   billingEmail         String?
   createdAt            DateTime                 @default(now())
@@ -186,8 +189,10 @@ model School {
   subscriptionPayments    SchoolSubscriptionPayment[]
   recurringSubscription   SchoolRecurringSubscription?
   contacts                SchoolContact[]
+  onboardedStudents       User[]                  @relation("UserOnboardingSchool")
 
   @@index([boardId])
+  @@index([name])
   @@map("schools")
 }
 
@@ -504,12 +509,22 @@ model User {
   phone        String?
   mailStatus   StudentMailStatus @default(NOT_SENT)
   mustChangePassword Boolean @default(false)
+  onboardingCompleted Boolean @default(true)
   firstName    String
   lastName     String   @default("")
+  dateOfBirth  DateTime?
   gender       Gender   @default(FEMALE)
   role         UserRole @default(STUDENT)
   sectionId    String?
   section      Section? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  onboardingSchoolId String?
+  onboardingSchool   School? @relation("UserOnboardingSchool", fields: [onboardingSchoolId], references: [id], onDelete: SetNull)
+  onboardingBoardId  String?
+  onboardingBoard    Board?  @relation("UserOnboardingBoard", fields: [onboardingBoardId], references: [id], onDelete: SetNull)
+  onboardingCity     String?
+  onboardingState    String?
+  onboardingStandard String?
+  onboardingSection  String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -526,6 +541,8 @@ model User {
 
   @@index([sectionId])
   @@index([role])
+  @@index([onboardingSchoolId])
+  @@index([onboardingBoardId])
   @@map("users")
 }
 

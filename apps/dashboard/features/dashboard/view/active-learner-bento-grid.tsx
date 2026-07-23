@@ -151,8 +151,6 @@ export function ActiveLearnerBentoGrid({
         </motion.div>
       </motion.div>
 
-      <div className="h-px w-full bg-[#E0E7FF]/90" aria-hidden />
-
       <motion.div
         className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 lg:grid-cols-3"
         variants={staggerContainer}

@@ -1,6 +1,9 @@
+import { Prisma } from "@prisma/client"
+
 import { mapPrismaRoleToAppRole } from "@/features/user/model/user"
 import { prisma } from "@/lib/db"
 
+import { EmailAlreadyRegisteredError } from "../model/auth-errors"
 import type { AuthUserRecord } from "../model/auth-session"
 
 function mapRow(row: {
@@ -12,6 +15,7 @@ function mapRow(row: {
   role: "ADMIN" | "STUDENT"
   passwordHash: string
   mustChangePassword: boolean
+  onboardingCompleted: boolean
 }): AuthUserRecord {
   return {
     id: row.id,
@@ -22,7 +26,18 @@ function mapRow(row: {
     role: mapPrismaRoleToAppRole(row.role),
     passwordHash: row.passwordHash,
     mustChangePassword: row.mustChangePassword,
+    onboardingCompleted: row.onboardingCompleted,
   }
+}
+
+export type CreateIndividualStudentInput = {
+  username: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  phone: string
+  dateOfBirth: Date
 }
 
 export class AuthUserRepository {
@@ -41,6 +56,37 @@ export class AuthUserRepository {
       },
     })
     return row ? mapRow(row) : null
+  }
+
+  async createIndividualStudent(
+    input: CreateIndividualStudentInput
+  ): Promise<AuthUserRecord> {
+    try {
+      const row = await prisma.user.create({
+        data: {
+          username: input.username,
+          email: input.email,
+          passwordHash: input.passwordHash,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          phone: input.phone,
+          dateOfBirth: input.dateOfBirth,
+          role: "STUDENT",
+          mustChangePassword: false,
+          onboardingCompleted: false,
+          sectionId: null,
+        },
+      })
+      return mapRow(row)
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        throw new EmailAlreadyRegisteredError()
+      }
+      throw error
+    }
   }
 
   async updatePasswordHash(

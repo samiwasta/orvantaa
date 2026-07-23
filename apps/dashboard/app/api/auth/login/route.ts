@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import {
   InvalidCredentialsError,
+  LoginModeMismatchError,
   SchoolSubscriptionBlockedError,
 } from "@/features/auth/model/auth-errors"
 import { loginSchema } from "@/features/auth/model/schemas"
@@ -40,18 +41,23 @@ export async function POST(request: Request) {
     const result = await authService.login(
       parsed.data.username,
       parsed.data.password,
+      parsed.data.loginMode,
       rememberMe
     )
 
     const response = NextResponse.json({
       user: result.user,
       mustChangePassword: result.mustChangePassword,
+      needsOnboarding: result.needsOnboarding,
     })
     setAuthCookie(response, result.accessToken, rememberMe)
     return response
   } catch (error) {
     if (error instanceof InvalidCredentialsError) {
       return NextResponse.json({ message: error.message }, { status: 401 })
+    }
+    if (error instanceof LoginModeMismatchError) {
+      return NextResponse.json({ message: error.message }, { status: 403 })
     }
     if (error instanceof SchoolSubscriptionBlockedError) {
       return NextResponse.json(

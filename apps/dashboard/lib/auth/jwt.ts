@@ -12,6 +12,7 @@ export type AccessTokenPayload = {
   username: string
   role: AppUserRole
   mustChangePassword?: boolean
+  needsOnboarding?: boolean
 }
 
 function getJwtSecret(): Uint8Array {
@@ -46,6 +47,7 @@ export async function signAccessToken(
     username: payload.username,
     role: payload.role,
     ...(payload.mustChangePassword ? { mcp: true } : {}),
+    ...(payload.needsOnboarding ? { onb: true } : {}),
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(payload.sub)
@@ -76,6 +78,7 @@ export async function verifyAccessToken(
     username,
     role,
     mustChangePassword: payload.mcp === true ? true : undefined,
+    needsOnboarding: payload.onb === true ? true : undefined,
   }
 }
 

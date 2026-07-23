@@ -24,6 +24,9 @@ const nextConfig = {
   experimental: {
     middlewareClientMaxBodySize: 55 * 1024 * 1024,
   },
+  env: {
+    ONBOARDING_PROTECTED: process.env.ONBOARDING_PROTECTED,
+  },
   images: {
     remotePatterns: r2ImageRemotePatterns(process.env.R2_PUBLIC_URL?.trim()),
   },

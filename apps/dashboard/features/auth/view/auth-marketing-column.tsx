@@ -8,21 +8,21 @@ export function AuthMarketingColumn({
   imageAlt = "Girl with laptop",
 }: AuthMarketingColumnProps) {
   return (
-    <section className="relative flex min-h-0 w-full flex-col justify-between gap-4 bg-[#6366f1] p-6 text-white md:min-h-[560px] md:w-1/2 lg:min-h-[600px] lg:p-10">
+    <section className="relative flex min-h-0 w-full flex-col justify-between gap-4 bg-[#4169E1] p-6 text-white md:min-h-[560px] md:w-1/2 lg:min-h-[600px] lg:p-10">
       <div className="flex items-center justify-center">
-        <div className="rounded-lg bg-white px-3 py-1.5 shadow-sm ring-1 shadow-black/15 ring-black/5">
+        <div className="rounded-xl bg-white px-4 py-2 shadow-sm">
           <Image
             src="/orvantaa-logo.png"
             alt="Orvantaa"
-            width={120}
-            height={32}
-            className="h-6 w-auto max-w-[120px] object-contain sm:h-7 sm:max-w-[132px]"
+            width={1159}
+            height={267}
             priority
+            className="h-8 w-auto max-w-[180px] object-contain"
           />
         </div>
       </div>
 
-      <div className="relative mx-auto hidden min-h-[260px] w-full max-w-lg flex-1 flex-col items-center justify-center py-4 md:flex md:min-h-[280px] md:py-4 lg:min-h-[320px] lg:py-6">
+      <div className="relative mx-auto hidden min-h-[260px] w-full max-w-lg flex-1 flex-col items-center justify-center py-4 md:flex md:min-h-[280px] lg:min-h-[320px]">
         <div className="relative z-0 flex w-full justify-center px-3">
           <Image
             src="/girl-with-laptop.svg"
@@ -39,7 +39,7 @@ export function AuthMarketingColumn({
         <h2 className="font-heading text-xl leading-snug font-bold lg:text-2xl">
           Learn smarter, not harder
         </h2>
-        <p className="max-w-sm text-sm leading-relaxed text-white/90">
+        <p className="mx-auto max-w-sm text-sm leading-relaxed text-white/90">
           Practice concepts, track your progress, and improve with AI-powered
           learning.
         </p>

@@ -5,6 +5,8 @@ import {
   AUTH_API_PUBLIC_PATHS,
   AUTH_COOKIE_NAME,
   CHANGE_PASSWORD_PATH,
+  ONBOARDING_API_PATH_PREFIX,
+  ONBOARDING_PATH,
   PUBLIC_PATH_PREFIXES,
   SUBSCRIPTION_UNAVAILABLE_PATH,
 } from "@/lib/auth/constants"
@@ -14,7 +16,12 @@ import {
   forbiddenAuthResponse,
   isStudentSession,
   sessionMustChangePassword,
+  sessionNeedsOnboarding,
 } from "@/lib/auth/middleware-auth"
+
+function readOnboardingProtected(): boolean {
+  return process.env.ONBOARDING_PROTECTED === "true"
+}
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATH_PREFIXES.some(
@@ -37,6 +44,19 @@ function isChangePasswordApiPath(pathname: string): boolean {
   return pathname === "/api/auth/change-password"
 }
 
+function isOnboardingPath(pathname: string): boolean {
+  return (
+    pathname === ONBOARDING_PATH || pathname.startsWith(`${ONBOARDING_PATH}/`)
+  )
+}
+
+function isOnboardingApiPath(pathname: string): boolean {
+  return (
+    pathname === ONBOARDING_API_PATH_PREFIX ||
+    pathname.startsWith(`${ONBOARDING_API_PATH_PREFIX}/`)
+  )
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -55,8 +75,13 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  const onboardingProtected = readOnboardingProtected()
   const mustChangePassword =
     isStudentSession(session) && sessionMustChangePassword(session)
+  const needsOnboarding =
+    onboardingProtected &&
+    isStudentSession(session) &&
+    sessionNeedsOnboarding(session)
 
   if (pathname === "/") {
     return NextResponse.redirect(
@@ -64,7 +89,9 @@ export async function middleware(request: NextRequest) {
         isStudentSession(session)
           ? mustChangePassword
             ? CHANGE_PASSWORD_PATH
-            : "/dashboard"
+            : needsOnboarding
+              ? ONBOARDING_PATH
+              : "/dashboard"
           : "/auth",
         request.url
       )
@@ -88,12 +115,18 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(CHANGE_PASSWORD_PATH, request.url))
     }
     if (isChangePasswordPath(pathname)) {
-      return NextResponse.redirect(new URL("/dashboard", request.url))
+      return NextResponse.redirect(
+        new URL(needsOnboarding ? ONBOARDING_PATH : "/dashboard", request.url)
+      )
     }
     if (pathname === "/auth" || pathname.startsWith("/auth/")) {
-      return NextResponse.redirect(new URL("/dashboard", request.url))
+      return NextResponse.redirect(
+        new URL(needsOnboarding ? ONBOARDING_PATH : "/dashboard", request.url)
+      )
     }
-    return NextResponse.redirect(new URL("/dashboard", request.url))
+    return NextResponse.redirect(
+      new URL(needsOnboarding ? ONBOARDING_PATH : "/dashboard", request.url)
+    )
   }
 
   const isProtected =
@@ -130,6 +163,32 @@ export async function middleware(request: NextRequest) {
     if (!isChangePasswordPath(pathname)) {
       return NextResponse.redirect(new URL(CHANGE_PASSWORD_PATH, request.url))
     }
+  }
+
+  if (needsOnboarding && isProtected) {
+    if (isOnboardingApiPath(pathname)) {
+      return NextResponse.next()
+    }
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { message: "Onboarding required." },
+        { status: 403 }
+      )
+    }
+    if (!isOnboardingPath(pathname)) {
+      return NextResponse.redirect(new URL(ONBOARDING_PATH, request.url))
+    }
+  }
+
+  // When protected, completed / school students cannot open /onboarding.
+  // When false (dev), any logged-in student can open it to build the feature.
+  if (
+    onboardingProtected &&
+    isStudentSession(session) &&
+    !sessionNeedsOnboarding(session) &&
+    isOnboardingPath(pathname)
+  ) {
+    return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 
   return NextResponse.next()

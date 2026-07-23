@@ -3,13 +3,18 @@
 import { useRouter } from "next/navigation"
 import * as React from "react"
 
-import { fieldErrorsFromZod, loginSchema } from "../model/schemas"
+import {
+  fieldErrorsFromZod,
+  type LoginMode,
+  loginSchema,
+} from "../model/schemas"
 
 export type LoginFieldName = "username" | "password"
 
-export function useLoginController() {
+export function useLoginController(loginMode: LoginMode) {
   const router = useRouter()
   const [showPassword, setShowPassword] = React.useState(false)
+  const [rememberMe, setRememberMe] = React.useState(false)
   const [isLoggingIn, setIsLoggingIn] = React.useState(false)
   const [formError, setFormError] = React.useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = React.useState<
@@ -25,6 +30,10 @@ export function useLoginController() {
     setFormError(null)
   }, [])
 
+  const clearFormError = React.useCallback(() => {
+    setFormError(null)
+  }, [])
+
   const onSubmit = React.useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault()
@@ -35,6 +44,7 @@ export function useLoginController() {
       const parsed = loginSchema.safeParse({
         username: fd.get("username"),
         password: fd.get("password"),
+        loginMode,
       })
 
       if (!parsed.success) {
@@ -51,8 +61,6 @@ export function useLoginController() {
       setFormError(null)
       setIsLoggingIn(true)
 
-      const rememberMe = fd.get("rememberMe") === "on"
-
       void (async () => {
         try {
           const response = await fetch("/api/auth/login", {
@@ -61,6 +69,7 @@ export function useLoginController() {
             body: JSON.stringify({
               username: parsed.data.username,
               password: parsed.data.password,
+              loginMode: parsed.data.loginMode,
               rememberMe,
             }),
           })
@@ -69,6 +78,7 @@ export function useLoginController() {
             message?: string
             fieldErrors?: Record<string, string[]>
             mustChangePassword?: boolean
+            needsOnboarding?: boolean
           }
 
           if (!response.ok) {
@@ -82,19 +92,16 @@ export function useLoginController() {
               setFieldErrors(flat)
               return
             }
-            if (response.status === 403) {
-              setFormError(
-                data.message ??
-                  "Your school's subscription is inactive. Contact your school administration."
-              )
-              return
-            }
             setFormError(data.message ?? "Login failed. Please try again.")
             return
           }
 
           router.push(
-            data.mustChangePassword ? "/auth/change-password" : "/dashboard"
+            data.mustChangePassword
+              ? "/auth/change-password"
+              : data.needsOnboarding
+                ? "/onboarding"
+                : "/dashboard"
           )
           router.refresh()
         } catch {
@@ -104,15 +111,18 @@ export function useLoginController() {
         }
       })()
     },
-    [isLoggingIn, router]
+    [isLoggingIn, loginMode, rememberMe, router]
   )
 
   return {
     showPassword,
     toggleShowPassword,
+    rememberMe,
+    setRememberMe,
     fieldErrors,
     formError,
     clearFieldError,
+    clearFormError,
     onSubmit,
     isLoggingIn,
   }

@@ -12,11 +12,18 @@ import {
 import { signAccessToken } from "@/lib/auth/jwt"
 
 import {
+  EmailAlreadyRegisteredError,
   InvalidCredentialsError,
   InvalidResetTokenError,
+  LoginModeMismatchError,
   SchoolSubscriptionBlockedError,
 } from "../model/auth-errors"
 import { type LoginResult, toSafeAuthUser } from "../model/auth-session"
+import {
+  type LoginMode,
+  type RegisterValues,
+  splitFullName,
+} from "../model/schemas"
 import {
   type AuthUserRepository,
   authUserRepository,
@@ -38,6 +45,7 @@ export class AuthService {
   async login(
     identifier: string,
     password: string,
+    loginMode: LoginMode,
     rememberMe = false
   ): Promise<LoginResult> {
     const user = await this.authUsers.findByUsernameOrEmail(identifier)
@@ -55,18 +63,32 @@ export class AuthService {
     }
 
     const access = await this.subscriptions.getStudentSchoolAccess(user.id)
-    if (!isSchoolSubscriptionAccessAllowed(access.status)) {
-      if (
-        access.status === "inactive" ||
-        access.status === "hold" ||
-        access.status === "blocked"
-      ) {
-        throw new SchoolSubscriptionBlockedError(
-          access.status,
-          subscriptionAccessMessage(access.status)
+
+    if (loginMode === "school") {
+      if (access.status === "unassigned") {
+        throw new LoginModeMismatchError(
+          "This is a personal account. Use Personal plan login."
         )
       }
+      if (!isSchoolSubscriptionAccessAllowed(access.status)) {
+        if (
+          access.status === "inactive" ||
+          access.status === "hold" ||
+          access.status === "blocked"
+        ) {
+          throw new SchoolSubscriptionBlockedError(
+            access.status,
+            subscriptionAccessMessage(access.status)
+          )
+        }
+      }
+    } else if (access.status !== "unassigned") {
+      throw new LoginModeMismatchError(
+        "This account is managed by your school. Use School plan login."
+      )
     }
+
+    const needsOnboarding = !user.onboardingCompleted
 
     const accessToken = await signAccessToken(
       {
@@ -74,6 +96,7 @@ export class AuthService {
         username: user.username,
         role: user.role,
         mustChangePassword: user.mustChangePassword,
+        needsOnboarding,
       },
       rememberMe
     )
@@ -82,6 +105,47 @@ export class AuthService {
       accessToken,
       user: toSafeAuthUser(user),
       mustChangePassword: user.mustChangePassword,
+      needsOnboarding,
+    }
+  }
+
+  async registerIndividual(input: RegisterValues): Promise<LoginResult> {
+    const email = input.email.trim().toLowerCase()
+    const existing = await this.authUsers.findByUsernameOrEmail(email)
+    if (existing) {
+      throw new EmailAlreadyRegisteredError()
+    }
+
+    const { firstName, lastName } = splitFullName(input.fullName)
+    const passwordHash = await bcrypt.hash(input.password, 10)
+    const dateOfBirth = new Date(input.dateOfBirth)
+
+    const user = await this.authUsers.createIndividualStudent({
+      username: email,
+      email,
+      passwordHash,
+      firstName,
+      lastName,
+      phone: input.phone.trim(),
+      dateOfBirth,
+    })
+
+    const accessToken = await signAccessToken(
+      {
+        sub: user.id,
+        username: user.username,
+        role: user.role,
+        mustChangePassword: false,
+        needsOnboarding: true,
+      },
+      false
+    )
+
+    return {
+      accessToken,
+      user: toSafeAuthUser(user),
+      mustChangePassword: false,
+      needsOnboarding: true,
     }
   }
 
