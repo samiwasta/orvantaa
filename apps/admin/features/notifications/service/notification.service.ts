@@ -1,4 +1,4 @@
-import type { SupportTicketStatus } from "@prisma/client"
+import type { SupportTicketStatus } from "@/lib/generated/prisma"
 
 import { ticketStatusLabel } from "@/features/queries/model/support-ticket"
 

@@ -1,6 +1,5 @@
 "use server"
 
-import { Prisma } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 
 import {
@@ -11,6 +10,7 @@ import {
   zodFieldErrors,
 } from "@/lib/actions/action-result"
 import { requireStudentSession } from "@/lib/auth/session"
+import { Prisma } from "@/lib/generated/prisma"
 
 import type { ProfilePageData } from "../model/profile"
 import { profilePasswordSchema, profileUpdateSchema } from "../model/profile"

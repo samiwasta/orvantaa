@@ -1,8 +1,3 @@
-import {
-  AdminNotificationKind,
-  AdminNotificationPriority,
-} from "@prisma/client"
-
 import { quizHref } from "@/features/subjects/model/content-navigation"
 import {
   studentTicketHref,
@@ -10,6 +5,10 @@ import {
 } from "@/features/support/model/support-ticket"
 import { CHANGE_PASSWORD_PATH } from "@/lib/auth/constants"
 import { prisma } from "@/lib/db"
+import {
+  AdminNotificationKind,
+  AdminNotificationPriority,
+} from "@/lib/generated/prisma"
 
 import type { UpsertStudentNotificationInput } from "../model/notification"
 import { notificationRepository } from "../repository/notification.repository"

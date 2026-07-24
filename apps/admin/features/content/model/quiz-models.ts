@@ -1,7 +1,7 @@
 import type {
   QuizDifficulty as PrismaQuizDifficulty,
   QuizTimedMode as PrismaQuizTimedMode,
-} from "@prisma/client"
+} from "@/lib/generated/prisma"
 import { isRichContentEmpty } from "@workspace/rich-text"
 import { z } from "zod"
 

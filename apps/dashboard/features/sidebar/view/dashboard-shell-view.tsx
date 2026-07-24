@@ -41,8 +41,8 @@ function DashboardSidebarHeader() {
   return (
     <div
       className={cn(
-        "flex h-12 items-center gap-3",
-        collapsed ? "justify-center" : "px-3"
+        "flex h-12 items-center",
+        collapsed ? "justify-center px-0" : "gap-3 px-3"
       )}
     >
       <button
@@ -50,10 +50,8 @@ function DashboardSidebarHeader() {
         onClick={toggleSidebar}
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         className={cn(
-          "relative inline-flex shrink-0 items-center justify-center text-[#4169E1] transition-colors",
-          "before:absolute before:rounded-lg before:transition-colors hover:before:bg-[#4169E1]/10",
-          "focus-visible:outline-none focus-visible:before:ring-2 focus-visible:before:ring-[#4169E1]/30",
-          collapsed ? "size-9 before:inset-0" : "size-5 before:-inset-1.5"
+          "relative inline-flex size-5 shrink-0 items-center justify-center text-[#4169E1] transition-colors",
+          "focus-visible:ring-2 focus-visible:ring-[#4169E1]/30 focus-visible:outline-none"
         )}
       >
         <Menu className="relative size-5" strokeWidth={2} aria-hidden />
@@ -63,7 +61,7 @@ function DashboardSidebarHeader() {
           href="/dashboard"
           className="flex h-full min-w-0 flex-1 items-center"
         >
-          <BrandLogo size="sm" priority className="shrink-0 object-left" />
+          <BrandLogo size="md" priority className="shrink-0 object-left" />
         </Link>
       ) : null}
     </div>
@@ -86,14 +84,14 @@ export function DashboardShellView({
       <SidebarProvider defaultOpen={defaultSidebarOpen}>
         {!isMobile ? (
           <Sidebar collapsible="icon" variant="floating">
-            <SidebarHeader className="px-2 py-0">
+            <SidebarHeader className="px-2 py-0 group-data-[collapsible=icon]:px-0">
               <DashboardSidebarHeader />
             </SidebarHeader>
 
-            <SidebarContent className="px-2">
+            <SidebarContent className="px-2 group-data-[collapsible=icon]:px-0">
               <SidebarGroup className="p-0">
                 <SidebarGroupContent>
-                  <SidebarMenu className="gap-3 group-data-[collapsible=icon]:pt-4">
+                  <SidebarMenu className="gap-1.5">
                     {navItems.map((item) => {
                       const Icon =
                         item.isActive && item.activeIcon
@@ -108,22 +106,31 @@ export function DashboardShellView({
                             isActive={item.isActive}
                             tooltip={item.title}
                             className={cn(
-                              "rounded-lg px-3 font-medium",
+                              "h-11 justify-start gap-3 rounded-lg px-3 font-medium transition-colors",
                               "[&_svg]:size-5 [&_svg]:shrink-0 [&_svg]:text-[#7B96ED]",
-                              "hover:bg-[#4169E1]/10 hover:text-[#4169E1]",
+                              "hover:bg-transparent! hover:text-[#4169E1]",
                               "hover:[&_svg]:text-[#4169E1]",
+                              "active:bg-transparent!",
                               "data-active:bg-transparent! data-active:font-semibold data-active:text-[#4169E1]",
                               "data-active:[&_svg]:text-[#4169E1]",
-                              "data-active:hover:bg-[#4169E1]/10! data-active:hover:text-[#4169E1]",
+                              "data-active:hover:bg-transparent! data-active:hover:text-[#4169E1]",
                               "data-active:hover:[&_svg]:text-[#4169E1]",
                               "focus-visible:ring-2 focus-visible:ring-[#4169E1]/40",
-                              "group-data-[collapsible=icon]:justify-center",
-                              "group-data-[collapsible=icon]:rounded-lg"
+                              "group-data-[collapsible=icon]:size-auto!",
+                              "group-data-[collapsible=icon]:h-11!",
+                              "group-data-[collapsible=icon]:w-full!",
+                              "group-data-[collapsible=icon]:justify-center!",
+                              "group-data-[collapsible=icon]:gap-0!",
+                              "group-data-[collapsible=icon]:rounded-lg!",
+                              "group-data-[collapsible=icon]:p-0!"
                             )}
                           >
-                            <Link href={item.href} className="gap-3">
+                            <Link
+                              href={item.href}
+                              className="justify-start gap-3 group-data-[collapsible=icon]:justify-center"
+                            >
                               <Icon />
-                              <span className="group-data-[collapsible=icon]:hidden">
+                              <span className="truncate group-data-[collapsible=icon]:hidden">
                                 {item.title}
                               </span>
                             </Link>

@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client"
+import { PrismaClient } from "@/lib/generated/prisma"
 
 import { getPrismaDatabaseUrl } from "../lib/db/connection-url"
 

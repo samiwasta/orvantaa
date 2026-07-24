@@ -1,4 +1,4 @@
-import type { RecurringSubscriptionStatus as PrismaStatus } from "@prisma/client"
+import type { RecurringSubscriptionStatus as PrismaStatus } from "@/lib/generated/prisma"
 import { z } from "zod"
 
 export type RecurringSubscriptionStatus =

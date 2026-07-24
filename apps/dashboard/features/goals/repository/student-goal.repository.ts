@@ -1,11 +1,10 @@
+import { prisma } from "@/lib/db"
 import type {
   StudentGoalSource,
   StudentGoalStatus,
   StudentGoalType,
-} from "@prisma/client"
-import type { Prisma } from "@prisma/client"
-
-import { prisma } from "@/lib/db"
+} from "@/lib/generated/prisma"
+import type { Prisma } from "@/lib/generated/prisma"
 
 import type {
   GeneratedGoalDraft,

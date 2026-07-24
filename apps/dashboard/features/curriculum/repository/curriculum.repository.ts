@@ -1,6 +1,5 @@
-import type { Prisma, QuizDifficulty } from "@prisma/client"
-
 import { prisma } from "@/lib/db"
+import type { Prisma, QuizDifficulty } from "@/lib/generated/prisma"
 
 import {
   chapterWithAssignedContentWhere,

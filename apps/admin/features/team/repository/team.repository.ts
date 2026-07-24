@@ -1,4 +1,4 @@
-import { UserRole } from "@prisma/client"
+import { UserRole } from "@/lib/generated/prisma"
 
 import { isSuperAdminUsername } from "@/lib/auth/super-admin"
 import {

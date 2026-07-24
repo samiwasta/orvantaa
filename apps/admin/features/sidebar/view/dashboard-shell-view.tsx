@@ -45,12 +45,12 @@ function DashboardSidebarBrandLink() {
       <Image
         src={useIcon ? "/orvantaa-icon.png" : "/orvantaa-logo.png"}
         alt="Orvantaa"
-        width={useIcon ? 32 : 120}
-        height={useIcon ? 32 : 32}
+        width={useIcon ? 40 : 168}
+        height={useIcon ? 40 : 40}
         className={
           useIcon
-            ? "size-7 shrink-0 object-contain"
-            : "my-2 h-7 w-auto max-w-[120px] shrink-0 object-contain sm:h-7 sm:max-w-[132px]"
+            ? "size-9 shrink-0 object-contain"
+            : "my-2 h-9 w-auto max-w-[168px] shrink-0 object-contain sm:h-10 sm:max-w-[180px]"
         }
         priority
       />

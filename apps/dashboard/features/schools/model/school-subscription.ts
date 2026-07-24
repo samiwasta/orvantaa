@@ -1,4 +1,4 @@
-import type { SchoolSubscriptionStatus as PrismaStatus } from "@prisma/client"
+import type { SchoolSubscriptionStatus as PrismaStatus } from "@/lib/generated/prisma"
 
 export type SchoolSubscriptionStatus =
   | "active"

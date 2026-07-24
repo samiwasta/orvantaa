@@ -1,10 +1,9 @@
-import type { SupportTicketIssueArea } from "@prisma/client"
-
 import {
   formatClassLabel,
   formatUserFullName,
 } from "@/features/user/model/user"
 import { prisma } from "@/lib/db"
+import type { SupportTicketIssueArea } from "@/lib/generated/prisma"
 
 import {
   issueAreaLabel,

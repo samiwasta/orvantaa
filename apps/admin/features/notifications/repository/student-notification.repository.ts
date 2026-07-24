@@ -2,7 +2,7 @@ import {
   StudentNotificationKind,
   StudentNotificationPriority,
   type SupportTicketStatus,
-} from "@prisma/client"
+} from "@/lib/generated/prisma"
 
 import {
   studentTicketHref,

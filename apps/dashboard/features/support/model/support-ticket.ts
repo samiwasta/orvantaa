@@ -1,8 +1,9 @@
+import { z } from "zod"
+
 import type {
   SupportTicketIssueArea,
   SupportTicketStatus,
-} from "@prisma/client"
-import { z } from "zod"
+} from "@/lib/generated/prisma"
 
 export type TicketIssueArea = SupportTicketIssueArea
 export type TicketStatus = SupportTicketStatus

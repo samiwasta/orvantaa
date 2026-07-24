@@ -1,6 +1,5 @@
-import type { NoteProgressStatus } from "@prisma/client"
-
 import { prisma } from "@/lib/db"
+import type { NoteProgressStatus } from "@/lib/generated/prisma"
 
 export class NoteProgressRepository {
   async upsertProgress(

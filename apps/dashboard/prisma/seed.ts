@@ -1,11 +1,12 @@
+import bcrypt from "bcryptjs"
+
 import {
   BoardKind,
   Gender,
   PrismaClient,
   QuizDifficulty,
   UserRole,
-} from "@prisma/client"
-import bcrypt from "bcryptjs"
+} from "@/lib/generated/prisma"
 
 const prisma = new PrismaClient()
 

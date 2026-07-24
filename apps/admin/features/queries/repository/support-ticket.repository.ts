@@ -1,4 +1,4 @@
-import type { SupportTicketStatus } from "@prisma/client"
+import type { SupportTicketStatus } from "@/lib/generated/prisma"
 
 import { formatClassLabel, formatUserFullName } from "@/features/user/model/user"
 import { prisma } from "@/lib/db"

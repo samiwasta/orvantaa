@@ -1,4 +1,4 @@
-import { type Prisma, UserRole } from "@prisma/client"
+import { type Prisma, UserRole } from "@/lib/generated/prisma"
 
 import { formatClassDisplayName, parseClassLevel } from "@/features/classes/model/class-list-item"
 import { mapPrismaGenderToUserGender, mapUserGenderToPrismaGender } from "@/features/user/model/user"

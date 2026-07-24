@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/lib/generated/prisma"
 import { isRichContentEmpty } from "@workspace/rich-text"
 
 import { prisma } from "@/lib/db"

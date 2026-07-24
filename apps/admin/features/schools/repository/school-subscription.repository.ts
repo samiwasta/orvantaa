@@ -1,4 +1,4 @@
-import type { SchoolSubscriptionStatus as PrismaSchoolSubscriptionStatus } from "@prisma/client"
+import type { SchoolSubscriptionStatus as PrismaSchoolSubscriptionStatus } from "@/lib/generated/prisma"
 
 import { prisma } from "@/lib/db"
 import type { RazorpayPaymentRecord } from "@/lib/payments/razorpay"

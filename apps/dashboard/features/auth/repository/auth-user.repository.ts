@@ -1,7 +1,6 @@
-import { Prisma } from "@prisma/client"
-
 import { mapPrismaRoleToAppRole } from "@/features/user/model/user"
 import { prisma } from "@/lib/db"
+import { Prisma } from "@/lib/generated/prisma"
 
 import { EmailAlreadyRegisteredError } from "../model/auth-errors"
 import type { AuthUserRecord } from "../model/auth-session"

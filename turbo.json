@@ -19,13 +19,27 @@
     "SEED_ADMIN_PASSWORD",
     "SEED_ADMIN_FIRST_NAME",
     "SEED_ADMIN_LAST_NAME",
-    "SEED_ADMIN_GENDER"
+    "SEED_ADMIN_GENDER",
+    "R2_PUBLIC_URL",
+    "R2_ACCOUNT_ID",
+    "R2_ACCESS_KEY_ID",
+    "R2_SECRET_ACCESS_KEY",
+    "R2_BUCKET_NAME",
+    "R2_ENDPOINT"
   ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**"]
+      "outputs": [".next/**", "!.next/cache/**"],
+      "env": [
+        "R2_PUBLIC_URL",
+        "R2_ACCOUNT_ID",
+        "R2_ACCESS_KEY_ID",
+        "R2_SECRET_ACCESS_KEY",
+        "R2_BUCKET_NAME",
+        "R2_ENDPOINT"
+      ]
     },
     "lint": {
       "dependsOn": ["^lint"]

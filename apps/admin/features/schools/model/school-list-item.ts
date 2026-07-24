@@ -1,4 +1,4 @@
-import type { SchoolSubscriptionStatus as PrismaSchoolSubscriptionStatus } from "@prisma/client"
+import type { SchoolSubscriptionStatus as PrismaSchoolSubscriptionStatus } from "@/lib/generated/prisma"
 import { z } from "zod"
 
 export type SchoolBoardKind = "board" | "university"

@@ -1,4 +1,4 @@
-import type { Gender, User as PrismaUser, UserRole } from "@prisma/client"
+import type { Gender, User as PrismaUser, UserRole } from "@/lib/generated/prisma"
 
 import type { UserGender } from "@/features/sidebar/model/user-gender"
 

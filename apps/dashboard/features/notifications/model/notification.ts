@@ -1,7 +1,3 @@
-import type {
-  StudentNotificationKind as PrismaKind,
-  StudentNotificationPriority as PrismaPriority,
-} from "@prisma/client"
 import type { LucideIcon } from "lucide-react"
 import {
   Bell,
@@ -11,6 +7,11 @@ import {
   LifeBuoy,
   Wrench,
 } from "lucide-react"
+
+import type {
+  StudentNotificationKind as PrismaKind,
+  StudentNotificationPriority as PrismaPriority,
+} from "@/lib/generated/prisma"
 
 export type NotificationKind =
   | "quiz_completed"

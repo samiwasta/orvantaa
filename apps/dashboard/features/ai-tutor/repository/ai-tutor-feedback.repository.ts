@@ -1,7 +1,6 @@
-import type { AiTutorMessageFeedback } from "@prisma/client"
-
 import type { MessageFeedback } from "@/features/ai-tutor/model/message-feedback"
 import { prisma } from "@/lib/db"
+import type { AiTutorMessageFeedback } from "@/lib/generated/prisma"
 
 export type AiTutorFeedbackInsight = {
   content: string

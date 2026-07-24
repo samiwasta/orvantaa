@@ -1,5 +1,3 @@
-import type { AiTutorMessageRole, Prisma } from "@prisma/client"
-
 import {
   type ChatMessage,
   type ChatMessageAttachment,
@@ -13,6 +11,7 @@ import {
 } from "@/features/ai-tutor/repository/ai-tutor-feedback.repository"
 import { generateAiTutorChatTitle } from "@/lib/ai/generate-chat-title"
 import { prisma } from "@/lib/db"
+import type { AiTutorMessageRole, Prisma } from "@/lib/generated/prisma"
 
 type SessionRow = {
   id: string
@@ -23,7 +22,7 @@ type SessionRow = {
     role: AiTutorMessageRole
     content: string
     attachments: Prisma.JsonValue | null
-    feedback: import("@prisma/client").AiTutorMessageFeedback | null
+    feedback: import("@/lib/generated/prisma").AiTutorMessageFeedback | null
     createdAt: Date
   }>
 }

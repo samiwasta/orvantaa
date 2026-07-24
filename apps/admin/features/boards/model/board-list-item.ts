@@ -1,4 +1,4 @@
-import type { BoardKind as PrismaBoardKind } from "@prisma/client"
+import type { BoardKind as PrismaBoardKind } from "@/lib/generated/prisma"
 import { z } from "zod"
 
 export type BoardKind = "board" | "university"

@@ -1,6 +1,6 @@
 "use server"
 
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/lib/generated/prisma"
 import { revalidatePath } from "next/cache"
 
 import { schoolDetailHref } from "@/features/schools/model/school-list-item"
