@@ -24,6 +24,7 @@ import type { StudentNotificationSummary } from "@/features/notifications/model/
 import type { DashboardUserProfile } from "@/features/user/model/user"
 
 import type { DashboardShellController } from "../controller/use-dashboard-shell-controller"
+import { useDashboardChrome } from "../model/dashboard-chrome-context"
 import { DashboardBottomNav } from "./dashboard-bottom-nav"
 import { SidebarInsetHeader } from "./sidebar-inset-header"
 
@@ -78,11 +79,13 @@ export function DashboardShellView({
   children,
 }: DashboardShellViewProps) {
   const isMobile = useIsMobile()
+  const { immersive } = useDashboardChrome()
+  const showChrome = !immersive
 
   return (
     <TooltipProvider>
       <SidebarProvider defaultOpen={defaultSidebarOpen}>
-        {!isMobile ? (
+        {showChrome && !isMobile ? (
           <Sidebar collapsible="icon" variant="floating">
             <SidebarHeader className="px-2 py-0 group-data-[collapsible=icon]:px-0">
               <DashboardSidebarHeader />
@@ -147,29 +150,36 @@ export function DashboardShellView({
 
         <SidebarInset
           className={cn(
-            !isMobile && "md:pt-2",
+            showChrome && !isMobile && "md:pt-2",
             isAiTutorPage &&
-              "h-svh max-h-svh min-h-0 overflow-x-hidden overflow-y-auto"
+              "h-svh max-h-svh min-h-0 overflow-x-hidden overflow-y-auto",
+            immersive && "min-h-svh"
           )}
         >
-          <SidebarInsetHeader
-            pageTitle={pageTitle}
-            userProfile={userProfile}
-            notifications={notifications}
-          />
+          {showChrome ? (
+            <SidebarInsetHeader
+              pageTitle={pageTitle}
+              userProfile={userProfile}
+              notifications={notifications}
+            />
+          ) : null}
           <div
             className={cn(
               "flex flex-1 flex-col gap-4 p-4 pt-6 md:p-6",
               isMobile &&
+                showChrome &&
                 !isAiTutorPage &&
                 "pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))]",
-              isAiTutorPage && "min-h-0 flex-1 gap-0 overflow-visible p-0"
+              isAiTutorPage && "min-h-0 flex-1 gap-0 overflow-visible p-0",
+              immersive && "gap-3 p-3 pt-3 md:p-4"
             )}
           >
             {children}
           </div>
         </SidebarInset>
-        {isMobile ? <DashboardBottomNav navItems={navItems} /> : null}
+        {showChrome && isMobile ? (
+          <DashboardBottomNav navItems={navItems} />
+        ) : null}
       </SidebarProvider>
     </TooltipProvider>
   )

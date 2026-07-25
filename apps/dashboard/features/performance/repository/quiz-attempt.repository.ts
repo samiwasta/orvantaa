@@ -8,6 +8,8 @@ type SubmitQuizAttemptInput = {
     optionId: string
   }>
   timeSpentSeconds?: number
+  proctorWarnings?: number
+  terminatedByProctor?: boolean
 }
 
 export class QuizAttemptRepository {
@@ -32,15 +34,25 @@ export class QuizAttemptRepository {
       quiz.questions.map((question) => [question.id, question])
     )
 
-    if (input.answers.length !== quiz.questions.length) {
-      throw new Error("All quiz questions must be answered.")
-    }
+    const gradedAnswers: Array<{
+      questionId: string
+      selectedOptionId: string
+      isCorrect: boolean
+    }> = []
+    const seenQuestionIds = new Set<string>()
 
-    const gradedAnswers = input.answers.map((answer) => {
+    for (const answer of input.answers) {
       const question = questionMap.get(answer.questionId)
       if (!question) {
         throw new Error("Invalid question in quiz attempt.")
       }
+      if (seenQuestionIds.has(question.id)) {
+        throw new Error("Duplicate question in quiz attempt.")
+      }
+      seenQuestionIds.add(question.id)
+
+      // Unanswered questions are kept out of the answer rows and graded as wrong.
+      if (!answer.optionId) continue
 
       const selectedOption = question.options.find(
         (option) => option.id === answer.optionId
@@ -49,12 +61,12 @@ export class QuizAttemptRepository {
         throw new Error("Invalid option in quiz attempt.")
       }
 
-      return {
+      gradedAnswers.push({
         questionId: question.id,
         selectedOptionId: selectedOption.id,
         isCorrect: selectedOption.isCorrect,
-      }
-    })
+      })
+    }
 
     const correctCount = gradedAnswers.filter(
       (answer) => answer.isCorrect
@@ -70,6 +82,9 @@ export class QuizAttemptRepository {
         correctCount,
         totalQuestions,
         timeSpentSeconds: input.timeSpentSeconds,
+        answeredCount: gradedAnswers.length,
+        proctorWarnings: input.proctorWarnings ?? 0,
+        terminatedByProctor: input.terminatedByProctor ?? false,
         answers: {
           create: gradedAnswers,
         },

@@ -1,6 +1,5 @@
 "use client"
 
-import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { cn } from "@workspace/ui/lib/utils"
 import {
@@ -9,27 +8,36 @@ import {
   Check,
   CheckCircle2,
   ChevronRight,
-  Circle,
-  Clock,
   HelpCircle,
   Lock,
-  PlayCircle,
-  Trophy,
 } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
 import type {
   ChapterItem,
   QuizDifficulty,
   QuizItem,
   TopicItem,
-  TopicStatus,
 } from "../model/chapter-data"
-import { chapterSlug } from "../model/chapter-data"
+import { chapterSlug, isTimedQuiz } from "../model/chapter-data"
 import { quizHref, topicFirstNoteHref } from "../model/content-navigation"
 
-// ── Circular progress ─────────────────────────────────────────────────────────
+type Tab = "notes" | "quiz"
+
+type ChapterDetailViewProps = {
+  subjectSlug: string
+  chapter: ChapterItem
+  topics: TopicItem[]
+  quizzes: QuizItem[]
+  objectives: string[]
+}
+
+const difficultyLabel: Record<QuizDifficulty, string> = {
+  easy: "Easy",
+  medium: "Medium",
+  hard: "Hard",
+}
 
 function CircularProgress({
   value,
@@ -91,52 +99,84 @@ function CircularProgress({
   )
 }
 
-// ── Progress strip ────────────────────────────────────────────────────────────
-
-function ProgressStrip({
+function TabProgress({
+  label,
   completed,
   total,
-  color = "#6C5CE7",
 }: {
+  label: string
   completed: number
   total: number
-  color?: string
 }) {
   const pct = total === 0 ? 0 : Math.round((completed / total) * 100)
+
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-      <div
-        className="h-full rounded-full transition-all duration-500"
-        style={{ width: `${pct}%`, backgroundColor: color }}
-      />
+    <div className="space-y-2.5 border-b border-[#EEF1F8] px-4 py-4 sm:px-5">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-sm font-medium text-foreground">
+          {completed}
+          <span className="font-normal text-muted-foreground">
+            {" "}
+            of {total} {label}
+          </span>
+        </p>
+        <span className="text-sm font-semibold text-[#6C5CE7] tabular-nums">
+          {pct}%
+        </span>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-[#EEF1F8]">
+        <div
+          className="h-full rounded-full bg-[#6C5CE7] transition-all duration-500"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </div>
   )
 }
 
-// ── Topic row ─────────────────────────────────────────────────────────────────
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="px-4 py-10 text-center sm:px-5">
+      <p className="text-sm text-muted-foreground">{message}</p>
+    </div>
+  )
+}
 
-const topicIconMap: Record<TopicStatus, React.ReactNode> = {
-  completed: (
-    <CheckCircle2
-      className="size-5 shrink-0 text-emerald-500"
-      strokeWidth={2}
-      aria-hidden
-    />
-  ),
-  in_progress: (
-    <PlayCircle
-      className="size-5 shrink-0 text-[#6C5CE7]"
-      strokeWidth={2}
-      aria-hidden
-    />
-  ),
-  not_started: (
-    <Circle
-      className="size-5 shrink-0 text-border"
-      strokeWidth={1.5}
-      aria-hidden
-    />
-  ),
+function StatusMark({
+  index,
+  state,
+}: {
+  index: number
+  state: "completed" | "active" | "available" | "locked"
+}) {
+  if (state === "completed") {
+    return (
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+        <CheckCircle2 className="size-5" strokeWidth={2} aria-hidden />
+      </span>
+    )
+  }
+
+  if (state === "locked") {
+    return (
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#F3F4F8] text-slate-400">
+        <Lock className="size-4" strokeWidth={2} aria-hidden />
+      </span>
+    )
+  }
+
+  return (
+    <span
+      className={cn(
+        "flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold tabular-nums",
+        state === "active"
+          ? "bg-[#6C5CE7] text-white shadow-[0_8px_18px_-10px_rgba(108,92,231,0.8)]"
+          : "bg-[#F3F4F8] text-slate-500"
+      )}
+    >
+      {index + 1}
+    </span>
+  )
 }
 
 function TopicRow({
@@ -144,208 +184,98 @@ function TopicRow({
   chapterSlug: chapterSlugParam,
   topic,
   index,
+  isNext,
 }: {
   subjectSlug: string
   chapterSlug: string
   topic: TopicItem
   index: number
+  isNext: boolean
 }) {
   const locked = topic.status === "not_started" || !topic.firstNoteId
-  const topicHref = topicFirstNoteHref(
+  const completed = topic.status === "completed"
+  const active = topic.status === "in_progress" || isNext
+  const href = topicFirstNoteHref(
     subjectSlug,
     chapterSlugParam,
     topic.id,
     topic.firstNoteId
   )
 
+  const state = locked
+    ? "locked"
+    : completed
+      ? "completed"
+      : active
+        ? "active"
+        : "available"
+
   const rowClassName = cn(
-    "group flex items-center gap-4 rounded-xl px-4 py-4 transition-all",
-    topic.status === "completed" && "cursor-pointer hover:bg-emerald-50/60",
-    topic.status === "in_progress" &&
-      "cursor-pointer bg-violet-50/70 ring-1 ring-[#6C5CE7]/12 hover:bg-violet-50",
-    locked && "cursor-default opacity-40"
+    "group block rounded-2xl px-3.5 py-3.5 transition-colors sm:px-4 sm:py-4",
+    locked && "cursor-default",
+    !locked && "cursor-pointer",
+    active && !completed && "bg-[#F5F3FF]",
+    completed && "hover:bg-emerald-50/40",
+    !locked && !completed && !active && "hover:bg-[#F8F9FC]"
   )
 
-  const inner = (
-    <>
-      {/* Step badge */}
-      <span
-        className={cn(
-          "flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold tabular-nums",
-          topic.status === "completed" && "bg-emerald-100 text-emerald-700",
-          topic.status === "in_progress" && "bg-violet-100 text-[#6C5CE7]",
-          locked && "bg-muted text-muted-foreground"
-        )}
-      >
-        {index + 1}
+  const action =
+    active && !completed ? (
+      <span className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-[#FF8A3D] text-sm font-semibold text-white shadow-[0_8px_18px_-10px_rgba(255,138,61,0.8)] sm:h-9 sm:w-auto sm:px-4 sm:text-xs">
+        Continue
       </span>
+    ) : locked ? (
+      <span className="text-[11px] font-medium text-slate-400 sm:shrink-0">
+        Locked
+      </span>
+    ) : (
+      <ChevronRight
+        className="hidden size-4 shrink-0 text-slate-300 transition-colors group-hover:text-slate-500 sm:block"
+        aria-hidden
+      />
+    )
 
-      {/* Status icon */}
-      {topicIconMap[topic.status]}
+  const inner = (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <StatusMark index={index} state={state} />
 
-      {/* Title + duration */}
-      <div className="min-w-0 flex-1">
-        <p
-          className={cn(
-            "text-sm leading-snug font-semibold",
-            locked ? "text-muted-foreground" : "text-foreground"
-          )}
-        >
-          {topic.title}
-        </p>
-        <div className="mt-1 flex items-center gap-1.5">
-          <Clock className="size-3.5 text-muted-foreground/50" aria-hidden />
-          <span className="text-xs text-muted-foreground">
+        <div className="min-w-0 flex-1 pt-0.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <p
+              className={cn(
+                "text-[15px] leading-snug font-semibold tracking-tight sm:text-sm",
+                locked ? "text-slate-400" : "text-foreground"
+              )}
+            >
+              {topic.title}
+            </p>
+            {active && !completed ? (
+              <span className="rounded-full bg-[#6C5CE7]/10 px-2 py-0.5 text-[10px] font-semibold text-[#6C5CE7]">
+                Up next
+              </span>
+            ) : null}
+          </div>
+          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
             {topic.duration}
-          </span>
+            {completed ? " · Completed" : ""}
+          </p>
         </div>
       </div>
 
-      {/* Action */}
-      {topic.status === "in_progress" && (
-        <span className="inline-flex h-8 shrink-0 items-center rounded-xl bg-[#FF8A3D] px-4 text-xs font-semibold text-white shadow-sm shadow-orange-200/60">
-          Continue
-        </span>
-      )}
-      {topic.status === "completed" && (
-        <ChevronRight
-          className="size-4 shrink-0 text-muted-foreground/25 transition-colors group-hover:text-muted-foreground/60"
-          aria-hidden
-        />
-      )}
-    </>
-  )
-
-  if (locked || !topicHref) {
-    return <div className={rowClassName}>{inner}</div>
-  }
-
-  return (
-    <Link href={topicHref} className={rowClassName}>
-      {inner}
-    </Link>
-  )
-}
-
-// ── Quiz row ──────────────────────────────────────────────────────────────────
-
-const difficultyMeta: Record<
-  QuizDifficulty,
-  { label: string; className: string }
-> = {
-  easy: {
-    label: "Easy",
-    className: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/80",
-  },
-  medium: {
-    label: "Medium",
-    className: "bg-amber-50 text-amber-700 ring-1 ring-amber-200/80",
-  },
-  hard: {
-    label: "Hard",
-    className: "bg-red-50 text-red-700 ring-1 ring-red-200/80",
-  },
-}
-
-function QuizRow({
-  subjectSlug,
-  chapterSlug: chapterSlugParam,
-  quiz,
-}: {
-  subjectSlug: string
-  chapterSlug: string
-  quiz: QuizItem
-}) {
-  const locked = quiz.status === "locked"
-  const completed = quiz.status === "completed"
-  const href = quizHref(subjectSlug, chapterSlugParam, quiz.id)
-
-  const rowClassName = cn(
-    "group flex items-center gap-4 rounded-xl px-4 py-4 transition-all",
-    locked && "cursor-default opacity-40",
-    completed && "cursor-pointer bg-violet-50/50 hover:bg-violet-50/80",
-    !locked && !completed && "cursor-pointer hover:bg-muted/50"
-  )
-
-  const inner = (
-    <>
-      {/* Icon tile */}
       <div
         className={cn(
-          "flex size-10 shrink-0 items-center justify-center rounded-xl",
-          locked && "bg-muted",
-          completed && "bg-emerald-100",
-          !locked && !completed && "bg-violet-100"
+          "sm:shrink-0",
+          active && !completed && "pl-12 sm:pl-0",
+          locked && "pl-12 sm:pl-0"
         )}
       >
-        {locked ? (
-          <Lock
-            className="size-4 text-muted-foreground/40"
-            strokeWidth={2}
-            aria-hidden
-          />
-        ) : completed ? (
-          <Trophy
-            className="size-4 text-emerald-600"
-            strokeWidth={2}
-            aria-hidden
-          />
-        ) : (
-          <HelpCircle
-            className="size-4 text-[#6C5CE7]"
-            strokeWidth={2}
-            aria-hidden
-          />
-        )}
+        {action}
       </div>
-
-      {/* Content */}
-      <div className="min-w-0 flex-1">
-        <p
-          className={cn(
-            "text-sm leading-snug font-semibold",
-            locked ? "text-muted-foreground" : "text-foreground"
-          )}
-        >
-          {quiz.title}
-        </p>
-        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-xs text-muted-foreground">
-            {quiz.questions} questions
-          </span>
-          <span
-            className={cn(
-              "rounded-full px-2 py-px text-[11px] font-semibold",
-              difficultyMeta[quiz.difficulty].className
-            )}
-          >
-            {difficultyMeta[quiz.difficulty].label}
-          </span>
-          {quiz.score !== undefined && (
-            <span className="text-xs font-semibold text-emerald-600 tabular-nums">
-              {quiz.score}% scored
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Button */}
-      {!locked && (
-        <span
-          className={cn(
-            "inline-flex h-8 shrink-0 items-center rounded-xl px-4 text-xs font-semibold text-white shadow-sm",
-            completed
-              ? "bg-[#6C5CE7] shadow-violet-200/60"
-              : "bg-[#FF8A3D] shadow-orange-200/60"
-          )}
-        >
-          {completed ? "Retry" : "Start"}
-        </span>
-      )}
-    </>
+    </div>
   )
 
-  if (locked) {
+  if (locked || !href) {
     return <div className={rowClassName}>{inner}</div>
   }
 
@@ -356,16 +286,119 @@ function QuizRow({
   )
 }
 
-// ── Main view ─────────────────────────────────────────────────────────────────
-
-type Tab = "notes" | "quiz"
-
-type ChapterDetailViewProps = {
+function QuizRow({
+  subjectSlug,
+  chapterSlug: chapterSlugParam,
+  quiz,
+  index,
+  isNext,
+}: {
   subjectSlug: string
-  chapter: ChapterItem
-  topics: TopicItem[]
-  quizzes: QuizItem[]
-  objectives: string[]
+  chapterSlug: string
+  quiz: QuizItem
+  index: number
+  isNext: boolean
+}) {
+  const locked = quiz.status === "locked"
+  const completed = quiz.status === "completed"
+  const available = !locked && !completed
+  const active = available && isNext
+  const href = quizHref(subjectSlug, chapterSlugParam, quiz.id)
+  const timed = isTimedQuiz(quiz)
+
+  const state = locked
+    ? "locked"
+    : completed
+      ? "completed"
+      : active
+        ? "active"
+        : "available"
+
+  const metaParts = [
+    `${quiz.questions} questions`,
+    difficultyLabel[quiz.difficulty],
+    timed ? "Timed" : null,
+    quiz.score !== undefined ? `${quiz.score}%` : null,
+  ].filter(Boolean) as string[]
+
+  const rowClassName = cn(
+    "group block rounded-2xl px-3.5 py-3.5 transition-colors sm:px-4 sm:py-4",
+    locked ? "cursor-default" : "cursor-pointer",
+    active && "bg-[#F5F3FF]",
+    completed && "hover:bg-emerald-50/40",
+    locked && "opacity-90",
+    available && !active && "hover:bg-[#F8F9FC]"
+  )
+
+  const action = active ? (
+    <span className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-[#FF8A3D] text-sm font-semibold text-white shadow-[0_8px_18px_-10px_rgba(255,138,61,0.8)] sm:h-9 sm:w-auto sm:px-4 sm:text-xs">
+      Start
+    </span>
+  ) : completed ? (
+    <span className="inline-flex h-10 w-full items-center justify-center rounded-xl border border-[#E4E9F5] bg-white text-sm font-semibold text-[#6C5CE7] transition-colors group-hover:border-[#d5dbf0] group-hover:bg-[#F7F6FF] sm:h-9 sm:w-auto sm:px-3.5 sm:text-xs">
+      Retry
+    </span>
+  ) : locked ? (
+    <span className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-[#F3F4F8] text-sm font-semibold text-slate-500 sm:h-9 sm:w-auto sm:px-3.5 sm:text-[11px]">
+      Blocked
+    </span>
+  ) : (
+    <span className="hidden sm:inline-flex">
+      <ChevronRight
+        className="size-4 shrink-0 text-slate-300 transition-colors group-hover:text-slate-500"
+        aria-hidden
+      />
+    </span>
+  )
+
+  const inner = (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <StatusMark index={index} state={state} />
+
+        <div className="min-w-0 flex-1 pt-0.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <p
+              className={cn(
+                "text-[15px] leading-snug font-semibold tracking-tight sm:text-sm",
+                locked ? "text-slate-400" : "text-foreground"
+              )}
+            >
+              {quiz.title}
+            </p>
+            {active ? (
+              <span className="rounded-full bg-[#6C5CE7]/10 px-2 py-0.5 text-[10px] font-semibold text-[#6C5CE7]">
+                Up next
+              </span>
+            ) : null}
+          </div>
+
+          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+            {metaParts.join(" · ")}
+          </p>
+        </div>
+      </div>
+
+      <div
+        className={cn(
+          "sm:shrink-0",
+          (active || completed || locked) && "pl-12 sm:pl-0"
+        )}
+      >
+        {action}
+      </div>
+    </div>
+  )
+
+  return (
+    <Link
+      href={href}
+      className={rowClassName}
+      aria-disabled={locked || undefined}
+    >
+      {inner}
+    </Link>
+  )
 }
 
 export function ChapterDetailView({
@@ -376,7 +409,6 @@ export function ChapterDetailView({
   objectives,
 }: ChapterDetailViewProps) {
   const [tab, setTab] = useState<Tab>("notes")
-
   const chSlug = chapterSlug(chapter)
 
   const completedTopics = topics.filter((t) => t.status === "completed").length
@@ -384,18 +416,18 @@ export function ChapterDetailView({
     (q) => q.status === "completed"
   ).length
 
-  const notesPct =
-    topics.length === 0
-      ? 0
-      : Math.round((completedTopics / topics.length) * 100)
-  const quizPct =
-    quizzes.length === 0
-      ? 0
-      : Math.round((completedQuizzes / quizzes.length) * 100)
+  const nextTopicIndex = useMemo(
+    () => topics.findIndex((t) => t.status === "in_progress"),
+    [topics]
+  )
+
+  const nextQuizIndex = useMemo(
+    () => quizzes.findIndex((q) => q.status === "available"),
+    [quizzes]
+  )
 
   return (
     <div className="w-full space-y-4 lg:space-y-5">
-      {/* ── Page header ── */}
       <div>
         <Link
           href={`/subjects/${subjectSlug}`}
@@ -464,128 +496,113 @@ export function ChapterDetailView({
         </div>
       </div>
 
-      {/* ── Custom tab bar ── */}
-      <div className="border-b border-border/60">
-        <div className="flex">
-          <button
-            onClick={() => setTab("notes")}
-            className={cn(
-              "relative flex items-center gap-2 border-b-2 px-1 pr-5 pb-3 text-sm font-semibold transition-colors",
-              tab === "notes"
-                ? "border-[#6C5CE7] text-[#6C5CE7]"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <BookOpen className="size-4" aria-hidden />
-            Notes
-            {completedTopics > 0 && (
-              <span className="rounded-full bg-emerald-100 px-1.5 py-px text-[10px] font-semibold text-emerald-700">
-                {completedTopics}/{topics.length}
-              </span>
-            )}
-          </button>
+      <div className="grid w-full grid-cols-2 gap-1 rounded-2xl bg-[#F3F4F8] p-1 sm:flex sm:w-fit">
+        <button
+          type="button"
+          onClick={() => setTab("notes")}
+          className={cn(
+            "inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all sm:justify-start sm:gap-2 sm:px-3.5 sm:py-2",
+            tab === "notes"
+              ? "bg-white text-[#6C5CE7] shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <BookOpen className="size-4 shrink-0" aria-hidden />
+          <span>Notes</span>
+          {topics.length > 0 ? (
+            <span
+              className={cn(
+                "rounded-full px-1.5 py-px text-[10px] font-semibold tabular-nums",
+                tab === "notes"
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-white/70 text-slate-500"
+              )}
+            >
+              {completedTopics}/{topics.length}
+            </span>
+          ) : null}
+        </button>
 
-          <button
-            onClick={() => setTab("quiz")}
-            className={cn(
-              "relative flex items-center gap-2 border-b-2 px-1 pr-5 pb-3 text-sm font-semibold transition-colors",
-              tab === "quiz"
-                ? "border-[#6C5CE7] text-[#6C5CE7]"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <HelpCircle className="size-4" aria-hidden />
-            Quiz
-            {completedQuizzes > 0 && (
-              <span className="rounded-full bg-violet-100 px-1.5 py-px text-[10px] font-semibold text-[#6C5CE7]">
-                {completedQuizzes}/{quizzes.length}
-              </span>
-            )}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setTab("quiz")}
+          className={cn(
+            "inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all sm:justify-start sm:gap-2 sm:px-3.5 sm:py-2",
+            tab === "quiz"
+              ? "bg-white text-[#6C5CE7] shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <HelpCircle className="size-4 shrink-0" aria-hidden />
+          <span>Quiz</span>
+          {quizzes.length > 0 ? (
+            <span
+              className={cn(
+                "rounded-full px-1.5 py-px text-[10px] font-semibold tabular-nums",
+                tab === "quiz"
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-white/70 text-slate-500"
+              )}
+            >
+              {completedQuizzes}/{quizzes.length}
+            </span>
+          ) : null}
+        </button>
       </div>
 
-      {/* ── Tab content ── */}
-      {tab === "notes" && (
-        <Card className="gap-0 overflow-hidden rounded-2xl py-0 shadow-sm ring-1 ring-black/5">
-          <CardContent className="p-4 sm:p-5">
-            {/* Header */}
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground">
-                  {completedTopics}
-                </span>{" "}
-                of {topics.length} topics completed
-              </p>
-              <span className="text-sm font-semibold text-[#6C5CE7]">
-                {notesPct}%
-              </span>
-            </div>
-            <ProgressStrip completed={completedTopics} total={topics.length} />
-
-            {/* List */}
-            <div className="mt-3 divide-y divide-border/40">
+      <Card className="gap-0 overflow-hidden rounded-[1.5rem] border border-[#E8EEFF]/90 bg-white py-0 shadow-[0_10px_30px_-18px_rgba(65,105,225,0.18)]">
+        <CardContent className="p-0">
+          {tab === "notes" ? (
+            <>
+              <TabProgress
+                label="topics completed"
+                completed={completedTopics}
+                total={topics.length}
+              />
               {topics.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  No notes have been assigned for this chapter yet.
-                </p>
+                <EmptyState message="No notes have been assigned for this chapter yet." />
               ) : (
-                topics.map((topic, i) => (
-                  <TopicRow
-                    key={topic.id}
-                    subjectSlug={subjectSlug}
-                    chapterSlug={chSlug}
-                    topic={topic}
-                    index={i}
-                  />
-                ))
+                <div className="divide-y divide-[#EEF1F8] px-1 py-1 sm:space-y-1.5 sm:divide-y-0 sm:p-2.5">
+                  {topics.map((topic, i) => (
+                    <TopicRow
+                      key={topic.id}
+                      subjectSlug={subjectSlug}
+                      chapterSlug={chSlug}
+                      topic={topic}
+                      index={i}
+                      isNext={i === nextTopicIndex}
+                    />
+                  ))}
+                </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {tab === "quiz" && (
-        <Card className="gap-0 overflow-hidden rounded-2xl py-0 shadow-sm ring-1 ring-black/5">
-          <CardContent className="p-4 sm:p-5">
-            {/* Header */}
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground">
-                  {completedQuizzes}
-                </span>{" "}
-                of {quizzes.length} quizzes completed
-              </p>
-              <span className="text-sm font-semibold text-[#FF8A3D]">
-                {quizPct}%
-              </span>
-            </div>
-            <ProgressStrip
-              completed={completedQuizzes}
-              total={quizzes.length}
-              color="#FF8A3D"
-            />
-
-            {/* List */}
-            <div className="mt-3 divide-y divide-border/40">
+            </>
+          ) : (
+            <>
+              <TabProgress
+                label="quizzes completed"
+                completed={completedQuizzes}
+                total={quizzes.length}
+              />
               {quizzes.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  No quizzes have been assigned for this chapter yet.
-                </p>
+                <EmptyState message="No quizzes have been assigned for this chapter yet." />
               ) : (
-                quizzes.map((quiz) => (
-                  <QuizRow
-                    key={quiz.id}
-                    subjectSlug={subjectSlug}
-                    chapterSlug={chSlug}
-                    quiz={quiz}
-                  />
-                ))
+                <div className="divide-y divide-[#EEF1F8] px-1 py-1 sm:space-y-1.5 sm:divide-y-0 sm:p-2.5">
+                  {quizzes.map((quiz, i) => (
+                    <QuizRow
+                      key={quiz.id}
+                      subjectSlug={subjectSlug}
+                      chapterSlug={chSlug}
+                      quiz={quiz}
+                      index={i}
+                      isNext={i === nextQuizIndex}
+                    />
+                  ))}
+                </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

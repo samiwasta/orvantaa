@@ -4,6 +4,7 @@ import type { StudentNotificationSummary } from "@/features/notifications/model/
 import type { DashboardUserProfile } from "@/features/user/model/user"
 
 import { useDashboardShellController } from "../controller/use-dashboard-shell-controller"
+import { DashboardChromeProvider } from "../model/dashboard-chrome-context"
 import { DashboardShellView } from "../view/dashboard-shell-view"
 
 type DashboardShellScreenProps = {
@@ -22,13 +23,15 @@ export function DashboardShellScreen({
   const controller = useDashboardShellController()
 
   return (
-    <DashboardShellView
-      {...controller}
-      defaultSidebarOpen={defaultSidebarOpen}
-      userProfile={userProfile}
-      notifications={notifications}
-    >
-      {children}
-    </DashboardShellView>
+    <DashboardChromeProvider>
+      <DashboardShellView
+        {...controller}
+        defaultSidebarOpen={defaultSidebarOpen}
+        userProfile={userProfile}
+        notifications={notifications}
+      >
+        {children}
+      </DashboardShellView>
+    </DashboardChromeProvider>
   )
 }

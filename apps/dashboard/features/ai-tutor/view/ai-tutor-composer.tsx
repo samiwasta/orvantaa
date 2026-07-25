@@ -70,6 +70,7 @@ export function AiTutorComposer({
   const dragDepthRef = useRef(0)
 
   const isPremium = variant === "premium"
+  const isDensePremium = isPremium && compact
 
   const canSend =
     !sendDisabled &&
@@ -138,7 +139,10 @@ export function AiTutorComposer({
         className={cn(
           "relative transition-all",
           isPremium
-            ? "rounded-[2rem] border border-white/70 bg-white/82 shadow-[0_1px_2px_rgba(0,0,0,0.03),0_6px_20px_rgba(15,23,42,0.04)] backdrop-blur-lg focus-within:border-white/85 focus-within:bg-white/88 focus-within:shadow-[0_2px_4px_rgba(0,0,0,0.03),0_10px_28px_rgba(15,23,42,0.06)]"
+            ? cn(
+                "border border-white/70 bg-white/82 shadow-[0_1px_2px_rgba(0,0,0,0.03),0_6px_20px_rgba(15,23,42,0.04)] backdrop-blur-lg focus-within:border-white/85 focus-within:bg-white/88 focus-within:shadow-[0_2px_4px_rgba(0,0,0,0.03),0_10px_28px_rgba(15,23,42,0.06)]",
+                isDensePremium ? "rounded-[1.5rem]" : "rounded-[2rem]"
+              )
             : cn(
                 "rounded-[1.75rem] border bg-white",
                 compact
@@ -162,7 +166,13 @@ export function AiTutorComposer({
         <div
           className={cn(
             "flex flex-col",
-            isPremium ? "gap-2.5 p-3" : compact ? "gap-2 p-2" : "gap-2.5 p-2.5"
+            isDensePremium
+              ? "gap-2 px-2.5 py-1.5"
+              : isPremium
+                ? "gap-2.5 p-3"
+                : compact
+                  ? "gap-2 p-2"
+                  : "gap-2.5 p-2.5"
           )}
         >
           {attachments.length > 0 ? (
@@ -176,8 +186,14 @@ export function AiTutorComposer({
 
           <div
             className={cn(
-              "flex items-center gap-2",
-              isPremium ? "min-h-10" : compact ? "min-h-8" : "min-h-9"
+              "flex items-center gap-1.5",
+              isDensePremium
+                ? "min-h-9"
+                : isPremium
+                  ? "min-h-10"
+                  : compact
+                    ? "min-h-8"
+                    : "min-h-9"
             )}
           >
             <input
@@ -205,16 +221,21 @@ export function AiTutorComposer({
               onClick={() => fileInputRef.current?.click()}
               className={cn(
                 "flex shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-black/[0.04] hover:text-foreground disabled:opacity-40",
-                isPremium
-                  ? "size-10"
-                  : "size-9 hover:bg-violet-50 hover:text-[#6C5CE7]",
+                isDensePremium
+                  ? "size-8"
+                  : isPremium
+                    ? "size-10"
+                    : "size-9 hover:bg-violet-50 hover:text-[#6C5CE7]",
                 compact && !isPremium && "size-8 rounded-lg"
               )}
               aria-label="Attach images or documents"
               title="Attach images or documents"
             >
               {isPremium ? (
-                <Plus className="size-5" strokeWidth={1.75} />
+                <Plus
+                  className={isDensePremium ? "size-4" : "size-5"}
+                  strokeWidth={1.75}
+                />
               ) : (
                 <Plus
                   className={compact ? "size-4" : "size-[18px]"}
@@ -240,11 +261,13 @@ export function AiTutorComposer({
               }}
               className={cn(
                 "block max-h-[inherit] flex-1 resize-none border-0 bg-transparent p-0 outline-none placeholder:text-muted-foreground/45",
-                isPremium
-                  ? "h-6 min-h-6 text-base leading-6 font-light tracking-[-0.01em] text-foreground"
-                  : compact
-                    ? "h-5 min-h-5 text-[13px] leading-5 text-foreground placeholder:text-muted-foreground/50"
-                    : "h-[22px] min-h-[22px] text-[15px] leading-[22px] text-foreground placeholder:text-muted-foreground/50"
+                isDensePremium
+                  ? "h-5 min-h-5 text-[13px] leading-5 font-light tracking-[-0.01em] text-foreground"
+                  : isPremium
+                    ? "h-6 min-h-6 text-base leading-6 font-light tracking-[-0.01em] text-foreground"
+                    : compact
+                      ? "h-5 min-h-5 text-[13px] leading-5 text-foreground placeholder:text-muted-foreground/50"
+                      : "h-[22px] min-h-[22px] text-[15px] leading-[22px] text-foreground placeholder:text-muted-foreground/50"
               )}
             />
 
@@ -254,9 +277,11 @@ export function AiTutorComposer({
                 isSupported={Boolean(dictationSupported)}
                 disabled={Boolean(disabled)}
                 className={cn(
-                  isPremium
-                    ? "size-10 hover:bg-black/[0.04] hover:text-foreground"
-                    : undefined,
+                  isDensePremium
+                    ? "size-8 hover:bg-black/[0.04] hover:text-foreground"
+                    : isPremium
+                      ? "size-10 hover:bg-black/[0.04] hover:text-foreground"
+                      : undefined,
                   isPremium && isListening && "hover:bg-rose-50"
                 )}
                 onClick={onToggleDictation}
@@ -270,16 +295,24 @@ export function AiTutorComposer({
                 disabled={!canSend}
                 className={cn(
                   "shrink-0 transition-all disabled:opacity-60 disabled:shadow-none",
-                  isPremium
-                    ? "size-10 rounded-full bg-foreground text-background shadow-none hover:bg-foreground/90 disabled:bg-muted disabled:text-muted-foreground"
-                    : "size-9 rounded-full bg-[#6C5CE7] text-white shadow-sm hover:bg-[#5d4ed6] disabled:bg-muted disabled:text-muted-foreground",
+                  isDensePremium
+                    ? "size-8 rounded-full bg-foreground text-background shadow-none hover:bg-foreground/90 disabled:bg-muted disabled:text-muted-foreground"
+                    : isPremium
+                      ? "size-10 rounded-full bg-foreground text-background shadow-none hover:bg-foreground/90 disabled:bg-muted disabled:text-muted-foreground"
+                      : "size-9 rounded-full bg-[#6C5CE7] text-white shadow-sm hover:bg-[#5d4ed6] disabled:bg-muted disabled:text-muted-foreground",
                   compact && !isPremium && "rounded-lg"
                 )}
                 aria-label="Send message"
               >
                 {sendIcon ?? (
                   <ArrowUp
-                    className={isPremium ? "size-[18px]" : "size-5"}
+                    className={
+                      isDensePremium
+                        ? "size-4"
+                        : isPremium
+                          ? "size-[18px]"
+                          : "size-5"
+                    }
                     strokeWidth={isPremium ? 2 : 2.25}
                     aria-hidden
                   />

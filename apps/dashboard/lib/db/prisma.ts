@@ -7,11 +7,13 @@ const globalForPrisma = globalThis as unknown as {
   prismaRevision: string | undefined
 }
 
-const PRISMA_CLIENT_REVISION = "20260723140000_student_onboarding"
+const PRISMA_CLIENT_REVISION = "20260725180000_proctor_session_report_token"
 
 const REQUIRED_PRISMA_DELEGATES = [
   "aiTutorChatSession",
   "quizAttempt",
+  "quizProctorSession",
+  "quizProctorViolation",
   "studentReportCard",
   "studentNotification",
   "adminNotification",

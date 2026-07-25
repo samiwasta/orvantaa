@@ -102,4 +102,20 @@
   h6 {
     font-family: var(--font-heading);
   }
+
+  html.proctor-secure {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  @media print {
+    html.proctor-secure,
+    html.proctor-secure body {
+      background: #000 !important;
+    }
+
+    html.proctor-secure body * {
+      visibility: hidden !important;
+    }
+  }
 }

@@ -20,6 +20,10 @@ export function buildStudentPasswordResetUrl(rawToken: string): string {
   return `${getStudentAppUrl()}/reset-password?token=${rawToken}`
 }
 
+export function buildQuizSessionReportUrl(rawToken: string): string {
+  return `${getStudentAppUrl()}/quiz-session/${encodeURIComponent(rawToken)}`
+}
+
 export function buildStudentTicketTrackUrl(ticketId: string): string {
   return `${getStudentAppUrl()}/help/tickets/${ticketId}`
 }

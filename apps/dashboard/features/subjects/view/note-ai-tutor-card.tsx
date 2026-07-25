@@ -1,12 +1,12 @@
 "use client"
 
+import { IconlySearch } from "@workspace/icons"
 import { cn } from "@workspace/ui/lib/utils"
-import { Loader2, SendHorizontal, X } from "lucide-react"
+import { X } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { useChatAttachments } from "@/features/ai-tutor/hooks/use-chat-attachments"
 import { useSpeechDictation } from "@/features/ai-tutor/hooks/use-speech-dictation"
-import type { ChatMessageAttachment } from "@/features/ai-tutor/model/chat-data"
 import { registerMessageAttachmentPreview } from "@/features/ai-tutor/model/message-attachment-preview-registry"
 import { requestAiTutorReply } from "@/features/ai-tutor/service/ai-tutor-chat.service"
 import { AiTutorComposer } from "@/features/ai-tutor/view/ai-tutor-composer"
@@ -14,8 +14,14 @@ import { AiTutorMarkdown } from "@/features/ai-tutor/view/ai-tutor-markdown"
 import { UserMessageAttachments } from "@/features/ai-tutor/view/user-message-attachments"
 
 import type { AiTutorWidgetScope } from "../model/ai-tutor-scope"
+import {
+  readWidgetChatSession,
+  type WidgetChatMessage,
+  writeWidgetChatSession,
+} from "../model/widget-chat-session"
 
-const MAX_INPUT_ROWS = 3
+const MAX_TEXTAREA_HEIGHT = 4 * 20
+const TEXTAREA_LINE_HEIGHT = 20
 
 const noteQuickPrompts = [
   "Explain this concept",
@@ -29,11 +35,7 @@ const quizQuickPrompts = [
   "What should I think about first?",
 ] as const
 
-type ChatMessage = {
-  role: "user" | "assistant"
-  content: string
-  attachments?: ChatMessageAttachment[]
-}
+type ChatMessage = WidgetChatMessage
 
 type NoteAiTutorCardProps = {
   scope: AiTutorWidgetScope
@@ -43,7 +45,7 @@ type NoteAiTutorCardProps = {
 
 function TypingDots() {
   return (
-    <span className="flex items-center gap-1 px-0.5" aria-label="Typing">
+    <span className="flex items-center gap-1.5 px-0.5" aria-label="Typing">
       {[0, 1, 2].map((index) => (
         <span
           key={index}
@@ -61,12 +63,17 @@ export function NoteAiTutorCard({
   className,
 }: NoteAiTutorCardProps) {
   const [query, setQuery] = useState("")
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>(() =>
+    readWidgetChatSession(scope)
+  )
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [dictationError, setDictationError] = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const scopeKeyRef = useRef(
+    `${scope.mode ?? "note"}|${scope.title}|${scope.content ?? ""}`
+  )
 
   const {
     isListening,
@@ -96,17 +103,13 @@ export function NoteAiTutorCard({
   const adjustTextareaHeight = useCallback(() => {
     const el = textareaRef.current
     if (!el) return
-
-    const style = getComputedStyle(el)
-    const lineHeight = parseFloat(style.lineHeight) || 20
-    const paddingY =
-      parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)
-    const maxHeight = lineHeight * MAX_INPUT_ROWS + paddingY
-
+    el.style.height = `${TEXTAREA_LINE_HEIGHT}px`
+    if (!el.value) return
     el.style.height = "auto"
-    const nextHeight = Math.min(el.scrollHeight, maxHeight)
-    el.style.height = `${nextHeight}px`
-    el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden"
+    el.style.height = `${Math.max(
+      TEXTAREA_LINE_HEIGHT,
+      Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT)
+    )}px`
   }, [])
 
   useEffect(() => {
@@ -114,10 +117,17 @@ export function NoteAiTutorCard({
   }, [query, adjustTextareaHeight])
 
   useEffect(() => {
-    setMessages([])
-    setQuery("")
-    setError(null)
-  }, [scope.title, scope.mode, scope.content])
+    const nextKey = `${scope.mode ?? "note"}|${scope.title}|${scope.content ?? ""}`
+    if (scopeKeyRef.current !== nextKey) {
+      scopeKeyRef.current = nextKey
+      setMessages(readWidgetChatSession(scope))
+      setQuery("")
+      setError(null)
+      return
+    }
+
+    writeWidgetChatSession(scope, messages)
+  }, [scope, messages])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
@@ -198,28 +208,33 @@ export function NoteAiTutorCard({
   return (
     <div
       className={cn(
-        "relative flex h-full flex-col overflow-hidden rounded-2xl bg-white",
-        "shadow-[0_24px_60px_-24px_rgba(15,23,42,0.35)] ring-1 ring-black/[0.06]",
+        "relative flex h-full flex-col overflow-hidden rounded-[1.75rem] bg-white",
+        "shadow-[0_28px_64px_-28px_rgba(45,40,90,0.45)] ring-1 ring-black/[0.05]",
         className
       )}
     >
-      <header className="relative shrink-0 overflow-hidden bg-linear-to-r from-[#6C5CE7] via-[#7158e8] to-[#5b4bc7] px-4 py-3.5">
+      <header className="relative shrink-0 overflow-hidden bg-[#6C5CE7] px-4 py-3.5 sm:px-5">
         <div
-          className="pointer-events-none absolute -top-10 -right-6 size-28 rounded-full bg-white/10 blur-2xl"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_100%_0%,rgba(255,255,255,0.18),transparent_55%)]"
           aria-hidden
         />
         <div className="relative flex items-center gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/20">
+            <IconlySearch size={18} color="white" aria-hidden />
+          </div>
           <div className="min-w-0 flex-1">
             <h2 className="text-[15px] font-semibold tracking-tight text-white">
               AI Tutor
             </h2>
-            <p className="truncate text-xs text-white/75">{scope.title}</p>
+            <p className="truncate text-[12px] font-light text-white/70">
+              {scope.title}
+            </p>
           </div>
           {onClose ? (
             <button
               type="button"
               onClick={onClose}
-              className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white/75 transition-colors hover:bg-white/15 hover:text-white"
+              className="flex size-8 shrink-0 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/15 hover:text-white"
               aria-label="Close AI Tutor"
             >
               <X className="size-4" strokeWidth={2} aria-hidden />
@@ -228,24 +243,24 @@ export function NoteAiTutorCard({
         </div>
       </header>
 
-      <div className="relative min-h-0 flex-1 overflow-y-auto bg-[#f7f6fb] px-3.5 py-4">
+      <div className="relative min-h-0 flex-1 overflow-y-auto bg-[#FAFBFF] px-4 py-5">
         {isEmpty ? (
-          <div className="flex h-full flex-col items-center justify-center px-2 text-center">
-            <h3 className="text-[15px] font-semibold text-foreground">
+          <div className="flex h-full flex-col items-center justify-center px-1 text-center">
+            <h3 className="text-[15px] font-semibold tracking-tight text-foreground/90">
               {emptyHeadline}
             </h3>
-            <p className="mt-1.5 max-w-[17rem] text-[13px] leading-relaxed text-muted-foreground">
+            <p className="mt-1.5 max-w-[16.5rem] text-[13px] leading-relaxed font-light text-muted-foreground">
               {emptyDescription}
             </p>
 
-            <div className="mt-5 flex w-full flex-col gap-2">
+            <div className="mt-6 flex w-full flex-col gap-2.5">
               {quickPrompts.map((prompt) => (
                 <button
                   key={prompt}
                   type="button"
                   disabled={isLoading}
                   onClick={() => void submitMessage(prompt)}
-                  className="rounded-xl border border-violet-100 bg-white px-3.5 py-3 text-left text-[13px] font-medium text-foreground shadow-sm transition-all hover:border-violet-200 hover:bg-violet-50/60 hover:shadow disabled:opacity-50"
+                  className="rounded-2xl border border-[#E8EEFF] bg-white px-4 py-3 text-left text-[13px] font-medium text-foreground/85 shadow-[0_2px_10px_-6px_rgba(65,105,225,0.18)] transition-all hover:border-[#d9e0ff] hover:bg-white hover:shadow-[0_6px_18px_-10px_rgba(108,92,231,0.28)] disabled:opacity-50"
                 >
                   {prompt}
                 </button>
@@ -264,10 +279,10 @@ export function NoteAiTutorCard({
               >
                 <div
                   className={cn(
-                    "max-w-[88%] text-[13px] leading-[1.55] shadow-sm",
+                    "max-w-[90%] text-[13.5px] leading-[1.55]",
                     message.role === "user"
-                      ? "rounded-2xl rounded-br-md bg-linear-to-br from-[#6C5CE7] to-[#5b4bc7] px-3.5 py-2.5 text-white"
-                      : "rounded-2xl rounded-bl-md border border-border/50 bg-white px-3.5 py-2.5 text-foreground"
+                      ? "rounded-3xl rounded-br-lg bg-[#6C5CE7] px-3.5 py-2.5 text-white shadow-sm"
+                      : "rounded-3xl rounded-bl-lg border border-[#E8EEFF] bg-white px-3.5 py-2.5 text-foreground shadow-[0_2px_10px_-6px_rgba(65,105,225,0.14)]"
                   )}
                 >
                   {message.role === "assistant" ? (
@@ -291,7 +306,7 @@ export function NoteAiTutorCard({
             ))}
             {isLoading ? (
               <div className="flex justify-start">
-                <div className="rounded-2xl rounded-bl-md border border-border/50 bg-white px-3.5 py-2.5 shadow-sm">
+                <div className="rounded-3xl rounded-bl-lg border border-[#E8EEFF] bg-white px-3.5 py-3 shadow-[0_2px_10px_-6px_rgba(65,105,225,0.14)]">
                   <TypingDots />
                 </div>
               </div>
@@ -301,30 +316,14 @@ export function NoteAiTutorCard({
         )}
       </div>
 
-      <div className="shrink-0 border-t border-border/60 bg-white px-3.5 py-3">
-        {error || dictationError || attachmentError ? (
+      <div className="shrink-0 bg-gradient-to-t from-white via-white to-white/90 px-3.5 pt-2 pb-3.5 sm:px-4 sm:pb-4">
+        {error ? (
           <p
-            className="mb-2.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700"
+            className="mb-2.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700"
             role="alert"
           >
-            {error ?? dictationError ?? attachmentError}
+            {error}
           </p>
-        ) : null}
-
-        {!isEmpty ? (
-          <div className="mb-2.5 flex flex-wrap gap-1.5">
-            {quickPrompts.map((prompt) => (
-              <button
-                key={prompt}
-                type="button"
-                disabled={isLoading}
-                onClick={() => void submitMessage(prompt)}
-                className="rounded-full border border-violet-100 bg-violet-50/80 px-2.5 py-1 text-[11px] font-medium text-[#5d4ed6] transition-colors hover:border-violet-200 hover:bg-violet-100 disabled:opacity-50"
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
         ) : null}
 
         <AiTutorComposer
@@ -370,14 +369,9 @@ export function NoteAiTutorCard({
               void submitMessage(query)
             }
           }}
+          maxTextareaHeight={MAX_TEXTAREA_HEIGHT}
+          variant="premium"
           compact
-          sendIcon={
-            isLoading ? (
-              <Loader2 className="size-4 animate-spin" aria-hidden />
-            ) : (
-              <SendHorizontal className="size-4" aria-hidden />
-            )
-          }
         />
       </div>
     </div>

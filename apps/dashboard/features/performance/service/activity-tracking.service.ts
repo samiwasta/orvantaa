@@ -5,6 +5,7 @@ type SubmitQuizAttemptInput = {
     optionId: string
   }>
   timeSpentSeconds?: number
+  proctorSessionId?: string
 }
 
 type QuizAttemptResponse = {
@@ -12,6 +13,7 @@ type QuizAttemptResponse = {
   scorePercent: number
   correctCount: number
   totalQuestions: number
+  terminatedByProctor?: boolean
 }
 
 const fetchOptions: RequestInit = {

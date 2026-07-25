@@ -320,3 +320,16 @@ export function mapQuizDifficulty(
       return "medium"
   }
 }
+
+export function mapQuizTimedMode(
+  timedMode: "UNTIMED" | "PER_QUESTION" | "WHOLE_QUIZ"
+): "untimed" | "per_question" | "whole_quiz" {
+  switch (timedMode) {
+    case "PER_QUESTION":
+      return "per_question"
+    case "WHOLE_QUIZ":
+      return "whole_quiz"
+    default:
+      return "untimed"
+  }
+}

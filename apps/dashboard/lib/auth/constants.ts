@@ -22,6 +22,7 @@ export const PUBLIC_PATH_PREFIXES = [
   "/auth",
   "/forgot-password",
   "/reset-password",
+  "/quiz-session",
   SUBSCRIPTION_UNAVAILABLE_PATH,
 ] as const
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { loadQuizPage } from "@/features/curriculum/server/load-quiz-page"
+import { loadQuizProctorLock } from "@/features/proctoring/server/load-quiz-proctor-lock"
 import {
   quizPageMetadata,
   titleFromSlug,
@@ -36,8 +37,14 @@ export default async function QuizPage({ params }: QuizPageProps) {
   if (!resolved) notFound()
 
   const { chapter, session } = resolved
+  const proctorLock = await loadQuizProctorLock(session.quiz.id)
 
   return (
-    <QuizView subjectSlug={subjectName} chapter={chapter} session={session} />
+    <QuizView
+      subjectSlug={subjectName}
+      chapter={chapter}
+      session={session}
+      proctorLock={proctorLock}
+    />
   )
 }

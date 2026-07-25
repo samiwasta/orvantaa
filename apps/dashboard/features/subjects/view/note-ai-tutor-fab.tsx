@@ -1,12 +1,12 @@
 "use client"
 
+import { IconlySearch } from "@workspace/icons"
 import {
   MOBILE_MEDIA_QUERY,
   useBodyScrollLock,
 } from "@workspace/ui/hooks/use-body-scroll-lock"
 import { cn } from "@workspace/ui/lib/utils"
-
-import { AnimatedSparklesIcon } from "@/features/ai-tutor/view/animated-sparkles-icon"
+import { useEffect, useState } from "react"
 
 import type { AiTutorWidgetScope } from "../model/ai-tutor-scope"
 import { NoteAiTutorCard } from "./note-ai-tutor-card"
@@ -22,9 +22,14 @@ export function NoteAiTutorFab({
   onOpenChange,
   scope,
 }: NoteAiTutorFabProps) {
+  const [hasOpened, setHasOpened] = useState(open)
   const close = () => onOpenChange(false)
 
   useBodyScrollLock(open, { mediaQuery: MOBILE_MEDIA_QUERY })
+
+  useEffect(() => {
+    if (open) setHasOpened(true)
+  }, [open])
 
   return (
     <>
@@ -46,11 +51,21 @@ export function NoteAiTutorFab({
             : "size-[3.75rem]"
         )}
       >
-        {open ? (
-          <div className="h-full origin-bottom-right animate-in duration-300 zoom-in-95 fade-in">
+        {hasOpened ? (
+          <div
+            className={cn(
+              "h-full origin-bottom-right",
+              open
+                ? "animate-in duration-300 zoom-in-95 fade-in"
+                : "pointer-events-none invisible absolute inset-0"
+            )}
+            aria-hidden={!open}
+          >
             <NoteAiTutorCard scope={scope} onClose={close} className="h-full" />
           </div>
-        ) : (
+        ) : null}
+
+        {!open ? (
           <button
             type="button"
             onClick={() => onOpenChange(true)}
@@ -68,13 +83,14 @@ export function NoteAiTutorFab({
               className="pointer-events-none absolute inset-0 rounded-full bg-white/10 opacity-0 transition-opacity group-hover:opacity-100"
               aria-hidden
             />
-            <AnimatedSparklesIcon
+            <IconlySearch
               size={28}
-              strokeWidth={2.35}
+              color="white"
               className="relative"
+              aria-hidden
             />
           </button>
-        )}
+        ) : null}
       </div>
     </>
   )

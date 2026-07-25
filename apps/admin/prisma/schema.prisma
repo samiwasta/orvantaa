@@ -375,8 +375,9 @@ model Quiz {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
-  questions Question[]
-  attempts  QuizAttempt[]
+  questions       Question[]
+  attempts        QuizAttempt[]
+  proctorSessions QuizProctorSession[]
 
   @@index([chapterId])
   @@map("quizzes")
@@ -509,6 +510,7 @@ model User {
   studentNotifications StudentNotification[]
   aiTutorChatSessions AiTutorChatSession[]
   quizAttempts        QuizAttempt[]
+  proctorSessions     QuizProctorSession[]
   noteProgress        NoteProgress[]
   reportCard          StudentReportCard?
   supportTickets      SupportTicket[]
@@ -571,19 +573,23 @@ enum NoteProgressStatus {
 }
 
 model QuizAttempt {
-  id               String   @id @default(cuid())
-  userId           String
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  quizId           String
-  quiz             Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  scorePercent     Int
-  correctCount     Int
-  totalQuestions   Int
-  timeSpentSeconds Int?
-  completedAt      DateTime @default(now())
-  createdAt        DateTime @default(now())
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizId              String
+  quiz                Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  scorePercent        Int
+  correctCount        Int
+  totalQuestions      Int
+  timeSpentSeconds    Int?
+  answeredCount       Int      @default(0)
+  proctorWarnings     Int      @default(0)
+  terminatedByProctor Boolean  @default(false)
+  completedAt         DateTime @default(now())
+  createdAt           DateTime @default(now())
 
-  answers QuizAttemptAnswer[]
+  answers        QuizAttemptAnswer[]
+  proctorSession QuizProctorSession?
 
   @@index([userId, completedAt(sort: Desc)])
   @@index([quizId])
@@ -600,6 +606,73 @@ model QuizAttemptAnswer {
 
   @@index([attemptId])
   @@map("quiz_attempt_answers")
+}
+
+// ─── Quiz proctoring ─────────────────────────────────────────────────────────
+
+enum ProctorSessionStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+  TERMINATED
+}
+
+enum ProctorViolationKind {
+  TAB_HIDDEN
+  WINDOW_BLUR
+  FULLSCREEN_EXIT
+  PAGE_RELOAD
+  COPY_ATTEMPT
+  PASTE_ATTEMPT
+  CONTEXT_MENU
+  DEVTOOLS_SHORTCUT
+  PRINT_ATTEMPT
+  SCREEN_CAPTURE_SHORTCUT
+  CAMERA_DISABLED
+  MIC_DISABLED
+  NO_FACE_DETECTED
+  MULTIPLE_FACES
+  CAMERA_OBSTRUCTED
+  CAMERA_FROZEN
+  SPEECH_DETECTED
+}
+
+model QuizProctorSession {
+  id              String               @id @default(cuid())
+  userId          String
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizId          String
+  quiz            Quiz                 @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  status          ProctorSessionStatus @default(IN_PROGRESS)
+  warningCount    Int                  @default(0)
+  warningLimit    Int                  @default(3)
+  attemptId       String?              @unique
+  attempt         QuizAttempt?         @relation(fields: [attemptId], references: [id], onDelete: SetNull)
+  reportTokenHash String?              @unique
+  startedAt       DateTime             @default(now())
+  lastSeenAt      DateTime             @default(now())
+  endedAt         DateTime?
+  updatedAt       DateTime             @updatedAt
+
+  violations QuizProctorViolation[]
+
+  @@index([userId, quizId, status])
+  @@index([quizId, status])
+  @@map("quiz_proctor_sessions")
+}
+
+model QuizProctorViolation {
+  id            String               @id @default(cuid())
+  sessionId     String
+  session       QuizProctorSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  kind          ProctorViolationKind
+  warningNumber Int?
+  questionIndex Int?
+  detail        String?
+  occurredAt    DateTime             @default(now())
+
+  @@index([sessionId, occurredAt])
+  @@map("quiz_proctor_violations")
 }
 
 model NoteProgress {

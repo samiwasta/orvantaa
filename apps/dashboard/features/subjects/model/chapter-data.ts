@@ -33,12 +33,19 @@ export type TopicItem = {
 
 export type QuizDifficulty = "easy" | "medium" | "hard"
 export type QuizStatus = "completed" | "available" | "locked"
+export type QuizTimedMode = "untimed" | "per_question" | "whole_quiz"
 
 export type QuizItem = {
   id: string
   title: string
   questions: number
   difficulty: QuizDifficulty
+  timedMode: QuizTimedMode
+  timeLimitSeconds?: number | null
   status: QuizStatus
   score?: number
+}
+
+export function isTimedQuiz(quiz: Pick<QuizItem, "timedMode">): boolean {
+  return quiz.timedMode !== "untimed"
 }

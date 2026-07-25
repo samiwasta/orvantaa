@@ -1,4 +1,5 @@
 import type { DashboardQuickLinks } from "@/features/dashboard/model/dashboard-quick-links"
+import { proctorService } from "@/features/proctoring/service/proctor.service"
 import type {
   ChapterItem,
   ChapterStatus,
@@ -31,6 +32,7 @@ import { subjectImageUrl } from "../model/subject-images"
 import {
   curriculumRepository,
   mapQuizDifficulty,
+  mapQuizTimedMode,
 } from "../repository/curriculum.repository"
 
 const OPTION_IDS = ["a", "b", "c", "d"] as const
@@ -303,11 +305,13 @@ export class CurriculumService {
     const noteProgressMap = new Map<string, "VIEWED" | "COMPLETED">()
     const quizScoreMap = new Map<string, number>()
     const completedQuizIds = new Set<string>()
+    let lockedQuizIds = new Set<string>()
 
     if (userId) {
-      const [noteProgress, quizScores] = await Promise.all([
+      const [noteProgress, quizScores, locked] = await Promise.all([
         this.repository.findStudentNoteProgress(userId, noteIds),
         this.repository.findStudentQuizScores(userId, quizIds),
+        proctorService.listLockedQuizIds(userId, quizIds),
       ])
 
       for (const progress of noteProgress) {
@@ -317,6 +321,7 @@ export class CurriculumService {
         quizScoreMap.set(score.quizId, score.scorePercent)
         completedQuizIds.add(score.quizId)
       }
+      lockedQuizIds = locked
     }
 
     const topics = resolveTopicStatuses(row.topics, noteProgressMap)
@@ -343,13 +348,17 @@ export class CurriculumService {
       topics,
       quizzes: row.quizzes.map((quiz) => {
         const score = quizScoreMap.get(quiz.id)
+        const locked = lockedQuizIds.has(quiz.id)
         return {
           id: quiz.id,
           title: quiz.title,
           questions: quiz._count.questions,
           difficulty: mapQuizDifficulty(quiz.difficulty),
-          status:
-            score !== undefined
+          timedMode: mapQuizTimedMode(quiz.timedMode),
+          timeLimitSeconds: quiz.timeLimitSeconds,
+          status: locked
+            ? ("locked" as const)
+            : score !== undefined
               ? ("completed" as const)
               : ("available" as const),
           score,
@@ -467,6 +476,8 @@ export class CurriculumService {
       title: row.title,
       questions: questions.length,
       difficulty: mapQuizDifficulty(row.difficulty),
+      timedMode: mapQuizTimedMode(row.timedMode),
+      timeLimitSeconds: row.timeLimitSeconds,
       status: "available",
     }
 
