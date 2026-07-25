@@ -36,11 +36,21 @@ function dayKey(date: Date) {
 function formatTimeSpent(totalSeconds: number) {
   if (totalSeconds <= 0) return "0m"
 
+  if (totalSeconds < 60) return `${totalSeconds}s`
+
   const hours = Math.floor(totalSeconds / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
 
-  if (hours > 0) return `${hours}h ${minutes}m`
+  if (hours > 0) {
+    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`
+  }
+
   return `${minutes}m`
+}
+
+function formatStreakDays(streak: number) {
+  if (streak <= 0) return "0 days"
+  return streak === 1 ? "1 day" : `${streak} days`
 }
 
 function gradePaceLabel(accuracy: number | null): string {
@@ -71,86 +81,98 @@ export class ActiveLearnerDashboardRepository {
   ): Promise<ActiveLearnerDashboardData | null> {
     if (!classId) return null
 
-    const [chapters, noteProgressRows, quizAttempts, quizAttemptsDetailed] =
-      await Promise.all([
-        prisma.chapter.findMany({
-          where: {
-            ...chapterWithAssignedContentWhere,
-            subject: {
-              classId,
-              ...subjectWithAssignedContentWhere,
+    const [
+      chapters,
+      noteProgressRows,
+      quizAttempts,
+      quizAttemptsDetailed,
+      aiUserMessages,
+    ] = await Promise.all([
+      prisma.chapter.findMany({
+        where: {
+          ...chapterWithAssignedContentWhere,
+          subject: {
+            classId,
+            ...subjectWithAssignedContentWhere,
+          },
+        },
+        orderBy: [{ subject: { orderIndex: "asc" } }, { number: "asc" }],
+        select: {
+          title: true,
+          slug: true,
+          number: true,
+          subject: {
+            select: {
+              title: true,
+              slug: true,
             },
           },
-          orderBy: [{ subject: { orderIndex: "asc" } }, { number: "asc" }],
-          select: {
-            title: true,
-            slug: true,
-            number: true,
-            subject: {
-              select: {
-                title: true,
-                slug: true,
+          topics: {
+            where: topicWithNotesWhere,
+            orderBy: { orderIndex: "asc" },
+            select: {
+              slug: true,
+              notes: {
+                orderBy: { orderIndex: "asc" },
+                select: { id: true },
               },
             },
-            topics: {
-              where: topicWithNotesWhere,
-              orderBy: { orderIndex: "asc" },
-              select: {
-                slug: true,
-                notes: {
-                  orderBy: { orderIndex: "asc" },
-                  select: { id: true },
-                },
-              },
-            },
-            quizzes: {
-              where: quizWithQuestionsWhere,
-              orderBy: { orderIndex: "asc" },
-              select: { id: true },
-            },
           },
-        }),
-        prisma.noteProgress.findMany({
-          where: { userId },
-          select: {
-            noteId: true,
-            status: true,
-            lastViewedAt: true,
+          quizzes: {
+            where: quizWithQuestionsWhere,
+            orderBy: { orderIndex: "asc" },
+            select: { id: true },
           },
-        }),
-        prisma.quizAttempt.findMany({
-          where: { userId },
-          select: {
-            quizId: true,
-            scorePercent: true,
-            completedAt: true,
-            timeSpentSeconds: true,
-          },
-          orderBy: { completedAt: "desc" },
-        }),
-        prisma.quizAttempt.findMany({
-          where: { userId },
-          select: {
-            scorePercent: true,
-            quiz: {
-              select: {
-                chapter: {
-                  select: {
-                    title: true,
-                    slug: true,
-                    subject: {
-                      select: {
-                        title: true,
-                        slug: true,
-                      },
+        },
+      }),
+      prisma.noteProgress.findMany({
+        where: { userId },
+        select: {
+          noteId: true,
+          status: true,
+          lastViewedAt: true,
+        },
+      }),
+      prisma.quizAttempt.findMany({
+        where: { userId },
+        select: {
+          quizId: true,
+          scorePercent: true,
+          completedAt: true,
+          timeSpentSeconds: true,
+        },
+        orderBy: { completedAt: "desc" },
+      }),
+      prisma.quizAttempt.findMany({
+        where: { userId },
+        select: {
+          scorePercent: true,
+          quiz: {
+            select: {
+              chapter: {
+                select: {
+                  title: true,
+                  slug: true,
+                  subject: {
+                    select: {
+                      title: true,
+                      slug: true,
                     },
                   },
                 },
               },
             },
           },
-        }),
-      ])
+        },
+      }),
+      prisma.aiTutorChatMessage.findMany({
+        where: {
+          role: "USER",
+          session: { userId },
+        },
+        select: { createdAt: true },
+      }),
+    ])
 
     const progressByNoteId = new Map(
       noteProgressRows.map((row) => [row.noteId, row.status])
@@ -188,6 +210,9 @@ export class ActiveLearnerDashboardRepository {
     for (const attempt of quizAttempts) {
       activityDays.add(dayKey(attempt.completedAt))
     }
+    for (const message of aiUserMessages) {
+      activityDays.add(dayKey(message.createdAt))
+    }
 
     const accuracy =
       quizAttempts.length > 0
@@ -213,7 +238,7 @@ export class ActiveLearnerDashboardRepository {
         stats: [
           {
             label: "Accuracy",
-            value: accuracy === null ? "0%" : `${accuracy}%`,
+            value: accuracy === null ? "—" : `${accuracy}%`,
             tone: "purple",
           },
           {
@@ -223,7 +248,7 @@ export class ActiveLearnerDashboardRepository {
           },
           {
             label: "Study Streak",
-            value: streak > 0 ? `${streak} days` : "0 days",
+            value: formatStreakDays(streak),
             tone: "amber",
           },
           {

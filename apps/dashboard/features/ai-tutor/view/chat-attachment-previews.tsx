@@ -49,7 +49,7 @@ export function ChatAttachmentPreviews({
           ) : (
             <span
               className={cn(
-                "flex shrink-0 items-center justify-center rounded-lg bg-violet-100 text-[#6C5CE7]",
+                "flex shrink-0 items-center justify-center rounded-lg bg-[#E0E7FF] text-[#4169E1]",
                 compact ? "size-9" : "size-10"
               )}
             >

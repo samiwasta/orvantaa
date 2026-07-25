@@ -19,7 +19,7 @@ function SubjectCard({ subject }: { subject: SubjectCardItem }) {
       href={`/subjects/${subject.id}`}
       className={cn(
         "block rounded-2xl outline-none",
-        "focus-visible:ring-2 focus-visible:ring-[#6C5CE7]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        "focus-visible:ring-2 focus-visible:ring-[#4169E1]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       )}
     >
       <Card
@@ -50,8 +50,8 @@ function SubjectCard({ subject }: { subject: SubjectCardItem }) {
           <Progress
             value={percent}
             className={cn(
-              "h-2.5 bg-violet-100/80 dark:bg-muted",
-              "**:data-[slot=progress-indicator]:bg-[#6C5CE7]"
+              "h-2.5 bg-[#E0E7FF]/80 dark:bg-muted",
+              "**:data-[slot=progress-indicator]:bg-[#4169E1]"
             )}
           />
         </CardContent>

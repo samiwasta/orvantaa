@@ -84,9 +84,9 @@ export function HelpView({ data }: HelpViewProps) {
         </p>
       </div>
 
-      <section className="rounded-2xl border border-[#6C5CE7]/20 bg-[#6C5CE7]/5 p-5 sm:p-6">
+      <section className="rounded-2xl border border-[#4169E1]/20 bg-[#4169E1]/5 p-5 sm:p-6">
         <div className="flex items-start gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#6C5CE7]/15 text-[#6C5CE7]">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#4169E1]/15 text-[#4169E1]">
             <LifeBuoy className="size-5" aria-hidden />
           </div>
           <div>
@@ -105,7 +105,7 @@ export function HelpView({ data }: HelpViewProps) {
       <section className="overflow-hidden rounded-2xl border border-border/60 bg-white shadow-sm ring-1 ring-black/[0.04]">
         <div className="border-b border-border/50 px-5 py-4 sm:px-6">
           <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
-            <CircleHelp className="size-4 text-[#6C5CE7]" aria-hidden />
+            <CircleHelp className="size-4 text-[#4169E1]" aria-hidden />
             Raise a ticket
           </h2>
         </div>
@@ -157,7 +157,7 @@ export function HelpView({ data }: HelpViewProps) {
           <div className="flex justify-end">
             <Button
               type="submit"
-              className="rounded-xl bg-[#6C5CE7] font-semibold text-white hover:bg-[#6C5CE7]/90"
+              className="rounded-xl bg-[#4169E1] font-semibold text-white hover:bg-[#4169E1]/90"
               disabled={pending}
             >
               {pending ? "Raising ticket..." : "Raise ticket"}
@@ -170,7 +170,7 @@ export function HelpView({ data }: HelpViewProps) {
         <section className="overflow-hidden rounded-2xl border border-border/60 bg-white shadow-sm ring-1 ring-black/[0.04]">
           <div className="border-b border-border/50 px-5 py-4 sm:px-6">
             <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
-              <Ticket className="size-4 text-[#6C5CE7]" aria-hidden />
+              <Ticket className="size-4 text-[#4169E1]" aria-hidden />
               Your tickets
             </h2>
           </div>
@@ -199,7 +199,7 @@ export function HelpView({ data }: HelpViewProps) {
                       ticketStatusTone(ticket.status) === "success" &&
                         "border-emerald-200 bg-emerald-50 text-emerald-700",
                       ticketStatusTone(ticket.status) === "secondary" &&
-                        "border-[#6C5CE7]/20 bg-[#6C5CE7]/10 text-[#6C5CE7]",
+                        "border-[#4169E1]/20 bg-[#4169E1]/10 text-[#4169E1]",
                       ticketStatusTone(ticket.status) === "muted" &&
                         "text-muted-foreground"
                     )}

@@ -64,7 +64,7 @@ export function ProctorTerminatedDialog({
         </div>
 
         <div className="space-y-3 px-5 py-5 sm:px-6">
-          <div className="rounded-2xl bg-[#F7F6FF] px-4 py-3.5 ring-1 ring-[#E8EEFF]">
+          <div className="rounded-2xl bg-[#F5F7FF] px-4 py-3.5 ring-1 ring-[#E8EEFF]">
             <p className="text-sm font-semibold text-foreground">
               {answeredCount} of {totalQuestions} answered
             </p>
@@ -116,7 +116,7 @@ export function ProctorTerminatedDialog({
               type="button"
               onClick={onExit}
               disabled={isSaving}
-              className="h-11 w-full rounded-xl bg-[#6C5CE7] px-6 text-sm font-semibold text-white shadow-[0_8px_18px_-10px_rgba(108,92,231,0.8)] hover:bg-[#5B4BD6]"
+              className="h-11 w-full rounded-xl bg-[#4169E1] px-6 text-sm font-semibold text-white shadow-[0_8px_18px_-10px_rgba(65,105,225,0.8)] hover:bg-[#5B4BD6]"
             >
               {isSaving ? (
                 <span className="inline-flex items-center gap-2">

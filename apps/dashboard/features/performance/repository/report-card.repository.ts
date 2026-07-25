@@ -3,16 +3,14 @@ import { prisma } from "@/lib/db"
 import {
   createEmptyReportCard,
   DEFAULT_REPORT_CARD_EXAMS,
+  emptyExamMaxMarks,
+  emptyExamScores,
   type ExamKey,
   type ReportCard,
 } from "../model/performance-data"
 import type { SaveReportCardInput } from "../model/report-card-request"
 
 const EXAM_ORDER: ExamKey[] = ["unit1", "term1", "unit2", "final"]
-
-function emptyScores(): Record<ExamKey, number | null> {
-  return { unit1: null, term1: null, unit2: null, final: null }
-}
 
 export class ReportCardRepository {
   async getReportCardForUser(
@@ -50,12 +48,16 @@ export class ReportCardRepository {
           }))
         : DEFAULT_REPORT_CARD_EXAMS.map((exam) => ({ ...exam }))
 
-    const scoreLookup = new Map<string, number | null>()
+    const defaultMax = emptyExamMaxMarks(exams)
+    const scoreLookup = new Map<
+      string,
+      { obtained: number | null; maxMarks: number | null }
+    >()
     for (const score of report.scores) {
-      scoreLookup.set(
-        `${score.subjectId}:${score.examKey}`,
-        score.obtainedMarks
-      )
+      scoreLookup.set(`${score.subjectId}:${score.examKey}`, {
+        obtained: score.obtainedMarks,
+        maxMarks: score.maxMarks,
+      })
     }
 
     const subjectIds = new Set(subjects.map((subject) => subject.id))
@@ -66,16 +68,23 @@ export class ReportCardRepository {
       exams,
       subjects: subjects
         .map((subject) => {
-          const scores = emptyScores()
+          const scores = emptyExamScores()
+          const maxMarks = { ...defaultMax }
           for (const exam of exams) {
             const key = exam.key
             if (!EXAM_ORDER.includes(key)) continue
-            scores[key] = scoreLookup.get(`${subject.id}:${key}`) ?? null
+            const stored = scoreLookup.get(`${subject.id}:${key}`)
+            scores[key] = stored?.obtained ?? null
+            maxMarks[key] =
+              stored?.maxMarks && stored.maxMarks > 0
+                ? stored.maxMarks
+                : exam.maxMarks
           }
           return {
             subjectId: subject.id,
             subject: subject.title,
             scores,
+            maxMarks,
           }
         })
         .filter((subject) => subjectIds.has(subject.subjectId)),
@@ -107,17 +116,21 @@ export class ReportCardRepository {
 
     for (const subject of input.subjects) {
       for (const exam of input.exams) {
+        const maxMarks = subject.maxMarks[exam.key]
         const obtained = subject.scores[exam.key]
+        if (maxMarks < 1) {
+          throw new Error(`Max marks for ${exam.label} must be at least 1.`)
+        }
         if (obtained === null || obtained === undefined) continue
-        if (obtained > exam.maxMarks) {
+        if (obtained > maxMarks) {
           throw new Error(
-            `Marks for ${exam.label} cannot exceed ${exam.maxMarks}.`
+            `Marks for ${exam.label} cannot exceed ${maxMarks} for this subject.`
           )
         }
       }
     }
 
-    const report = await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx) => {
       const saved = await tx.studentReportCard.upsert({
         where: { userId },
         create: {
@@ -152,18 +165,13 @@ export class ReportCardRepository {
         )
         if (!payload) return []
 
-        return input.exams
-          .map((exam) => {
-            const obtained = payload.scores[exam.key]
-            if (obtained === null || obtained === undefined) return null
-            return {
-              reportCardId: saved.id,
-              subjectId: subject.id,
-              examKey: exam.key,
-              obtainedMarks: obtained,
-            }
-          })
-          .filter((row): row is NonNullable<typeof row> => row !== null)
+        return input.exams.map((exam) => ({
+          reportCardId: saved.id,
+          subjectId: subject.id,
+          examKey: exam.key,
+          obtainedMarks: payload.scores[exam.key] ?? null,
+          maxMarks: payload.maxMarks[exam.key] ?? exam.maxMarks,
+        }))
       })
 
       if (scoreRows.length > 0) {

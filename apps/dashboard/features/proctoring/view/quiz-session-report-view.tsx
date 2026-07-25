@@ -50,7 +50,7 @@ export function QuizSessionReportView({ report }: QuizSessionReportViewProps) {
             "relative overflow-hidden px-5 py-6 sm:px-7",
             blocked
               ? "bg-linear-to-br from-[#DC2626] via-[#E23B3B] to-[#F05252]"
-              : "bg-linear-to-br from-[#6C5CE7] via-[#7c6ff0] to-[#9b8cf5]"
+              : "bg-linear-to-br from-[#4169E1] via-[#7c6ff0] to-[#9b8cf5]"
           )}
         >
           <div
@@ -116,9 +116,9 @@ export function QuizSessionReportView({ report }: QuizSessionReportViewProps) {
             ) : null}
           </section>
 
-          <section className="rounded-2xl bg-[#F7F6FF] px-4 py-4 ring-1 ring-[#E8EEFF]">
+          <section className="rounded-2xl bg-[#F5F7FF] px-4 py-4 ring-1 ring-[#E8EEFF]">
             <div className="flex gap-3">
-              <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl bg-white text-[#6C5CE7] ring-1 ring-[#E4E9F5]">
+              <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl bg-white text-[#4169E1] ring-1 ring-[#E4E9F5]">
                 <Shield className="size-4" aria-hidden />
               </span>
               <div>
@@ -132,7 +132,7 @@ export function QuizSessionReportView({ report }: QuizSessionReportViewProps) {
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Link
                     href={report.helpHref}
-                    className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[#6C5CE7] px-4 text-sm font-semibold text-white hover:bg-[#5B4BD6]"
+                    className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[#4169E1] px-4 text-sm font-semibold text-white hover:bg-[#5B4BD6]"
                   >
                     Help and Support
                     <ExternalLink className="size-3.5" aria-hidden />
@@ -148,7 +148,7 @@ export function QuizSessionReportView({ report }: QuizSessionReportViewProps) {
 
           <section>
             <div className="mb-3 flex items-center gap-2">
-              <Clock3 className="size-4 text-[#6C5CE7]" aria-hidden />
+              <Clock3 className="size-4 text-[#4169E1]" aria-hidden />
               <h2 className="font-heading text-base font-semibold text-foreground">
                 Activity log
               </h2>
@@ -171,7 +171,7 @@ export function QuizSessionReportView({ report }: QuizSessionReportViewProps) {
                           "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl text-xs font-bold",
                           item.warningNumber !== null
                             ? "bg-amber-100 text-amber-700"
-                            : "bg-[#F0EEFF] text-[#6C5CE7]"
+                            : "bg-[#F0EEFF] text-[#4169E1]"
                         )}
                       >
                         {index + 1}

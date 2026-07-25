@@ -49,7 +49,7 @@ function TypingDots() {
       {[0, 1, 2].map((index) => (
         <span
           key={index}
-          className="size-1.5 animate-bounce rounded-full bg-[#6C5CE7]/55"
+          className="size-1.5 animate-bounce rounded-full bg-[#4169E1]/55"
           style={{ animationDelay: `${index * 140}ms` }}
         />
       ))}
@@ -213,7 +213,7 @@ export function NoteAiTutorCard({
         className
       )}
     >
-      <header className="relative shrink-0 overflow-hidden bg-[#6C5CE7] px-4 py-3.5 sm:px-5">
+      <header className="relative shrink-0 overflow-hidden bg-[#4169E1] px-4 py-3.5 sm:px-5">
         <div
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_100%_0%,rgba(255,255,255,0.18),transparent_55%)]"
           aria-hidden
@@ -260,7 +260,7 @@ export function NoteAiTutorCard({
                   type="button"
                   disabled={isLoading}
                   onClick={() => void submitMessage(prompt)}
-                  className="rounded-2xl border border-[#E8EEFF] bg-white px-4 py-3 text-left text-[13px] font-medium text-foreground/85 shadow-[0_2px_10px_-6px_rgba(65,105,225,0.18)] transition-all hover:border-[#d9e0ff] hover:bg-white hover:shadow-[0_6px_18px_-10px_rgba(108,92,231,0.28)] disabled:opacity-50"
+                  className="rounded-2xl border border-[#E8EEFF] bg-white px-4 py-3 text-left text-[13px] font-medium text-foreground/85 shadow-[0_2px_10px_-6px_rgba(65,105,225,0.18)] transition-all hover:border-[#d9e0ff] hover:bg-white hover:shadow-[0_6px_18px_-10px_rgba(65,105,225,0.28)] disabled:opacity-50"
                 >
                   {prompt}
                 </button>
@@ -281,7 +281,7 @@ export function NoteAiTutorCard({
                   className={cn(
                     "max-w-[90%] text-[13.5px] leading-[1.55]",
                     message.role === "user"
-                      ? "rounded-3xl rounded-br-lg bg-[#6C5CE7] px-3.5 py-2.5 text-white shadow-sm"
+                      ? "rounded-3xl rounded-br-lg bg-[#4169E1] px-3.5 py-2.5 text-white shadow-sm"
                       : "rounded-3xl rounded-bl-lg border border-[#E8EEFF] bg-white px-3.5 py-2.5 text-foreground shadow-[0_2px_10px_-6px_rgba(65,105,225,0.14)]"
                   )}
                 >

@@ -57,7 +57,7 @@ const defaultMarkdownComponents: Components = {
   ),
   em: ({ children }) => <em className="italic">{children}</em>,
   blockquote: ({ children }) => (
-    <blockquote className="mb-4 border-l-4 border-[#6C5CE7]/35 py-0.5 pl-4 text-muted-foreground last:mb-0">
+    <blockquote className="mb-4 border-l-4 border-[#4169E1]/35 py-0.5 pl-4 text-muted-foreground last:mb-0">
       {children}
     </blockquote>
   ),
@@ -67,7 +67,7 @@ const defaultMarkdownComponents: Components = {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="font-medium text-[#6C5CE7] underline underline-offset-2 hover:text-[#5d4ed6]"
+      className="font-medium text-[#4169E1] underline underline-offset-2 hover:text-[#3558C8]"
     >
       {children}
     </a>
@@ -139,7 +139,7 @@ const compactMarkdownComponents: Components = {
   ),
   em: ({ children }) => <em className="italic">{children}</em>,
   blockquote: ({ children }) => (
-    <blockquote className="mb-2 border-l-2 border-[#6C5CE7]/35 py-0.5 pl-3 text-[13px] text-muted-foreground last:mb-0">
+    <blockquote className="mb-2 border-l-2 border-[#4169E1]/35 py-0.5 pl-3 text-[13px] text-muted-foreground last:mb-0">
       {children}
     </blockquote>
   ),
@@ -149,7 +149,7 @@ const compactMarkdownComponents: Components = {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="font-medium text-[#6C5CE7] underline underline-offset-2 hover:text-[#5d4ed6]"
+      className="font-medium text-[#4169E1] underline underline-offset-2 hover:text-[#3558C8]"
     >
       {children}
     </a>

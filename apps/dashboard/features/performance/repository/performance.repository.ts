@@ -1,3 +1,10 @@
+import {
+  chapterWithAssignedContentWhere,
+  quizWithQuestionsWhere,
+  subjectWithAssignedContentWhere,
+  topicWithNotesWhere,
+} from "@/features/curriculum/model/assigned-content-filters"
+import { resolveChapterProgress } from "@/features/curriculum/model/chapter-progress"
 import { prisma } from "@/lib/db"
 
 import type {
@@ -8,15 +15,24 @@ import type {
   WeeklyAccuracyPoint,
 } from "../model/performance-data"
 import { subjectBarColors } from "../model/performance-data"
+import {
+  buildPerformanceScorecard,
+  computeWeightedScore,
+  DAILY_PERFORMANCE_WEIGHTS,
+  type DailyPerformancePoint,
+  formatTimeSpent,
+  type PerformanceScorecard,
+  roundScore,
+  scoreAiEngagement,
+  scoreIntegrityPenalty,
+  scoreLearningDepth,
+  scoreStudyAttendance,
+  scoreStudyStreak,
+} from "../model/performance-score"
 import { reportCardRepository } from "./report-card.repository"
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const
-
-const PERFORMANCE_WEIGHTS = {
-  quiz: 0.7,
-  notes: 0.2,
-  aiTutor: 0.1,
-} as const
+const LOOKBACK_DAYS = 28
 
 function startOfDay(date: Date) {
   const next = new Date(date)
@@ -48,24 +64,31 @@ function getWeekRange(reference: Date, weekOffset: number) {
   })
 }
 
-function computeWeightedScore(
-  signals: Array<{ value: number; weight: number }>
-) {
-  if (signals.length === 0) return null
-
-  const totalWeight = signals.reduce((sum, signal) => sum + signal.weight, 0)
-  const weightedSum = signals.reduce(
-    (sum, signal) => sum + signal.value * signal.weight,
-    0
-  )
-
-  return Math.round(weightedSum / totalWeight)
+function getDayRange(reference: Date, days: number) {
+  const end = startOfDay(reference)
+  return Array.from({ length: days }, (_, index) => {
+    const next = new Date(end)
+    next.setDate(end.getDate() - (days - 1 - index))
+    return next
+  })
 }
 
 function accuracyTier(value: number): SubjectAccuracy["tier"] {
   if (value >= 80) return "high"
   if (value >= 65) return "medium"
   return "low"
+}
+
+function computeStudyStreak(activityDays: Set<string>) {
+  let streak = 0
+  const cursor = startOfDay(new Date())
+
+  while (activityDays.has(dayKey(cursor))) {
+    streak += 1
+    cursor.setDate(cursor.getDate() - 1)
+  }
+
+  return streak
 }
 
 type DailyActivity = {
@@ -117,50 +140,64 @@ function buildDailyActivityMap(
   return map
 }
 
-function scoreForDay(activity: DailyActivity | undefined) {
-  if (!activity) return null
+function daySignalScores(activity: DailyActivity | undefined) {
+  if (!activity) {
+    return { quiz: null, notes: null, ai: null, composite: null }
+  }
 
-  const signals: Array<{ value: number; weight: number }> = []
+  let quiz: number | null = null
+  let notes: number | null = null
+  let ai: number | null = null
 
   if (activity.quizScores.length > 0) {
-    const quizAverage =
+    quiz = roundScore(
       activity.quizScores.reduce((sum, score) => sum + score, 0) /
-      activity.quizScores.length
-    signals.push({ value: quizAverage, weight: PERFORMANCE_WEIGHTS.quiz })
+        activity.quizScores.length
+    )
   }
 
   if (activity.notesViewed > 0) {
     const completionRatio = activity.notesCompleted / activity.notesViewed
-    const noteScore = Math.round(
+    notes = roundScore(
       Math.min(100, 40 + completionRatio * 60 + activity.notesCompleted * 5)
     )
-    signals.push({ value: noteScore, weight: PERFORMANCE_WEIGHTS.notes })
   }
 
   if (activity.aiTutorMessages > 0) {
-    const engagementScore = Math.min(
-      100,
-      Math.round((activity.aiTutorMessages / 5) * 100)
-    )
-    signals.push({
-      value: engagementScore,
-      weight: PERFORMANCE_WEIGHTS.aiTutor,
-    })
+    ai = roundScore(Math.min(100, (activity.aiTutorMessages / 5) * 100))
   }
 
-  return computeWeightedScore(signals)
+  const signals: Array<{ value: number; weight: number }> = []
+  if (quiz !== null) {
+    signals.push({ value: quiz, weight: DAILY_PERFORMANCE_WEIGHTS.quiz })
+  }
+  if (notes !== null) {
+    signals.push({ value: notes, weight: DAILY_PERFORMANCE_WEIGHTS.notes })
+  }
+  if (ai !== null) {
+    signals.push({ value: ai, weight: DAILY_PERFORMANCE_WEIGHTS.aiTutor })
+  }
+
+  return {
+    quiz,
+    notes,
+    ai,
+    composite: computeWeightedScore(signals),
+  }
 }
 
 function averageScore(values: Array<number | null>) {
   const filtered = values.filter((value): value is number => value !== null)
   if (filtered.length === 0) return null
-  return Math.round(
+  return roundScore(
     filtered.reduce((sum, value) => sum + value, 0) / filtered.length
   )
 }
 
 export type PerformanceDashboardData = {
+  scorecard: PerformanceScorecard
   weeklyAccuracyTrend: WeeklyAccuracyPoint[]
+  dailyPerformanceTrend: DailyPerformancePoint[]
   weeklyAccuracyDeltaPercent: number
   subjectAccuracy: SubjectAccuracy[]
   performanceInsights: PerformanceInsights
@@ -176,10 +213,21 @@ export class PerformanceRepository {
     const now = new Date()
     const currentWeek = getWeekRange(now, 0)
     const previousWeek = getWeekRange(now, -1)
-    const rangeStart = startOfDay(previousWeek[0]!)
-    const rangeEnd = endOfDay(currentWeek[6]!)
+    const lookbackDays = getDayRange(now, LOOKBACK_DAYS)
+    const rangeStart = startOfDay(
+      previousWeek[0]! < lookbackDays[0]! ? previousWeek[0]! : lookbackDays[0]!
+    )
+    const rangeEnd = endOfDay(lookbackDays[lookbackDays.length - 1]!)
 
-    const [attempts, noteProgress, aiMessages, subjects] = await Promise.all([
+    const [
+      recentAttempts,
+      allAttempts,
+      recentNoteProgress,
+      allNoteProgress,
+      recentAiMessages,
+      subjects,
+      chapters,
+    ] = await Promise.all([
       prisma.quizAttempt.findMany({
         where: {
           userId,
@@ -187,7 +235,46 @@ export class PerformanceRepository {
         },
         select: {
           scorePercent: true,
+          correctCount: true,
+          totalQuestions: true,
+          answeredCount: true,
+          timeSpentSeconds: true,
+          proctorWarnings: true,
+          terminatedByProctor: true,
           completedAt: true,
+          quizId: true,
+          quiz: {
+            select: {
+              chapter: {
+                select: {
+                  id: true,
+                  title: true,
+                  slug: true,
+                  subject: {
+                    select: {
+                      id: true,
+                      title: true,
+                      slug: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+      prisma.quizAttempt.findMany({
+        where: { userId },
+        select: {
+          scorePercent: true,
+          correctCount: true,
+          totalQuestions: true,
+          answeredCount: true,
+          timeSpentSeconds: true,
+          proctorWarnings: true,
+          terminatedByProctor: true,
+          completedAt: true,
+          quizId: true,
           quiz: {
             select: {
               chapter: {
@@ -218,6 +305,14 @@ export class PerformanceRepository {
           lastViewedAt: true,
         },
       }),
+      prisma.noteProgress.findMany({
+        where: { userId },
+        select: {
+          noteId: true,
+          status: true,
+          lastViewedAt: true,
+        },
+      }),
       prisma.aiTutorChatMessage.findMany({
         where: {
           role: "USER",
@@ -231,26 +326,76 @@ export class PerformanceRepository {
         orderBy: { orderIndex: "asc" },
         select: { id: true, title: true, slug: true },
       }),
+      classId
+        ? prisma.chapter.findMany({
+            where: {
+              ...chapterWithAssignedContentWhere,
+              subject: {
+                classId,
+                ...subjectWithAssignedContentWhere,
+              },
+            },
+            select: {
+              id: true,
+              topics: {
+                where: topicWithNotesWhere,
+                select: {
+                  notes: {
+                    select: { id: true },
+                  },
+                },
+              },
+              quizzes: {
+                where: quizWithQuestionsWhere,
+                select: { id: true },
+              },
+            },
+          })
+        : Promise.resolve([]),
     ])
 
+    const lookbackAttempts = recentAttempts.filter(
+      (attempt) => attempt.completedAt >= rangeStart
+    )
+    const lookbackNotes = recentNoteProgress.filter(
+      (row) => row.lastViewedAt >= rangeStart
+    )
+    const lookbackAi = recentAiMessages.filter(
+      (message) => message.createdAt >= rangeStart
+    )
+
     const dailyActivity = buildDailyActivityMap(
-      attempts,
-      noteProgress,
-      aiMessages
+      recentAttempts,
+      recentNoteProgress,
+      recentAiMessages
     )
 
     const weeklyAccuracyTrend: WeeklyAccuracyPoint[] = currentWeek.map(
       (date) => ({
         day: DAY_LABELS[date.getDay()] ?? "Mon",
-        value: scoreForDay(dailyActivity.get(dayKey(date))),
+        value: daySignalScores(dailyActivity.get(dayKey(date))).composite,
       })
     )
 
-    const currentWeekScores = currentWeek.map((date) =>
-      scoreForDay(dailyActivity.get(dayKey(date)))
+    const dailyPerformanceTrend: DailyPerformancePoint[] = lookbackDays.map(
+      (date) => {
+        const scores = daySignalScores(dailyActivity.get(dayKey(date)))
+        return {
+          day: DAY_LABELS[date.getDay()] ?? "Mon",
+          dateKey: dayKey(date),
+          value: scores.composite,
+          quiz: scores.quiz,
+          notes: scores.notes,
+          ai: scores.ai,
+        }
+      }
     )
-    const previousWeekScores = previousWeek.map((date) =>
-      scoreForDay(dailyActivity.get(dayKey(date)))
+
+    const currentWeekScores = currentWeek.map(
+      (date) => daySignalScores(dailyActivity.get(dayKey(date))).composite
+    )
+    const previousWeekScores = previousWeek.map(
+      (date) => daySignalScores(dailyActivity.get(dayKey(date))).composite
     )
 
     const currentAverage = averageScore(currentWeekScores)
@@ -259,31 +404,6 @@ export class PerformanceRepository {
       currentAverage !== null && previousAverage !== null
         ? currentAverage - previousAverage
         : 0
-
-    const allAttempts = await prisma.quizAttempt.findMany({
-      where: { userId },
-      select: {
-        scorePercent: true,
-        quiz: {
-          select: {
-            chapter: {
-              select: {
-                id: true,
-                title: true,
-                slug: true,
-                subject: {
-                  select: {
-                    id: true,
-                    title: true,
-                    slug: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    })
 
     const subjectScoreMap = new Map<string, { total: number; count: number }>()
 
@@ -347,19 +467,33 @@ export class PerformanceRepository {
         )?.slug
       : null
 
-    const focusChapters: FocusChapter[] = [...chapterScoreMap.entries()]
+    const rankedFocusChapters = [...chapterScoreMap.entries()]
       .map(([id, stats]) => ({
         id,
-        label: `Ch: ${stats.chapterTitle}`,
+        label: stats.chapterTitle,
         href: `/subjects/${stats.subjectSlug}/${stats.chapterSlug}`,
         average: Math.round(stats.total / stats.count),
         subjectSlug: stats.subjectSlug,
       }))
-      .filter((chapter) =>
-        weakSubjectSlug ? chapter.href.includes(weakSubjectSlug) : true
-      )
       .sort((a, b) => a.average - b.average)
-      .slice(0, 2)
+
+    const weakSubjectChapters = weakSubjectSlug
+      ? rankedFocusChapters.filter(
+          (chapter) => chapter.subjectSlug === weakSubjectSlug
+        )
+      : []
+
+    const otherChapters = weakSubjectSlug
+      ? rankedFocusChapters.filter(
+          (chapter) => chapter.subjectSlug !== weakSubjectSlug
+        )
+      : rankedFocusChapters
+
+    const focusChapters: FocusChapter[] = [
+      ...weakSubjectChapters,
+      ...otherChapters,
+    ]
+      .slice(0, 6)
       .map(({ id, label, href }) => ({ id, label, href }))
 
     const performanceInsights: PerformanceInsights = {
@@ -378,11 +512,166 @@ export class PerformanceRepository {
       focusChapters,
     }
 
-    const hasActivity =
-      attempts.length > 0 ||
-      noteProgress.length > 0 ||
-      aiMessages.length > 0 ||
+    const activityDays = new Set<string>()
+    for (const row of allNoteProgress) {
+      activityDays.add(dayKey(row.lastViewedAt))
+    }
+    for (const attempt of allAttempts) {
+      activityDays.add(dayKey(attempt.completedAt))
+    }
+    for (const message of recentAiMessages) {
+      activityDays.add(dayKey(message.createdAt))
+    }
+
+    const lookbackActivityDays = new Set<string>()
+    for (const date of lookbackDays) {
+      const key = dayKey(date)
+      const activity = dailyActivity.get(key)
+      if (
+        activity &&
+        (activity.quizScores.length > 0 ||
+          activity.notesViewed > 0 ||
+          activity.aiTutorMessages > 0)
+      ) {
+        lookbackActivityDays.add(key)
+      }
+    }
+
+    const studyStreak = computeStudyStreak(activityDays)
+    const accuracy =
       allAttempts.length > 0
+        ? roundScore(
+            allAttempts.reduce(
+              (sum, attempt) => sum + attempt.scorePercent,
+              0
+            ) / allAttempts.length
+          )
+        : null
+
+    const answeredTotals = allAttempts.reduce(
+      (acc, attempt) => {
+        const answered =
+          attempt.answeredCount > 0
+            ? attempt.answeredCount
+            : attempt.totalQuestions
+        acc.answered += answered
+        acc.total += attempt.totalQuestions
+        return acc
+      },
+      { answered: 0, total: 0 }
+    )
+    const answerCompletionRate =
+      answeredTotals.total > 0
+        ? roundScore((answeredTotals.answered / answeredTotals.total) * 100)
+        : null
+
+    const notesCompletedLast28 = lookbackNotes.filter(
+      (row) => row.status === "COMPLETED"
+    ).length
+
+    const progressByNoteId = new Map(
+      allNoteProgress.map((row) => [row.noteId, row.status])
+    )
+    const completedQuizIds = new Set(
+      allAttempts.map((attempt) => attempt.quizId)
+    )
+
+    let completedChapters = 0
+    for (const chapter of chapters) {
+      if (
+        resolveChapterProgress(chapter, progressByNoteId, completedQuizIds)
+          .isCompleted
+      ) {
+        completedChapters += 1
+      }
+    }
+
+    const syllabus =
+      chapters.length > 0
+        ? roundScore((completedChapters / chapters.length) * 100)
+        : null
+
+    const totalTimeSpentSeconds = allAttempts.reduce(
+      (sum, attempt) => sum + (attempt.timeSpentSeconds ?? 0),
+      0
+    )
+
+    const integrityPenalty = scoreIntegrityPenalty({
+      averageWarnings:
+        allAttempts.length > 0
+          ? allAttempts.reduce(
+              (sum, attempt) => sum + attempt.proctorWarnings,
+              0
+            ) / allAttempts.length
+          : 0,
+      terminatedAttempts: allAttempts.filter(
+        (attempt) => attempt.terminatedByProctor
+      ).length,
+      totalAttempts: allAttempts.length,
+    })
+
+    const scorecard = buildPerformanceScorecard({
+      accuracy,
+      attendance: scoreStudyAttendance(
+        lookbackActivityDays.size,
+        LOOKBACK_DAYS
+      ),
+      streakScore: scoreStudyStreak(studyStreak),
+      syllabus,
+      learningDepth: scoreLearningDepth({
+        notesCompletedLast28Days: notesCompletedLast28,
+        quizzesTakenLast28Days: lookbackAttempts.length,
+        answerCompletionRate,
+      }),
+      aiEngagement: scoreAiEngagement(lookbackAi.length),
+      integrityPenalty,
+      stats: [
+        {
+          key: "accuracy",
+          label: "Accuracy",
+          value: accuracy === null ? "—" : `${accuracy}%`,
+          hint: `${allAttempts.length} quiz attempts`,
+        },
+        {
+          key: "attendance",
+          label: "Attendance",
+          value: `${lookbackActivityDays.size}/${LOOKBACK_DAYS}`,
+          hint: "Active days · last 28 days",
+        },
+        {
+          key: "streak",
+          label: "Streak",
+          value: studyStreak > 0 ? `${studyStreak}d` : "0d",
+          hint: "Consecutive study days",
+        },
+        {
+          key: "syllabus",
+          label: "Syllabus",
+          value:
+            chapters.length > 0
+              ? `${completedChapters}/${chapters.length}`
+              : "—",
+          hint: "Chapters completed",
+        },
+        {
+          key: "ai",
+          label: "AI prompts",
+          value: String(lookbackAi.length),
+          hint: "Orvantaa AI · last 28 days",
+        },
+        {
+          key: "time",
+          label: "Quiz time",
+          value: formatTimeSpent(totalTimeSpentSeconds),
+          hint: "Total timed quiz practice",
+        },
+      ],
+    })
+
+    const hasActivity =
+      allAttempts.length > 0 ||
+      allNoteProgress.length > 0 ||
+      recentAiMessages.length > 0
 
     const reportCard = await reportCardRepository.getReportCardForUser(
       userId,
@@ -390,7 +679,9 @@ export class PerformanceRepository {
     )
 
     return {
+      scorecard,
       weeklyAccuracyTrend,
+      dailyPerformanceTrend,
       weeklyAccuracyDeltaPercent,
       subjectAccuracy,
       performanceInsights,

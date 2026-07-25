@@ -153,7 +153,7 @@ export function QuizStartDialog({
         onPointerDownOutside={(event) => event.preventDefault()}
         onEscapeKeyDown={(event) => event.preventDefault()}
       >
-        <div className="relative shrink-0 overflow-hidden bg-linear-to-br from-[#6C5CE7] via-[#7c6ff0] to-[#9b8cf5] px-5 py-5 sm:px-6 sm:py-6">
+        <div className="relative shrink-0 overflow-hidden bg-linear-to-br from-[#4169E1] via-[#7c6ff0] to-[#9b8cf5] px-5 py-5 sm:px-6 sm:py-6">
           <div
             className="pointer-events-none absolute -top-10 -right-8 size-28 rounded-full bg-white/10"
             aria-hidden
@@ -181,7 +181,7 @@ export function QuizStartDialog({
                   ? "bg-amber-50/80 ring-amber-100"
                   : item.tone === "info"
                     ? "bg-sky-50/80 ring-sky-100"
-                    : "bg-[#F7F6FF] ring-[#E8EEFF]"
+                    : "bg-[#F5F7FF] ring-[#E8EEFF]"
               )}
             >
               <span
@@ -191,7 +191,7 @@ export function QuizStartDialog({
                     ? "bg-amber-100 text-amber-700"
                     : item.tone === "info"
                       ? "bg-sky-100 text-sky-700"
-                      : "bg-white text-[#6C5CE7] ring-1 ring-[#E4E9F5]"
+                      : "bg-white text-[#4169E1] ring-1 ring-[#E4E9F5]"
                 )}
               >
                 {item.icon}

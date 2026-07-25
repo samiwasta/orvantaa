@@ -111,7 +111,7 @@ export function AssistantMessageActions({
         disabled={disabled}
         className={
           feedback === "like"
-            ? "text-[#6C5CE7] hover:bg-[#6C5CE7]/10 hover:text-[#6C5CE7]"
+            ? "text-[#4169E1] hover:bg-[#4169E1]/10 hover:text-[#4169E1]"
             : undefined
         }
       >

@@ -71,10 +71,10 @@ export function NoteAiTutorFab({
             onClick={() => onOpenChange(true)}
             className={cn(
               "group relative flex size-[3.75rem] items-center justify-center rounded-full",
-              "bg-linear-to-br from-[#6C5CE7] via-[#7550ea] to-[#5b4bc7]",
-              "shadow-[0_14px_36px_-10px_rgba(108,92,231,0.75)]",
+              "bg-linear-to-br from-[#4169E1] via-[#4169E1] to-[#5b4bc7]",
+              "shadow-[0_14px_36px_-10px_rgba(65,105,225,0.75)]",
               "ring-2 ring-white transition-all duration-200",
-              "hover:scale-[1.04] hover:shadow-[0_18px_40px_-10px_rgba(108,92,231,0.85)]",
+              "hover:scale-[1.04] hover:shadow-[0_18px_40px_-10px_rgba(65,105,225,0.85)]",
               "active:scale-[0.98]"
             )}
             aria-label="Open AI Tutor"

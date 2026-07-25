@@ -23,10 +23,15 @@ import {
   subjectBarColors,
   type WeeklyAccuracyPoint,
 } from "../model/performance-data"
+import type { DailyPerformancePoint } from "../model/performance-score"
 import type { PerformanceDashboardData } from "../repository/performance.repository"
+import {
+  PerformanceFactorsCard,
+  PerformanceMetricTiles,
+  PerformanceOverallCard,
+} from "./performance-scorecard"
 import { ReportCardUploadCard } from "./report-card-upload-card"
 
-// ─── Card wrapper ─────────────────────────────────────────────────────────────
 type ChartMetricCardProps = {
   title: string
   description: string
@@ -49,9 +54,9 @@ function ChartMetricCard({
         className
       )}
     >
-      <div className="flex items-start justify-between gap-3 border-b border-border/50 px-5 py-4 sm:px-6">
+      <div className="flex items-start justify-between gap-3 border-b border-border/50 px-5 py-4">
         <div className="min-w-0">
-          <CardTitle className="font-heading text-base font-semibold tracking-tight text-foreground sm:text-[17px]">
+          <CardTitle className="font-heading text-base font-semibold tracking-tight text-foreground">
             {title}
           </CardTitle>
           <CardDescription className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
@@ -65,7 +70,6 @@ function ChartMetricCard({
   )
 }
 
-// ─── Shared tooltip styles ────────────────────────────────────────────────────
 const tooltipWrapperStyle: React.CSSProperties = {
   outline: "none",
   border: "1px solid #e5e7eb",
@@ -79,33 +83,69 @@ const tooltipWrapperStyle: React.CSSProperties = {
   pointerEvents: "none",
 }
 
-// ─── Line chart ───────────────────────────────────────────────────────────────
 function LineTooltip({
   active,
   payload,
   label,
 }: {
   active?: boolean
-  payload?: { value?: number }[]
+  payload?: Array<{
+    value?: number
+    dataKey?: string | number
+    color?: string
+    name?: string
+  }>
   label?: string
 }) {
   if (!active || !payload?.length) return null
   return (
     <div style={tooltipWrapperStyle}>
-      <span style={{ color: "#6b7280", fontWeight: 400 }}>{label} — </span>
-      Accuracy: {payload[0]?.value}%
+      <div style={{ color: "#6b7280", fontWeight: 500, marginBottom: 4 }}>
+        {label}
+      </div>
+      {payload.map((entry) => (
+        <div key={String(entry.dataKey)} style={{ color: entry.color }}>
+          {entry.name}: {entry.value ?? "—"}
+          {entry.value != null ? "%" : ""}
+        </div>
+      ))}
     </div>
   )
+}
+
+function formatTrendLabel(point: DailyPerformancePoint) {
+  const [, month, day] = point.dateKey.split("-")
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ] as const
+  const monthIndex = Number(month) - 1
+  const monthLabel = monthNames[monthIndex] ?? month
+  return `${Number(day)} ${monthLabel}`
 }
 
 function PerformanceOverTimeChart({
   data,
   hasActivity,
 }: {
-  data: WeeklyAccuracyPoint[]
+  data: DailyPerformancePoint[]
   hasActivity: boolean
 }) {
-  const values = data
+  const chartData = data.map((point) => ({
+    ...point,
+    label: formatTrendLabel(point),
+  }))
+  const values = chartData
     .map((point) => point.value)
     .filter((value): value is number => value !== null)
   const minValue = values.length > 0 ? Math.max(0, Math.min(...values) - 10) : 0
@@ -117,7 +157,7 @@ function PerformanceOverTimeChart({
 
   if (!hasActivity) {
     return (
-      <div className="flex h-[280px] items-center justify-center px-6 text-center sm:h-[320px]">
+      <div className="flex h-[240px] items-center justify-center px-5 text-center">
         <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
           Complete quizzes, lessons, or AI tutor sessions to start tracking your
           performance over time.
@@ -127,24 +167,103 @@ function PerformanceOverTimeChart({
   }
 
   return (
-    <div className="h-[280px] w-full px-3 pt-4 pb-4 sm:h-[320px] sm:px-4">
+    <div className="h-[240px] w-full overflow-x-auto px-3 pt-3 pb-3 sm:px-4">
+      <div className="h-full min-w-[560px] sm:min-w-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart
+            data={chartData}
+            margin={{ top: 10, right: 10, bottom: 4, left: 0 }}
+          >
+            <defs>
+              <linearGradient
+                id="rechartsLineAreaGrad"
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop offset="5%" stopColor="#4169E1" stopOpacity={0.18} />
+                <stop offset="95%" stopColor="#4169E1" stopOpacity={0.01} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              vertical={false}
+              stroke="#e9eaec"
+              strokeDasharray="5 5"
+            />
+            <XAxis
+              dataKey="label"
+              tickLine={false}
+              axisLine={false}
+              interval="preserveStartEnd"
+              minTickGap={36}
+              tick={{ fill: "#9ca3af", fontSize: 11, fontWeight: 500 }}
+              dy={6}
+            />
+            <YAxis
+              domain={[minValue, 100]}
+              ticks={yTicks}
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: "#b0b7c3", fontSize: 11 }}
+              tickFormatter={(v) => `${v}%`}
+              width={40}
+            />
+            <Tooltip
+              content={<LineTooltip />}
+              cursor={{
+                stroke: "#4169E1",
+                strokeWidth: 1,
+                strokeDasharray: "4 4",
+              }}
+            />
+            <Area
+              type="monotone"
+              name="Performance"
+              dataKey="value"
+              stroke="#4169E1"
+              strokeWidth={2.5}
+              fill="url(#rechartsLineAreaGrad)"
+              connectNulls
+              dot={false}
+              activeDot={{
+                fill: "#4169E1",
+                stroke: "#fff",
+                strokeWidth: 2.5,
+                r: 5,
+              }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  )
+}
+
+function WeeklySnapshotChart({
+  data,
+  hasActivity,
+}: {
+  data: WeeklyAccuracyPoint[]
+  hasActivity: boolean
+}) {
+  if (!hasActivity) {
+    return (
+      <div className="flex h-[240px] items-center justify-center px-5 text-center">
+        <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+          Your weekly snapshot appears after you start learning.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="h-[240px] w-full px-3 pt-3 pb-3 sm:px-4">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={data}
-          margin={{ top: 12, right: 12, bottom: 8, left: 0 }}
+          margin={{ top: 10, right: 8, bottom: 4, left: 0 }}
         >
-          <defs>
-            <linearGradient
-              id="rechartsLineAreaGrad"
-              x1="0"
-              y1="0"
-              x2="0"
-              y2="1"
-            >
-              <stop offset="5%" stopColor="#6C5CE7" stopOpacity={0.18} />
-              <stop offset="95%" stopColor="#6C5CE7" stopOpacity={0.01} />
-            </linearGradient>
-          </defs>
           <CartesianGrid
             vertical={false}
             stroke="#e9eaec"
@@ -155,39 +274,27 @@ function PerformanceOverTimeChart({
             tickLine={false}
             axisLine={false}
             tick={{ fill: "#9ca3af", fontSize: 11, fontWeight: 500 }}
-            dy={8}
           />
           <YAxis
-            domain={[minValue, 100]}
-            ticks={yTicks}
+            domain={[0, 100]}
+            ticks={[0, 50, 100]}
             tickLine={false}
             axisLine={false}
             tick={{ fill: "#b0b7c3", fontSize: 11 }}
             tickFormatter={(v) => `${v}%`}
-            width={42}
+            width={36}
           />
-          <Tooltip
-            content={<LineTooltip />}
-            cursor={{
-              stroke: "#6C5CE7",
-              strokeWidth: 1,
-              strokeDasharray: "4 4",
-            }}
-          />
+          <Tooltip content={<LineTooltip />} />
           <Area
             type="monotone"
+            name="This week"
             dataKey="value"
-            stroke="#6C5CE7"
-            strokeWidth={2.5}
-            fill="url(#rechartsLineAreaGrad)"
+            stroke="#FF8A3D"
+            strokeWidth={2}
+            fill="#FF8A3D"
+            fillOpacity={0.12}
             connectNulls
-            dot={{ fill: "#6C5CE7", stroke: "#fff", strokeWidth: 2, r: 4 }}
-            activeDot={{
-              fill: "#6C5CE7",
-              stroke: "#fff",
-              strokeWidth: 2.5,
-              r: 5.5,
-            }}
+            dot={{ fill: "#FF8A3D", stroke: "#fff", strokeWidth: 2, r: 3.5 }}
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -195,7 +302,6 @@ function PerformanceOverTimeChart({
   )
 }
 
-// ─── Bar value label ─────────────────────────────────────────────────────────
 function BarValueLabel(props: {
   x?: number
   y?: number
@@ -218,7 +324,6 @@ function BarValueLabel(props: {
   )
 }
 
-// ─── Bar chart ────────────────────────────────────────────────────────────────
 function BarTooltip({
   active,
   payload,
@@ -231,7 +336,7 @@ function BarTooltip({
   if (!active || !payload?.length) return null
   return (
     <div style={tooltipWrapperStyle}>
-      {label}: <span style={{ color: "#6C5CE7" }}>{payload[0]?.value}%</span>
+      {label}: <span style={{ color: "#4169E1" }}>{payload[0]?.value}%</span>
     </div>
   )
 }
@@ -250,7 +355,7 @@ function SubjectBarChart({
 
   if (subjectCount === 0) {
     return (
-      <div className="flex h-[280px] items-center justify-center px-6 text-center sm:h-[320px]">
+      <div className="flex h-[240px] items-center justify-center px-5 text-center">
         <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
           Your class subjects will appear here once assigned by your school.
         </p>
@@ -271,7 +376,7 @@ function SubjectBarChart({
   return (
     <div
       className={cn(
-        "h-[280px] w-full px-3 pt-4 pb-4 sm:h-[320px] sm:px-4",
+        "h-[240px] w-full px-3 pt-3 pb-3 sm:px-4",
         useScroll && "overflow-x-auto"
       )}
     >
@@ -283,9 +388,9 @@ function SubjectBarChart({
           <BarChart
             data={data}
             margin={{
-              top: 24,
-              right: 12,
-              bottom: useCompactLayout ? 28 : 8,
+              top: 20,
+              right: 8,
+              bottom: useCompactLayout ? 24 : 4,
               left: 0,
             }}
             barCategoryGap={subjectCount > 8 ? "10%" : "18%"}
@@ -302,7 +407,7 @@ function SubjectBarChart({
               axisLine={false}
               angle={useCompactLayout ? -35 : 0}
               textAnchor={useCompactLayout ? "end" : "middle"}
-              height={useCompactLayout ? 52 : 32}
+              height={useCompactLayout ? 48 : 28}
               tick={{
                 fill: "#9ca3af",
                 fontSize: tickFontSize,
@@ -311,21 +416,21 @@ function SubjectBarChart({
               tickFormatter={(value: string) =>
                 truncateSubjectLabel(value, useCompactLayout ? 10 : 14)
               }
-              dy={useCompactLayout ? 4 : 8}
+              dy={4}
             />
             <YAxis
               domain={[0, 110]}
-              ticks={[0, 25, 50, 75, 100]}
+              ticks={[0, 50, 100]}
               tickLine={false}
               axisLine={false}
               tick={{ fill: "#b0b7c3", fontSize: 11 }}
               tickFormatter={(v) => `${v}%`}
-              width={42}
+              width={40}
             />
             <ReferenceLine y={100} stroke="#e9eaec" strokeDasharray="5 5" />
             <Tooltip
               content={<BarTooltip />}
-              cursor={{ fill: "rgba(108,92,231,0.06)", radius: 6 }}
+              cursor={{ fill: "rgba(65,105,225,0.06)", radius: 6 }}
             />
             <Bar
               dataKey="value"
@@ -348,7 +453,6 @@ function SubjectBarChart({
   )
 }
 
-// ─── Insights card ────────────────────────────────────────────────────────────
 function PerformanceInsightsCard({
   insights,
 }: {
@@ -358,89 +462,91 @@ function PerformanceInsightsCard({
 
   return (
     <Card className="flex h-full flex-col gap-0 overflow-hidden rounded-2xl border-0 bg-card py-0 shadow-md ring-1 ring-black/5">
-      <div className="border-b border-border/50 px-5 py-4 sm:px-6">
-        <CardTitle className="font-heading text-base font-semibold tracking-tight text-foreground sm:text-[17px]">
+      <div className="border-b border-border/50 px-5 py-4">
+        <CardTitle className="font-heading text-base font-semibold tracking-tight text-foreground">
           Performance Insights
         </CardTitle>
         <CardDescription className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
-          Your strengths and areas that need attention
+          Strengths and areas that need attention
         </CardDescription>
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 px-5 py-4 sm:px-6 sm:py-5">
-        {/* Strength & Needs Improvement — always side by side */}
+      <div className="flex flex-1 flex-col gap-3 px-5 py-4">
         <div className="grid grid-cols-2 gap-3">
-          <div className="flex items-center gap-3 rounded-xl bg-emerald-50 px-4 py-3.5 ring-1 ring-emerald-100/80">
+          <div className="flex items-center gap-3 rounded-xl bg-emerald-50 px-3.5 py-3 ring-1 ring-emerald-100/80">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm">
-              <TrendingUp className="size-[16px]" strokeWidth={2.25} />
+              <TrendingUp className="size-4" strokeWidth={2.25} />
             </div>
             <div className="min-w-0">
               <p className="text-[10px] font-semibold tracking-wide text-emerald-700/80 uppercase">
                 {strength.label}
               </p>
-              <p className="truncate font-heading text-base leading-tight font-semibold text-foreground sm:text-[17px]">
+              <p className="truncate font-heading text-sm font-semibold text-foreground sm:text-base">
                 {strength.subject}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 rounded-xl bg-violet-50 px-4 py-3.5 ring-1 ring-violet-100/80">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#6C5CE7] text-white shadow-sm">
-              <Target className="size-[16px]" strokeWidth={2.25} />
+          <div className="flex items-center gap-3 rounded-xl bg-[#F0F4FF] px-3.5 py-3 ring-1 ring-[#E0E7FF]/80">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#4169E1] text-white shadow-sm">
+              <Target className="size-4" strokeWidth={2.25} />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold tracking-wide text-[#6C5CE7]/80 uppercase">
+              <p className="text-[10px] font-semibold tracking-wide text-[#4169E1]/80 uppercase">
                 {needsImprovement.label}
               </p>
-              <p className="truncate font-heading text-base leading-tight font-semibold text-foreground sm:text-[17px]">
+              <p className="truncate font-heading text-sm font-semibold text-foreground sm:text-base">
                 {needsImprovement.subject}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Tip — full width */}
-        <div className="flex gap-3 rounded-xl bg-amber-50/70 px-4 py-3.5 ring-1 ring-amber-100/80">
+        <div className="flex gap-3 rounded-xl bg-amber-50/70 px-3.5 py-3 ring-1 ring-amber-100/80">
           <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-amber-400/20 text-amber-500">
-            <Lightbulb className="size-[15px]" strokeWidth={2} />
+            <Lightbulb className="size-3.5" strokeWidth={2} />
           </div>
           <p className="text-sm leading-relaxed text-muted-foreground">{tip}</p>
         </div>
 
-        {/* Chapters to focus on — flex-1 so it fills remaining space */}
-        <div className="flex flex-1 flex-col">
-          <p className="mb-2.5 text-sm font-semibold text-foreground">
+        <div className="flex flex-col">
+          <p className="mb-2 text-sm font-semibold text-foreground">
             Chapters to focus on
           </p>
-          <ul className="flex flex-col gap-2">
-            {focusChapters.length === 0 ? (
-              <li className="rounded-xl border border-dashed border-border/70 px-4 py-3 text-sm text-muted-foreground">
-                Complete more quizzes to see chapters that need attention.
-              </li>
-            ) : (
-              focusChapters.map((chapter) => (
-                <li key={chapter.id}>
+          {focusChapters.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border/70 px-3.5 py-3 text-sm text-muted-foreground">
+              Complete more quizzes to see chapters that need attention.
+            </div>
+          ) : (
+            <ul
+              className={cn(
+                "flex flex-col gap-2",
+                focusChapters.length > 3 &&
+                  "max-h-[188px] overflow-y-auto overscroll-contain pr-1"
+              )}
+            >
+              {focusChapters.map((chapter) => (
+                <li key={chapter.id} className="shrink-0">
                   <Link
                     href={chapter.href}
                     className={cn(
-                      "flex items-center justify-between gap-2 rounded-xl border border-[#FF8A3D]/30 bg-muted/30 px-4 py-3 text-sm font-medium text-foreground transition-colors",
+                      "flex items-center justify-between gap-2 rounded-xl border border-[#FF8A3D]/30 bg-muted/30 px-3.5 py-3 text-sm font-medium text-foreground transition-colors",
                       "hover:border-[#FF8A3D]/55 hover:bg-orange-50/60"
                     )}
                   >
-                    {chapter.label}
+                    <span className="min-w-0 truncate">{chapter.label}</span>
                     <ChevronRight className="size-4 shrink-0 text-[#FF8A3D]" />
                   </Link>
                 </li>
-              ))
-            )}
-          </ul>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </Card>
   )
 }
 
-// ─── Bento grid ───────────────────────────────────────────────────────────────
 export function PerformanceBentoGrid({
   dashboard,
 }: {
@@ -451,12 +557,23 @@ export function PerformanceBentoGrid({
     delta === 0 ? null : `${delta > 0 ? "+" : ""}${delta}% this week`
 
   return (
-    <section className="@container/perf flex flex-col gap-4 sm:gap-5">
-      <div className="grid grid-cols-1 gap-4 @[900px]/perf:grid-cols-5 @[900px]/perf:items-stretch @[900px]/perf:gap-5">
+    <section className="@container/perf flex flex-col gap-5 sm:gap-6">
+      <div className="grid grid-cols-1 gap-5 sm:gap-6 @[960px]/perf:grid-cols-3 @[960px]/perf:items-stretch">
+        <div className="@[960px]/perf:col-span-1">
+          <PerformanceOverallCard scorecard={dashboard.scorecard} />
+        </div>
+        <div className="@[960px]/perf:col-span-2">
+          <PerformanceFactorsCard scorecard={dashboard.scorecard} />
+        </div>
+      </div>
+
+      <PerformanceMetricTiles scorecard={dashboard.scorecard} />
+
+      <div className="grid grid-cols-1 gap-5 sm:gap-6 @[960px]/perf:grid-cols-5 @[960px]/perf:items-stretch">
         <ChartMetricCard
-          className="@[900px]/perf:col-span-3"
+          className="@[960px]/perf:col-span-3"
           title="Performance over time"
-          description="See how your accuracy has improved"
+          description="28-day score from quizzes, notes, and Orvantaa AI"
           badge={
             deltaLabel ? (
               <span
@@ -473,28 +590,38 @@ export function PerformanceBentoGrid({
           }
         >
           <PerformanceOverTimeChart
-            data={dashboard.weeklyAccuracyTrend}
+            data={dashboard.dailyPerformanceTrend}
             hasActivity={dashboard.hasActivity}
           />
         </ChartMetricCard>
 
         <ChartMetricCard
-          className="@[900px]/perf:col-span-2"
+          className="@[960px]/perf:col-span-2"
+          title="This week"
+          description="Daily composite for the current week"
+        >
+          <WeeklySnapshotChart
+            data={dashboard.weeklyAccuracyTrend}
+            hasActivity={dashboard.hasActivity}
+          />
+        </ChartMetricCard>
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 sm:gap-6 @[960px]/perf:grid-cols-5 @[960px]/perf:items-stretch">
+        <ChartMetricCard
+          className="@[960px]/perf:col-span-3"
           title="Subject-wise Performance"
           description="Compare your accuracy across subjects"
         >
           <SubjectBarChart data={dashboard.subjectAccuracy} />
         </ChartMetricCard>
-      </div>
 
-      <div className="grid grid-cols-1 gap-4 @[900px]/perf:grid-cols-5 @[900px]/perf:items-stretch @[900px]/perf:gap-5">
-        <div className="@[900px]/perf:col-span-3">
+        <div className="@[960px]/perf:col-span-2">
           <PerformanceInsightsCard insights={dashboard.performanceInsights} />
         </div>
-        <div className="@[900px]/perf:col-span-2">
-          <ReportCardUploadCard initialReport={dashboard.reportCard} />
-        </div>
       </div>
+
+      <ReportCardUploadCard initialReport={dashboard.reportCard} />
     </section>
   )
 }

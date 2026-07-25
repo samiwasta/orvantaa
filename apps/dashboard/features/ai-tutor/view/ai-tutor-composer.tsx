@@ -146,18 +146,18 @@ export function AiTutorComposer({
             : cn(
                 "rounded-[1.75rem] border bg-white",
                 compact
-                  ? "rounded-xl border-border/70 bg-[#faf9fc] shadow-sm focus-within:border-violet-200 focus-within:ring-2 focus-within:ring-violet-100"
-                  : "border-border/60 shadow-[0_2px_16px_-8px_rgba(15,15,40,0.18)] focus-within:border-[#6C5CE7]/50 focus-within:shadow-[0_4px_24px_-8px_rgba(108,92,231,0.3)]"
+                  ? "rounded-xl border-border/70 bg-[#faf9fc] shadow-sm focus-within:border-[#C7D7FF] focus-within:ring-2 focus-within:ring-[#E0E7FF]"
+                  : "border-border/60 shadow-[0_2px_16px_-8px_rgba(15,15,40,0.18)] focus-within:border-[#4169E1]/50 focus-within:shadow-[0_4px_24px_-8px_rgba(65,105,225,0.3)]"
               ),
           isDragging &&
             (isPremium
-              ? "border-[#6C5CE7]/40 ring-2 ring-[#6C5CE7]/10"
-              : "border-[#6C5CE7]/60 ring-2 ring-[#6C5CE7]/15")
+              ? "border-[#4169E1]/40 ring-2 ring-[#4169E1]/10"
+              : "border-[#4169E1]/60 ring-2 ring-[#4169E1]/15")
         )}
       >
         {isDragging ? (
-          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-[inherit] bg-violet-50/90 backdrop-blur-[1px]">
-            <p className="text-sm font-medium text-[#5d4ed6]">
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-[inherit] bg-[#F0F4FF]/90 backdrop-blur-[1px]">
+            <p className="text-sm font-medium text-[#3558C8]">
               Drop up to {CHAT_ATTACHMENT_MAX_FILES} files (10 MB each)
             </p>
           </div>
@@ -225,7 +225,7 @@ export function AiTutorComposer({
                   ? "size-8"
                   : isPremium
                     ? "size-10"
-                    : "size-9 hover:bg-violet-50 hover:text-[#6C5CE7]",
+                    : "size-9 hover:bg-[#F0F4FF] hover:text-[#4169E1]",
                 compact && !isPremium && "size-8 rounded-lg"
               )}
               aria-label="Attach images or documents"
@@ -299,7 +299,7 @@ export function AiTutorComposer({
                     ? "size-8 rounded-full bg-foreground text-background shadow-none hover:bg-foreground/90 disabled:bg-muted disabled:text-muted-foreground"
                     : isPremium
                       ? "size-10 rounded-full bg-foreground text-background shadow-none hover:bg-foreground/90 disabled:bg-muted disabled:text-muted-foreground"
-                      : "size-9 rounded-full bg-[#6C5CE7] text-white shadow-sm hover:bg-[#5d4ed6] disabled:bg-muted disabled:text-muted-foreground",
+                      : "size-9 rounded-full bg-[#4169E1] text-white shadow-sm hover:bg-[#3558C8] disabled:bg-muted disabled:text-muted-foreground",
                   compact && !isPremium && "rounded-lg"
                 )}
                 aria-label="Send message"

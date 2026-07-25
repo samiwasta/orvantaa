@@ -575,7 +575,10 @@ function ExamTargetCard({
               {data.syllabusSummary.totalChapters} ({syllabusPercent}%)
             </span>
           </div>
-          <Progress value={syllabusPercent} className="mt-1.5 h-1.5" />
+          <Progress
+            value={syllabusPercent}
+            className="mt-1.5 h-1.5 **:data-[slot=progress-indicator]:bg-[#4169E1]"
+          />
         </div>
       </div>
     </Card>
@@ -665,7 +668,7 @@ function JourneyStepCard({
                     {goal.source === "AI" ? (
                       <Badge
                         variant="outline"
-                        className="hidden border-violet-100 bg-violet-50 px-1.5 py-0 text-[9px] text-violet-700 sm:inline-flex"
+                        className="hidden border-[#E0E7FF] bg-[#F0F4FF] px-1.5 py-0 text-[9px] text-[#3558C8] sm:inline-flex"
                       >
                         Personalized
                       </Badge>
@@ -715,7 +718,10 @@ function JourneyStepCard({
                       {goal.progressCount}/{goal.targetCount} ({percent}%)
                     </span>
                   </div>
-                  <Progress value={percent} className="h-1.5" />
+                  <Progress
+                    value={percent}
+                    className="h-1.5 **:data-[slot=progress-indicator]:bg-[#4169E1]"
+                  />
                 </div>
 
                 {goal.href ? (

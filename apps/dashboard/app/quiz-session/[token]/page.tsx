@@ -42,7 +42,7 @@ export default async function QuizSessionPage({
           </Link>
           <Link
             href="/help"
-            className="text-sm font-semibold text-[#6C5CE7] hover:text-[#5B4BD6]"
+            className="text-sm font-semibold text-[#4169E1] hover:text-[#5B4BD6]"
           >
             Help and Support
           </Link>

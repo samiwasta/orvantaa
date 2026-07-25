@@ -99,7 +99,7 @@ export function UserProfileMenu({ profile }: UserProfileMenuProps) {
             "text-foreground transition-colors hover:bg-muted"
           )}
         >
-          <CircleHelp className="size-4 text-[#6C5CE7]" strokeWidth={2} />
+          <CircleHelp className="size-4 text-[#4169E1]" strokeWidth={2} />
           Help
         </Link>
         <Link
@@ -110,7 +110,7 @@ export function UserProfileMenu({ profile }: UserProfileMenuProps) {
             "text-foreground transition-colors hover:bg-muted"
           )}
         >
-          <UserRound className="size-4 text-[#6C5CE7]" strokeWidth={2} />
+          <UserRound className="size-4 text-[#4169E1]" strokeWidth={2} />
           My Profile
         </Link>
         <button
@@ -123,7 +123,7 @@ export function UserProfileMenu({ profile }: UserProfileMenuProps) {
             "disabled:pointer-events-none disabled:opacity-50"
           )}
         >
-          <LogOut className="size-4 text-[#6C5CE7]" strokeWidth={2} />
+          <LogOut className="size-4 text-[#4169E1]" strokeWidth={2} />
           {isLoggingOut ? "Logging out..." : "Logout"}
         </button>
       </PopoverContent>

@@ -124,7 +124,7 @@ export function ProfileView({ profile: initialProfile }: ProfileViewProps) {
         <div className="flex items-center gap-4 border-b border-border/50 px-5 py-5 sm:px-6">
           <Avatar className="size-14">
             <AvatarImage src={avatarSrc} alt="" />
-            <AvatarFallback className="bg-[#6C5CE7]/15 text-[#6C5CE7]">
+            <AvatarFallback className="bg-[#4169E1]/15 text-[#4169E1]">
               {initials(displayName)}
             </AvatarFallback>
           </Avatar>
@@ -229,7 +229,7 @@ export function ProfileView({ profile: initialProfile }: ProfileViewProps) {
           <div className="flex justify-end">
             <Button
               type="submit"
-              className="rounded-xl bg-[#6C5CE7] font-semibold text-white hover:bg-[#6C5CE7]/90"
+              className="rounded-xl bg-[#4169E1] font-semibold text-white hover:bg-[#4169E1]/90"
               disabled={profilePending}
             >
               {profilePending ? "Saving..." : "Save profile"}
@@ -250,7 +250,7 @@ export function ProfileView({ profile: initialProfile }: ProfileViewProps) {
         <dl className="divide-y divide-border/50">
           <div className="flex items-start justify-between gap-4 px-5 py-3.5 sm:px-6">
             <dt className="flex items-center gap-2 text-sm text-muted-foreground">
-              <School className="size-4 shrink-0 text-[#6C5CE7]" aria-hidden />
+              <School className="size-4 shrink-0 text-[#4169E1]" aria-hidden />
               School
             </dt>
             <dd className="text-right text-sm font-medium">
@@ -260,7 +260,7 @@ export function ProfileView({ profile: initialProfile }: ProfileViewProps) {
           <div className="flex items-start justify-between gap-4 px-5 py-3.5 sm:px-6">
             <dt className="flex items-center gap-2 text-sm text-muted-foreground">
               <GraduationCap
-                className="size-4 shrink-0 text-[#6C5CE7]"
+                className="size-4 shrink-0 text-[#4169E1]"
                 aria-hidden
               />
               Class

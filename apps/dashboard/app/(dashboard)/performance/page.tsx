@@ -5,7 +5,8 @@ import { PerformanceView } from "@/features/performance/view/performance-view"
 
 export const metadata: Metadata = {
   title: "Performance - Orvantaa",
-  description: "Track your learning progress and subject-wise accuracy",
+  description:
+    "Track your performance score from accuracy, attendance, streak, syllabus, and Orvantaa AI",
 }
 
 export default async function PerformancePage() {

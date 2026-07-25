@@ -74,8 +74,8 @@ export function NewLearnerDashboard({
             href={quickLinks.firstReadingHref}
             icon="/book-stack.svg"
             iconAlt="Stack of books"
-            gradient="from-[#7f54ee] via-[#7550ea] to-[#6447dd]"
-            shadow="shadow-[0_20px_44px_-24px_rgba(108,92,231,0.95)]"
+            gradient="from-[#5B7FE8] via-[#4169E1] to-[#3558C8]"
+            shadow="shadow-[0_20px_44px_-24px_rgba(65,105,225,0.95)]"
           />
         </motion.div>
         <motion.div variants={fadeUp}>
@@ -109,8 +109,8 @@ function HeroCard({
   subjectsHref: string
 }) {
   return (
-    <Card className="relative overflow-hidden rounded-3xl bg-linear-to-br from-white via-[#faf9ff] to-[#f1eeff] p-4 shadow-[0_14px_34px_-22px_rgba(108,92,231,0.65)] ring-0 sm:p-5 lg:p-8">
-      <div className="pointer-events-none absolute top-8 -left-16 size-44 rounded-full bg-[#6c5ce7]/10 blur-3xl" />
+    <Card className="relative overflow-hidden rounded-3xl bg-linear-to-br from-white via-[#F8FAFF] to-[#E8EEFF] p-4 shadow-[0_14px_34px_-22px_rgba(65,105,225,0.65)] ring-0 sm:p-5 lg:p-8">
+      <div className="pointer-events-none absolute top-8 -left-16 size-44 rounded-full bg-[#4169E1]/10 blur-3xl" />
       <div className="pointer-events-none absolute -right-12 bottom-0 size-48 rounded-full bg-[#8b7cf6]/20 blur-3xl" />
 
       <div className="@container/hero relative">
@@ -140,7 +140,7 @@ function HeroCard({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05, duration: 0.4 }}
-              className="inline-flex w-fit items-center rounded-full border border-[#6c5ce7]/20 bg-[#6c5ce7]/10 px-3 py-1 text-xs font-semibold tracking-wide text-[#5d4ed6] uppercase"
+              className="inline-flex w-fit items-center rounded-full border border-[#4169E1]/20 bg-[#4169E1]/10 px-3 py-1 text-xs font-semibold tracking-wide text-[#3558C8] uppercase"
             >
               New learner journey
             </motion.p>
@@ -175,7 +175,7 @@ function HeroCard({
               <Button
                 asChild
                 size="lg"
-                className="mt-4 h-11 w-full self-start rounded-xl bg-[#6c5ce7] px-4 text-sm font-semibold text-white shadow-[0_10px_20px_-12px_rgba(108,92,231,0.95)] transition-all hover:bg-[#5d4ed6] xl:mt-6 @[540px]/hero:w-auto @[540px]/hero:px-5"
+                className="mt-4 h-11 w-full self-start rounded-xl bg-[#4169E1] px-4 text-sm font-semibold text-white shadow-[0_10px_20px_-12px_rgba(65,105,225,0.95)] transition-all hover:bg-[#3558C8] xl:mt-6 @[540px]/hero:w-auto @[540px]/hero:px-5"
               >
                 <Link href={subjectsHref}>Explore Subjects</Link>
               </Button>

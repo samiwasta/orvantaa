@@ -58,7 +58,7 @@ export function TicketDetailView({ ticket }: TicketDetailViewProps) {
               ticketStatusTone(ticket.status) === "success" &&
                 "border-emerald-200 bg-emerald-50 text-emerald-700",
               ticketStatusTone(ticket.status) === "secondary" &&
-                "border-[#6C5CE7]/20 bg-[#6C5CE7]/10 text-[#6C5CE7]",
+                "border-[#4169E1]/20 bg-[#4169E1]/10 text-[#4169E1]",
               ticketStatusTone(ticket.status) === "muted" &&
                 "text-muted-foreground"
             )}
@@ -82,8 +82,8 @@ export function TicketDetailView({ ticket }: TicketDetailViewProps) {
           </div>
 
           {ticket.adminNote ? (
-            <div className="rounded-xl border border-[#6C5CE7]/20 bg-[#6C5CE7]/5 p-4">
-              <h2 className="text-sm font-semibold text-[#6C5CE7]">
+            <div className="rounded-xl border border-[#4169E1]/20 bg-[#4169E1]/5 p-4">
+              <h2 className="text-sm font-semibold text-[#4169E1]">
                 Team response
               </h2>
               <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap text-foreground">

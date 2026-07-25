@@ -57,9 +57,9 @@ function TypingIndicator() {
     <div className="w-full px-3 py-4 md:px-6 md:py-6">
       <div className={cn("mx-auto w-full", CHAT_MAX_WIDTH)}>
         <div className="flex h-8 items-center gap-1.5">
-          <span className="size-2 animate-bounce rounded-full bg-[#6C5CE7]/70 [animation-delay:0ms]" />
-          <span className="size-2 animate-bounce rounded-full bg-[#6C5CE7]/70 [animation-delay:150ms]" />
-          <span className="size-2 animate-bounce rounded-full bg-[#6C5CE7]/70 [animation-delay:300ms]" />
+          <span className="size-2 animate-bounce rounded-full bg-[#4169E1]/70 [animation-delay:0ms]" />
+          <span className="size-2 animate-bounce rounded-full bg-[#4169E1]/70 [animation-delay:150ms]" />
+          <span className="size-2 animate-bounce rounded-full bg-[#4169E1]/70 [animation-delay:300ms]" />
         </div>
       </div>
     </div>
@@ -76,7 +76,7 @@ function UserMessage({
   return (
     <div className="w-full px-3 py-2 md:px-6 md:py-3">
       <div className={cn("mx-auto flex w-full justify-end", CHAT_MAX_WIDTH)}>
-        <div className="max-w-[92%] rounded-3xl rounded-br-lg bg-[#6C5CE7] px-3.5 py-2.5 text-[15px] leading-relaxed text-white shadow-sm sm:max-w-[80%] sm:px-4">
+        <div className="max-w-[92%] rounded-3xl rounded-br-lg bg-[#4169E1] px-3.5 py-2.5 text-[15px] leading-relaxed text-white shadow-sm sm:max-w-[80%] sm:px-4">
           <UserMessageAttachments attachments={attachments} />
           {content ? (
             <p className="break-words whitespace-pre-wrap">{content}</p>
@@ -603,10 +603,10 @@ function AiTutorChat({ chatId, session, userFirstName }: AiTutorChatProps) {
           type="button"
           variant="outline"
           size="sm"
-          className="h-8 gap-1.5 rounded-lg border-border/60 px-2.5 text-sm font-medium hover:border-[#6C5CE7]/40 hover:bg-violet-50/80 sm:px-3"
+          className="h-8 gap-1.5 rounded-lg border-border/60 px-2.5 text-sm font-medium hover:border-[#4169E1]/40 hover:bg-[#F0F4FF]/80 sm:px-3"
           onClick={() => setHistoryOpen(true)}
         >
-          <History className="size-4 text-[#6C5CE7]" strokeWidth={2} />
+          <History className="size-4 text-[#4169E1]" strokeWidth={2} />
           <span className="max-sm:sr-only">Chat History</span>
         </Button>
       </header>
@@ -658,10 +658,10 @@ function AiTutorChat({ chatId, session, userFirstName }: AiTutorChatProps) {
               className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-visible"
               aria-hidden
             >
-              <div className="absolute h-[min(68vw,26rem)] w-[min(88vw,36rem)] -translate-y-6 rounded-full bg-gradient-to-r from-violet-300/25 via-sky-200/20 to-cyan-200/18 blur-[110px] sm:-translate-y-8" />
-              <div className="absolute h-52 w-72 -translate-x-[38%] translate-y-0 rounded-full bg-gradient-to-br from-[#6C5CE7]/20 to-indigo-200/16 blur-[96px] sm:translate-y-2" />
-              <div className="absolute h-48 w-64 translate-x-[42%] -translate-y-6 rounded-full bg-gradient-to-bl from-sky-300/18 to-violet-200/16 blur-[88px] sm:-translate-y-8" />
-              <div className="absolute h-36 w-[min(76vw,28rem)] translate-y-4 rounded-full bg-gradient-to-t from-cyan-100/14 via-transparent to-violet-100/12 blur-[80px] sm:translate-y-2" />
+              <div className="absolute h-[min(68vw,26rem)] w-[min(88vw,36rem)] -translate-y-6 rounded-full bg-gradient-to-r from-sky-300/25 via-sky-200/20 to-cyan-200/18 blur-[110px] sm:-translate-y-8" />
+              <div className="absolute h-52 w-72 -translate-x-[38%] translate-y-0 rounded-full bg-gradient-to-br from-[#4169E1]/20 to-indigo-200/16 blur-[96px] sm:translate-y-2" />
+              <div className="absolute h-48 w-64 translate-x-[42%] -translate-y-6 rounded-full bg-gradient-to-bl from-sky-300/18 to-[#C7D7FF]/16 blur-[88px] sm:-translate-y-8" />
+              <div className="absolute h-36 w-[min(76vw,28rem)] translate-y-4 rounded-full bg-gradient-to-t from-cyan-100/14 via-transparent to-[#E0E7FF]/12 blur-[80px] sm:translate-y-2" />
             </div>
 
             <div className="flex-[2] max-md:flex-[1.5]" aria-hidden />

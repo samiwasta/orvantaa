@@ -816,6 +816,7 @@ model ReportCardSubjectScore {
   subject       Subject           @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   examKey       String
   obtainedMarks Int?
+  maxMarks      Int?
 
   @@unique([reportCardId, subjectId, examKey])
   @@index([reportCardId])

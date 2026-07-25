@@ -35,7 +35,7 @@ export const loadActiveLearnerDashboard = cache(
       performance: {
         gradePaceLabel: "Start Strong",
         stats: [
-          { label: "Accuracy", value: "0%", tone: "purple" },
+          { label: "Accuracy", value: "—", tone: "purple" },
           { label: "Tests Taken", value: "0", tone: "orange" },
           { label: "Study Streak", value: "0 days", tone: "amber" },
           { label: "Time Spent", value: "0m", tone: "teal" },

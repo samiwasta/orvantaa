@@ -29,7 +29,7 @@ function StatusIcon({ status }: { status: ChapterStatus }) {
   if (status === "in_progress") {
     return (
       <span
-        className="size-2.5 shrink-0 rounded-full bg-[#6C5CE7]"
+        className="size-2.5 shrink-0 rounded-full bg-[#4169E1]"
         aria-hidden
       />
     )
@@ -56,7 +56,7 @@ function ChapterCard({
     status === "completed"
       ? "text-green-600"
       : status === "in_progress"
-        ? "text-[#6C5CE7]"
+        ? "text-[#4169E1]"
         : "text-muted-foreground"
 
   const action =
@@ -138,7 +138,7 @@ function ChapterCard({
             value={progressPercent}
             className={cn(
               "h-2 bg-neutral-200/90 dark:bg-muted",
-              "**:data-[slot=progress-indicator]:bg-[#6C5CE7]"
+              "**:data-[slot=progress-indicator]:bg-[#4169E1]"
             )}
           />
         </div>

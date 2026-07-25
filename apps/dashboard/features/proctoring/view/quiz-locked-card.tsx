@@ -90,8 +90,8 @@ export function QuizLockedCard({
             </div>
           </div>
 
-          <div className="flex gap-3 rounded-2xl bg-[#F7F6FF] px-4 py-3.5 ring-1 ring-[#E8EEFF]">
-            <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl bg-white text-[#6C5CE7] ring-1 ring-[#E4E9F5]">
+          <div className="flex gap-3 rounded-2xl bg-[#F5F7FF] px-4 py-3.5 ring-1 ring-[#E8EEFF]">
+            <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl bg-white text-[#4169E1] ring-1 ring-[#E4E9F5]">
               <MessageCircleQuestion className="size-4" aria-hidden />
             </span>
             <div className="min-w-0">
@@ -114,7 +114,7 @@ export function QuizLockedCard({
             </Link>
             <Link
               href="/help"
-              className="inline-flex h-11 items-center justify-center rounded-xl bg-[#6C5CE7] px-6 text-sm font-semibold text-white shadow-[0_8px_18px_-10px_rgba(108,92,231,0.8)] transition-colors hover:bg-[#5B4BD6]"
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-[#4169E1] px-6 text-sm font-semibold text-white shadow-[0_8px_18px_-10px_rgba(65,105,225,0.8)] transition-colors hover:bg-[#5B4BD6]"
             >
               Help and Support
             </Link>

@@ -51,7 +51,7 @@ export const OrvantaaAiIcon = forwardRef<SVGSVGElement, OrvantaaAiIconProps>(
                 <stop offset="42%" stopColor="#7b6cf2">
                   <animate
                     attributeName="stop-color"
-                    values="#7b6cf2;#6C5CE7;#7480eb;#6C5CE7;#7b6cf2"
+                    values="#7b6cf2;#4169E1;#7480eb;#4169E1;#7b6cf2"
                     dur="10s"
                     repeatCount="indefinite"
                   />

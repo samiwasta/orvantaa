@@ -72,7 +72,7 @@ function CircularProgress({
           fill="none"
           stroke="currentColor"
           strokeWidth={stroke}
-          className="text-violet-100"
+          className="text-[#E0E7FF]"
         />
         <circle
           cx={vb / 2}
@@ -84,11 +84,11 @@ function CircularProgress({
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          className="text-[#6C5CE7] transition-[stroke-dashoffset] duration-500"
+          className="text-[#4169E1] transition-[stroke-dashoffset] duration-500"
         />
       </svg>
       <span className="absolute inset-0 flex flex-col items-center justify-center leading-none">
-        <span className="text-sm font-semibold text-[#6C5CE7] tabular-nums sm:text-base xl:text-lg">
+        <span className="text-sm font-semibold text-[#4169E1] tabular-nums sm:text-base xl:text-lg">
           {value}%
         </span>
         <span className="mt-0.5 text-[10px] font-medium text-muted-foreground sm:text-xs">
@@ -120,13 +120,13 @@ function TabProgress({
             of {total} {label}
           </span>
         </p>
-        <span className="text-sm font-semibold text-[#6C5CE7] tabular-nums">
+        <span className="text-sm font-semibold text-[#4169E1] tabular-nums">
           {pct}%
         </span>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-[#EEF1F8]">
         <div
-          className="h-full rounded-full bg-[#6C5CE7] transition-all duration-500"
+          className="h-full rounded-full bg-[#4169E1] transition-all duration-500"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -170,7 +170,7 @@ function StatusMark({
       className={cn(
         "flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold tabular-nums",
         state === "active"
-          ? "bg-[#6C5CE7] text-white shadow-[0_8px_18px_-10px_rgba(108,92,231,0.8)]"
+          ? "bg-[#4169E1] text-white shadow-[0_8px_18px_-10px_rgba(65,105,225,0.8)]"
           : "bg-[#F3F4F8] text-slate-500"
       )}
     >
@@ -214,7 +214,7 @@ function TopicRow({
     "group block rounded-2xl px-3.5 py-3.5 transition-colors sm:px-4 sm:py-4",
     locked && "cursor-default",
     !locked && "cursor-pointer",
-    active && !completed && "bg-[#F5F3FF]",
+    active && !completed && "bg-[#F5F7FF]",
     completed && "hover:bg-emerald-50/40",
     !locked && !completed && !active && "hover:bg-[#F8F9FC]"
   )
@@ -251,7 +251,7 @@ function TopicRow({
               {topic.title}
             </p>
             {active && !completed ? (
-              <span className="rounded-full bg-[#6C5CE7]/10 px-2 py-0.5 text-[10px] font-semibold text-[#6C5CE7]">
+              <span className="rounded-full bg-[#4169E1]/10 px-2 py-0.5 text-[10px] font-semibold text-[#4169E1]">
                 Up next
               </span>
             ) : null}
@@ -324,7 +324,7 @@ function QuizRow({
   const rowClassName = cn(
     "group block rounded-2xl px-3.5 py-3.5 transition-colors sm:px-4 sm:py-4",
     locked ? "cursor-default" : "cursor-pointer",
-    active && "bg-[#F5F3FF]",
+    active && "bg-[#F5F7FF]",
     completed && "hover:bg-emerald-50/40",
     locked && "opacity-90",
     available && !active && "hover:bg-[#F8F9FC]"
@@ -335,7 +335,7 @@ function QuizRow({
       Start
     </span>
   ) : completed ? (
-    <span className="inline-flex h-10 w-full items-center justify-center rounded-xl border border-[#E4E9F5] bg-white text-sm font-semibold text-[#6C5CE7] transition-colors group-hover:border-[#d5dbf0] group-hover:bg-[#F7F6FF] sm:h-9 sm:w-auto sm:px-3.5 sm:text-xs">
+    <span className="inline-flex h-10 w-full items-center justify-center rounded-xl border border-[#E4E9F5] bg-white text-sm font-semibold text-[#4169E1] transition-colors group-hover:border-[#d5dbf0] group-hover:bg-[#F5F7FF] sm:h-9 sm:w-auto sm:px-3.5 sm:text-xs">
       Retry
     </span>
   ) : locked ? (
@@ -367,7 +367,7 @@ function QuizRow({
               {quiz.title}
             </p>
             {active ? (
-              <span className="rounded-full bg-[#6C5CE7]/10 px-2 py-0.5 text-[10px] font-semibold text-[#6C5CE7]">
+              <span className="rounded-full bg-[#4169E1]/10 px-2 py-0.5 text-[10px] font-semibold text-[#4169E1]">
                 Up next
               </span>
             ) : null}
@@ -441,7 +441,7 @@ export function ChapterDetailView({
           <div className="flex min-w-0 flex-1 flex-col gap-2 lg:gap-3">
             <div className="flex items-start justify-between gap-3 lg:block">
               <div className="min-w-0">
-                <span className="inline-block rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-semibold text-[#6C5CE7] md:px-2.5 md:text-xs">
+                <span className="inline-block rounded-full bg-[#E0E7FF] px-2 py-0.5 text-[11px] font-semibold text-[#4169E1] md:px-2.5 md:text-xs">
                   Chapter {chapter.number}
                 </span>
                 <h1 className="mt-1 text-xl font-semibold tracking-tight text-foreground md:mt-1.5 md:text-2xl lg:text-3xl">
@@ -503,7 +503,7 @@ export function ChapterDetailView({
           className={cn(
             "inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all sm:justify-start sm:gap-2 sm:px-3.5 sm:py-2",
             tab === "notes"
-              ? "bg-white text-[#6C5CE7] shadow-sm"
+              ? "bg-white text-[#4169E1] shadow-sm"
               : "text-muted-foreground hover:text-foreground"
           )}
         >
@@ -529,7 +529,7 @@ export function ChapterDetailView({
           className={cn(
             "inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all sm:justify-start sm:gap-2 sm:px-3.5 sm:py-2",
             tab === "quiz"
-              ? "bg-white text-[#6C5CE7] shadow-sm"
+              ? "bg-white text-[#4169E1] shadow-sm"
               : "text-muted-foreground hover:text-foreground"
           )}
         >

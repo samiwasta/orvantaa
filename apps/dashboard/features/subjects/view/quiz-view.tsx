@@ -597,7 +597,7 @@ export function QuizView({
         </div>
       ) : question ? (
         <div className="mt-3 overflow-hidden rounded-[1.5rem] border border-[#E8EEFF]/90 bg-white shadow-[0_10px_30px_-18px_rgba(65,105,225,0.18)]">
-          <div className="relative overflow-hidden bg-linear-to-br from-[#6C5CE7] via-[#7c6ff0] to-[#9b8cf5] px-4 py-3.5 sm:px-5 sm:py-4">
+          <div className="relative overflow-hidden bg-linear-to-br from-[#4169E1] via-[#7c6ff0] to-[#9b8cf5] px-4 py-3.5 sm:px-5 sm:py-4">
             <div
               className="pointer-events-none absolute -top-8 -right-8 size-24 rounded-full bg-white/10"
               aria-hidden
@@ -691,11 +691,11 @@ export function QuizView({
                     onClick={() => setSelectedOptionId(option.id)}
                     className={cn(
                       "flex w-full items-center gap-3 rounded-2xl px-3.5 py-3.5 text-left transition-all sm:px-4",
-                      "bg-[#F7F6FF] ring-1 ring-[#E8EEFF]",
+                      "bg-[#F5F7FF] ring-1 ring-[#E8EEFF]",
                       !feedbackOpen && "hover:bg-[#F0EEFF]",
                       selected &&
                         !feedbackOpen &&
-                        "bg-[#F0EEFF] shadow-sm ring-2 ring-[#6C5CE7] ring-offset-0",
+                        "bg-[#F0EEFF] shadow-sm ring-2 ring-[#4169E1] ring-offset-0",
                       showCorrect && "bg-emerald-50 ring-2 ring-emerald-500",
                       showWrong && "bg-red-50 ring-2 ring-red-400",
                       feedbackOpen && "cursor-default"
@@ -709,8 +709,8 @@ export function QuizView({
                           : showWrong
                             ? "bg-red-500 text-white"
                             : selected
-                              ? "bg-[#6C5CE7] text-white"
-                              : "bg-white text-[#6C5CE7] ring-1 ring-[#E4E9F5]"
+                              ? "bg-[#4169E1] text-white"
+                              : "bg-white text-[#4169E1] ring-1 ring-[#E4E9F5]"
                       )}
                     >
                       {letter}

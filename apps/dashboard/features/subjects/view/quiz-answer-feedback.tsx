@@ -72,7 +72,7 @@ export function QuizAnswerFeedback({
       {!isCorrect ? (
         <div className="rounded-xl bg-white/80 px-3.5 py-3 ring-1 ring-amber-100/80">
           <div className="flex items-start gap-2.5">
-            <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#F0EEFF] text-[#6C5CE7]">
+            <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#F0EEFF] text-[#4169E1]">
               {hintLoading ? (
                 <Loader2 className="size-3.5 animate-spin" aria-hidden />
               ) : (
@@ -80,7 +80,7 @@ export function QuizAnswerFeedback({
               )}
             </span>
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold tracking-wide text-[#6C5CE7] uppercase">
+              <p className="text-[11px] font-semibold tracking-wide text-[#4169E1] uppercase">
                 Soft AI hint
               </p>
               <p className="mt-1 text-[13px] leading-relaxed text-foreground">

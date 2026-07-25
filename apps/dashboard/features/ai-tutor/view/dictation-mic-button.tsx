@@ -29,7 +29,7 @@ export function DictationMicButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "size-9 shrink-0 rounded-full text-muted-foreground transition-colors hover:bg-violet-50 hover:text-[#6C5CE7]",
+        "size-9 shrink-0 rounded-full text-muted-foreground transition-colors hover:bg-[#F0F4FF] hover:text-[#4169E1]",
         isListening &&
           "bg-rose-50 text-rose-600 ring-2 ring-rose-200/80 hover:bg-rose-50 hover:text-rose-600",
         className

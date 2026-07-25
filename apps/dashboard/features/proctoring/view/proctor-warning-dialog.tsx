@@ -78,8 +78,8 @@ export function ProctorWarningDialog({
             )}
           </div>
 
-          <div className="flex gap-3 rounded-2xl bg-[#F7F6FF] px-4 py-3.5 ring-1 ring-[#E8EEFF]">
-            <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl bg-white text-[#6C5CE7] ring-1 ring-[#E4E9F5]">
+          <div className="flex gap-3 rounded-2xl bg-[#F5F7FF] px-4 py-3.5 ring-1 ring-[#E8EEFF]">
+            <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl bg-white text-[#4169E1] ring-1 ring-[#E4E9F5]">
               <ShieldAlert className="size-4" aria-hidden />
             </span>
             <div className="min-w-0">

@@ -1,7 +1,14 @@
+import type {
+  DailyPerformancePoint,
+  PerformanceScorecard,
+} from "./performance-score"
+
 export type WeeklyAccuracyPoint = {
   day: string
   value: number | null
 }
+
+export type { DailyPerformancePoint, PerformanceScorecard }
 
 export type SubjectAccuracy = {
   subjectId: string
@@ -68,12 +75,12 @@ export const performanceInsights = {
   focusChapters: [
     {
       id: "motion-force",
-      label: "Ch 2: Motion & Force",
+      label: "Motion & Force",
       href: "/subjects/physics",
     },
     {
       id: "laws-of-motion",
-      label: "Ch 4: Laws of Motion",
+      label: "Laws of Motion",
       href: "/subjects/physics",
     },
   ] satisfies FocusChapter[],
@@ -91,6 +98,7 @@ export type ExamKey = "unit1" | "term1" | "unit2" | "final"
 export type ExamDef = {
   key: ExamKey
   label: string
+  /** Default max marks used when a subject has no custom max yet */
   maxMarks: number
 }
 
@@ -98,6 +106,7 @@ export type SubjectReportScore = {
   subjectId: string
   subject: string
   scores: Record<ExamKey, number | null>
+  maxMarks: Record<ExamKey, number>
 }
 
 export type ReportCard = {
@@ -116,17 +125,27 @@ export const DEFAULT_REPORT_CARD_EXAMS: ExamDef[] = [
 
 export const reportCardExams = DEFAULT_REPORT_CARD_EXAMS
 
+export function emptyExamScores(): Record<ExamKey, number | null> {
+  return { unit1: null, term1: null, unit2: null, final: null }
+}
+
+export function emptyExamMaxMarks(
+  exams: ExamDef[] = DEFAULT_REPORT_CARD_EXAMS
+): Record<ExamKey, number> {
+  return {
+    unit1: exams.find((exam) => exam.key === "unit1")?.maxMarks ?? 25,
+    term1: exams.find((exam) => exam.key === "term1")?.maxMarks ?? 100,
+    unit2: exams.find((exam) => exam.key === "unit2")?.maxMarks ?? 25,
+    final: exams.find((exam) => exam.key === "final")?.maxMarks ?? 100,
+  }
+}
+
 export function createEmptyReportCard(
   subjects: Array<{ id: string; title: string }>,
   title = "Report Card"
 ): ReportCard {
   const exams = DEFAULT_REPORT_CARD_EXAMS.map((exam) => ({ ...exam }))
-  const emptyScores = (): Record<ExamKey, number | null> => ({
-    unit1: null,
-    term1: null,
-    unit2: null,
-    final: null,
-  })
+  const maxMarks = emptyExamMaxMarks(exams)
 
   return {
     id: null,
@@ -135,9 +154,27 @@ export function createEmptyReportCard(
     subjects: subjects.map((subject) => ({
       subjectId: subject.id,
       subject: subject.title,
-      scores: emptyScores(),
+      scores: emptyExamScores(),
+      maxMarks: { ...maxMarks },
     })),
   }
+}
+
+export function resolveSubjectExamMax(
+  subject: SubjectReportScore,
+  exam: ExamDef
+): number {
+  const custom = subject.maxMarks[exam.key]
+  if (typeof custom === "number" && custom > 0) return custom
+  return exam.maxMarks
+}
+
+export function calcExamPercent(
+  obtained: number | null | undefined,
+  maxMarks: number
+): number | null {
+  if (obtained === null || obtained === undefined || maxMarks <= 0) return null
+  return Math.round((obtained / maxMarks) * 100)
 }
 
 export function calcOverallPercent(card: ReportCard): number {
@@ -149,7 +186,7 @@ export function calcOverallPercent(card: ReportCard): number {
       const obtained = sub.scores[exam.key]
       if (obtained === null || obtained === undefined) continue
       totalObtained += obtained
-      totalMax += exam.maxMarks
+      totalMax += resolveSubjectExamMax(sub, exam)
     }
   }
 
@@ -168,9 +205,53 @@ export function calcSubjectPercent(
     const score = sub.scores[exam.key]
     if (score === null || score === undefined) continue
     obtained += score
-    max += exam.maxMarks
+    max += resolveSubjectExamMax(sub, exam)
   }
 
   if (max === 0) return 0
   return Math.round((obtained / max) * 100)
+}
+
+export function calcExamColumnSummary(
+  subjects: SubjectReportScore[],
+  exam: ExamDef
+): {
+  obtained: number
+  max: number
+  avgPercent: number | null
+  hasScores: boolean
+} {
+  let obtained = 0
+  let max = 0
+  let scoredSubjects = 0
+
+  for (const subject of subjects) {
+    const score = subject.scores[exam.key]
+    if (score === null || score === undefined) continue
+    obtained += score
+    max += resolveSubjectExamMax(subject, exam)
+    scoredSubjects += 1
+  }
+
+  return {
+    obtained,
+    max,
+    avgPercent: max > 0 ? Math.round((obtained / max) * 100) : null,
+    hasScores: scoredSubjects > 0,
+  }
+}
+
+export function calcAverageOverallPercent(
+  subjects: SubjectReportScore[],
+  exams: ExamDef[]
+): number | null {
+  const percents = subjects
+    .map((subject) => calcSubjectPercent(subject, exams))
+    .filter((percent) => percent > 0)
+
+  if (percents.length === 0) return null
+
+  return Math.round(
+    percents.reduce((sum, percent) => sum + percent, 0) / percents.length
+  )
 }

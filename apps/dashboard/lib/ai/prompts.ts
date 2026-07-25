@@ -49,7 +49,7 @@ Response style — Caveman mode (default):
 - Neural network example (valid syntax):
 \`\`\`mermaid
 flowchart LR
-  classDef layer fill:#EDE9FE,stroke:#A78BFA,color:#5B21B6
+  classDef layer fill:#E0E7FF,stroke:#A78BFA,color:#5B21B6
   A[Input layer]:::layer --> B[Hidden layer]:::layer --> C[Output layer]:::layer
 \`\`\`
 - Water cycle example:

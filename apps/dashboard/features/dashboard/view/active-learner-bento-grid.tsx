@@ -3,6 +3,7 @@
 import { Button } from "@workspace/ui/components/button"
 import { Card } from "@workspace/ui/components/card"
 import { Progress } from "@workspace/ui/components/progress"
+import { useSidebar } from "@workspace/ui/components/sidebar"
 import { cn } from "@workspace/ui/lib/utils"
 import { motion, useInView, useMotionValue, useSpring } from "framer-motion"
 import type { LucideIcon } from "lucide-react"
@@ -42,12 +43,12 @@ const actionCardConfig: Record<
 > = {
   purple: {
     shell:
-      "border-0 bg-gradient-to-br from-[#8B5CF6] via-[#7C5CE8] to-[#6C5CE7] shadow-[0_18px_40px_-18px_rgba(108,92,231,0.75)]",
+      "border-0 bg-gradient-to-br from-[#5B7FE8] via-[#5B7FE8] to-[#4169E1] shadow-[0_18px_40px_-18px_rgba(65,105,225,0.75)]",
     badge: "border-white/70 bg-white/95 text-[#5B5B7A]",
     title: "text-white",
     subtitle: "text-white/80",
     secondary: "text-white/85",
-    cta: "bg-white text-[#6C5CE7] hover:bg-[#F5F3FF]",
+    cta: "bg-white text-[#4169E1] hover:bg-[#F5F7FF]",
     glow: "bg-white/15",
     progressTrack: "bg-white/25 **:data-[slot=progress-indicator]:bg-white",
   },
@@ -80,9 +81,9 @@ const statToneStyles: Record<
   { card: string; icon: string; value: string; label: string }
 > = {
   purple: {
-    card: "bg-[#F3F0FF]",
-    icon: "text-[#7C6BF0]",
-    value: "text-[#6C5CE7]",
+    card: "bg-[#F0F4FF]",
+    icon: "text-[#5B7FE8]",
+    value: "text-[#4169E1]",
     label: "text-[#5B5B7A]",
   },
   orange: {
@@ -136,23 +137,29 @@ export function ActiveLearnerBentoGrid({
   userFirstName,
 }: ActiveLearnerBentoGridProps) {
   return (
-    <section className="flex flex-col gap-6 md:gap-8">
+    <section className="@container/grid flex flex-col gap-6 md:gap-8">
       <motion.div
-        className="grid grid-cols-1 gap-5 md:gap-6 xl:grid-cols-3 xl:items-stretch"
+        className="grid grid-cols-1 gap-5 md:gap-6 @[1100px]/grid:grid-cols-3 @[1100px]/grid:items-stretch"
         variants={staggerContainer}
         initial="hidden"
         animate="visible"
       >
-        <motion.div variants={staggerItem} className="xl:col-span-1">
+        <motion.div
+          variants={staggerItem}
+          className="@[1100px]/grid:col-span-1"
+        >
           <CurrentLessonCard lesson={data.currentLesson} />
         </motion.div>
-        <motion.div variants={staggerItem} className="xl:col-span-2">
+        <motion.div
+          variants={staggerItem}
+          className="@[1100px]/grid:col-span-2"
+        >
           <PerformanceSummaryCard performance={data.performance} />
         </motion.div>
       </motion.div>
 
       <motion.div
-        className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 lg:grid-cols-3"
+        className="grid grid-cols-1 gap-5 md:gap-6 @[1100px]/grid:grid-cols-3"
         variants={staggerContainer}
         initial="hidden"
         animate="visible"
@@ -167,7 +174,7 @@ export function ActiveLearnerBentoGrid({
       <div className="h-px w-full bg-[#E0E7FF]/90" aria-hidden />
 
       <motion.div
-        className="grid grid-cols-1 gap-5 md:gap-6 xl:grid-cols-2 xl:items-stretch"
+        className="grid grid-cols-1 gap-5 md:gap-6 @[1100px]/grid:grid-cols-2 @[1100px]/grid:items-stretch"
         variants={staggerContainer}
         initial="hidden"
         animate="visible"
@@ -310,6 +317,9 @@ function PerformanceSummaryCard({
 }: {
   performance: ActiveLearnerDashboardData["performance"]
 }) {
+  const { state, isMobile } = useSidebar()
+  const sidebarCollapsed = state === "collapsed" && !isMobile
+
   return (
     <Card className="flex h-full flex-col gap-0 overflow-hidden rounded-2xl border border-[#E8EEFF]/90 bg-white py-0 shadow-[0_8px_30px_-14px_rgba(65,105,225,0.12)]">
       <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-4 sm:px-6 sm:pt-6">
@@ -328,7 +338,11 @@ function PerformanceSummaryCard({
       </div>
 
       <motion.div
-        className="grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-3 px-5 pb-5 sm:grid-cols-4 sm:gap-3.5 sm:px-6 sm:pb-6"
+        className={cn(
+          "grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-3 px-5 pb-5 sm:gap-3.5 sm:px-6 sm:pb-6",
+          sidebarCollapsed ? "md:grid-cols-4" : "md:grid-cols-2",
+          "xl:grid-cols-4"
+        )}
         variants={staggerContainer}
         initial="hidden"
         animate="visible"
@@ -396,7 +410,7 @@ function PerformanceInsightsCard({
   const { strength, growthArea, tip } = insights
 
   return (
-    <Card className="flex h-full flex-col gap-0 overflow-hidden rounded-[1.5rem] border border-[#E8EEFF]/90 bg-white py-0 shadow-[0_10px_32px_-16px_rgba(108,92,231,0.16)]">
+    <Card className="flex h-full flex-col gap-0 overflow-hidden rounded-[1.5rem] border border-[#E8EEFF]/90 bg-white py-0 shadow-[0_10px_32px_-16px_rgba(65,105,225,0.16)]">
       <div className="px-5 pt-5 pb-4 sm:px-6 sm:pt-6">
         <h3 className="font-heading text-lg font-semibold tracking-tight text-foreground">
           Performance Insights
@@ -427,9 +441,9 @@ function PerformanceInsightsCard({
 
           <motion.div
             whileHover={{ y: -2, transition: { duration: 0.18 } }}
-            className="flex items-center gap-3 rounded-2xl border border-[#E4DEFF] bg-[#F3F0FF] p-4"
+            className="flex items-center gap-3 rounded-2xl border border-[#E4DEFF] bg-[#F0F4FF] p-4"
           >
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#7C5CE8] text-white">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#5B7FE8] text-white">
               <Target className="size-4.5" strokeWidth={2.25} />
             </div>
             <div className="min-w-0">
@@ -493,14 +507,28 @@ function DashboardActionCardView({ card }: { card: DashboardActionCard }) {
 
         <div className="relative flex min-h-0 flex-1 items-stretch gap-2 p-4 sm:p-5">
           <div className="flex min-w-0 flex-1 flex-col">
-            <span
-              className={cn(
-                "inline-flex w-fit max-w-full items-center rounded-full border px-2.5 py-1 text-[11px] font-medium tracking-tight",
-                config.badge
-              )}
-            >
-              <span className="truncate">{card.badge}</span>
-            </span>
+            <div className="flex items-start justify-between gap-3">
+              <span
+                className={cn(
+                  "inline-flex w-fit max-w-[min(100%,12rem)] items-center rounded-full border px-2.5 py-1 text-[11px] font-medium tracking-tight sm:max-w-full",
+                  config.badge
+                )}
+              >
+                <span className="truncate">{card.badge}</span>
+              </span>
+
+              {hasSplitFooter ? (
+                <Link
+                  href={card.secondaryHref!}
+                  className={cn(
+                    "shrink-0 pt-0.5 text-right text-xs font-semibold underline-offset-2 hover:underline @[1100px]/grid:hidden",
+                    config.secondary
+                  )}
+                >
+                  {card.secondaryButtonLabel}
+                </Link>
+              ) : null}
+            </div>
 
             <h3
               className={cn(
@@ -512,7 +540,7 @@ function DashboardActionCardView({ card }: { card: DashboardActionCard }) {
             </h3>
 
             {card.progressPercent !== undefined ? (
-              <div className="mt-3 max-w-[12rem] space-y-1">
+              <div className="mt-3 w-full space-y-1">
                 <div
                   className={cn(
                     "flex items-center justify-between text-[10px] font-semibold",
@@ -526,7 +554,7 @@ function DashboardActionCardView({ card }: { card: DashboardActionCard }) {
                 </div>
                 <Progress
                   value={card.progressPercent}
-                  className={cn("h-1.5", config.progressTrack)}
+                  className={cn("h-1.5 w-full", config.progressTrack)}
                 />
               </div>
             ) : card.subtitle ? (
@@ -540,18 +568,7 @@ function DashboardActionCardView({ card }: { card: DashboardActionCard }) {
               </p>
             ) : null}
 
-            <div className="mt-auto flex flex-wrap items-center gap-2 pt-4">
-              {hasSplitFooter ? (
-                <Link
-                  href={card.secondaryHref!}
-                  className={cn(
-                    "text-xs font-semibold underline-offset-2 hover:underline",
-                    config.secondary
-                  )}
-                >
-                  {card.secondaryButtonLabel}
-                </Link>
-              ) : null}
+            <div className="mt-auto flex items-center justify-start gap-2 pt-4">
               <Button
                 asChild
                 size="sm"
@@ -568,23 +585,36 @@ function DashboardActionCardView({ card }: { card: DashboardActionCard }) {
             </div>
           </div>
 
-          <motion.div
-            className="relative hidden w-[42%] max-w-[140px] shrink-0 self-end sm:block"
-            animate={{ y: [0, -5, 0], rotate: [0, -2, 0] }}
-            transition={{
-              duration: 4.5,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          >
-            <Image
-              src={card.imageSrc}
-              alt={card.imageAlt}
-              width={160}
-              height={160}
-              className="h-auto w-full object-contain drop-shadow-[0_12px_20px_rgba(0,0,0,0.18)]"
-            />
-          </motion.div>
+          <div className="relative hidden w-[42%] max-w-[140px] shrink-0 flex-col items-end sm:flex">
+            {hasSplitFooter ? (
+              <Link
+                href={card.secondaryHref!}
+                className={cn(
+                  "relative z-10 mb-auto hidden pt-0.5 text-right text-xs font-semibold underline-offset-2 hover:underline @[1100px]/grid:inline",
+                  config.secondary
+                )}
+              >
+                {card.secondaryButtonLabel}
+              </Link>
+            ) : null}
+            <motion.div
+              className="mt-auto w-full self-end"
+              animate={{ y: [0, -5, 0], rotate: [0, -2, 0] }}
+              transition={{
+                duration: 4.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            >
+              <Image
+                src={card.imageSrc}
+                alt={card.imageAlt}
+                width={160}
+                height={160}
+                className="h-auto w-full object-contain drop-shadow-[0_12px_20px_rgba(0,0,0,0.18)]"
+              />
+            </motion.div>
+          </div>
         </div>
       </Card>
     </motion.div>

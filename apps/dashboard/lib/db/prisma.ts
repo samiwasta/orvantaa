@@ -7,7 +7,7 @@ const globalForPrisma = globalThis as unknown as {
   prismaRevision: string | undefined
 }
 
-const PRISMA_CLIENT_REVISION = "20260725180000_proctor_session_report_token"
+const PRISMA_CLIENT_REVISION = "20260725190000_report_card_subject_max_marks"
 
 const REQUIRED_PRISMA_DELEGATES = [
   "aiTutorChatSession",

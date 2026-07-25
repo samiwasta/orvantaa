@@ -136,7 +136,7 @@ export function notificationAccentClass(
     case "low":
       return "bg-muted text-muted-foreground"
     default:
-      return "bg-[#6C5CE7]/10 text-[#6C5CE7]"
+      return "bg-[#4169E1]/10 text-[#4169E1]"
   }
 }
 

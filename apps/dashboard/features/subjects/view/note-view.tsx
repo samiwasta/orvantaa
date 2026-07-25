@@ -29,16 +29,16 @@ import { NoteAiTutorFab } from "./note-ai-tutor-fab"
 
 function DefinitionBox({ title, content }: { title: string; content: string }) {
   return (
-    <div className="overflow-hidden rounded-2xl border-2 border-violet-200/70 bg-linear-to-br from-violet-50 via-white to-indigo-50/80 shadow-sm">
-      <div className="flex items-center gap-2 border-b border-violet-100 bg-violet-100/50 px-4 py-2.5 sm:px-5">
-        <span className="flex size-7 items-center justify-center rounded-lg bg-[#6C5CE7] text-white shadow-sm">
+    <div className="overflow-hidden rounded-2xl border-2 border-[#C7D7FF]/70 bg-linear-to-br from-[#F0F4FF] via-white to-indigo-50/80 shadow-sm">
+      <div className="flex items-center gap-2 border-b border-[#E0E7FF] bg-[#E0E7FF]/50 px-4 py-2.5 sm:px-5">
+        <span className="flex size-7 items-center justify-center rounded-lg bg-[#4169E1] text-white shadow-sm">
           <BookMarked className="size-3.5" strokeWidth={2.5} aria-hidden />
         </span>
-        <div className="min-w-0 flex-1 text-sm font-semibold text-[#6C5CE7]">
+        <div className="min-w-0 flex-1 text-sm font-semibold text-[#4169E1]">
           <RichTextContent html={title} studentPreview previewBlock="label" />
         </div>
         <Sparkles
-          className="ml-auto size-4 text-violet-400"
+          className="ml-auto size-4 text-sky-400"
           strokeWidth={2}
           aria-hidden
         />
@@ -150,7 +150,7 @@ function NoteBlockRenderer({ block }: { block: NoteBlock }) {
       return <ListBlockContent content={block.content} />
     case "callout":
       return (
-        <div className="rounded-xl border-l-4 border-[#6C5CE7] bg-violet-50 px-4 py-3.5">
+        <div className="rounded-xl border-l-4 border-[#4169E1] bg-[#F0F4FF] px-4 py-3.5">
           <RichTextContent
             html={block.text}
             studentPreview
@@ -160,7 +160,7 @@ function NoteBlockRenderer({ block }: { block: NoteBlock }) {
       )
     case "quote":
       return (
-        <blockquote className="border-l-2 border-violet-200 pl-4 text-muted-foreground italic">
+        <blockquote className="border-l-2 border-[#C7D7FF] pl-4 text-muted-foreground italic">
           <RichTextContent
             html={block.text}
             studentPreview
@@ -239,7 +239,7 @@ export function NoteView({
           /
         </span>
         <p className="min-w-0 text-sm text-muted-foreground">
-          <span className="font-medium text-[#6C5CE7]">
+          <span className="font-medium text-[#4169E1]">
             Chapter {chapter.number}
           </span>
           <span className="mx-1.5 text-muted-foreground/50">·</span>
@@ -249,8 +249,8 @@ export function NoteView({
 
       <div className="mt-3">
         <div className="min-w-0">
-          <article className="note-student-preview overflow-hidden rounded-2xl border border-violet-100 bg-card font-heading shadow-sm shadow-violet-100/40">
-            <div className="relative overflow-hidden bg-linear-to-br from-[#6C5CE7] via-[#7c6ff0] to-[#9b8cf5] px-4 py-3.5 sm:px-5 sm:py-4">
+          <article className="note-student-preview overflow-hidden rounded-2xl border border-[#E0E7FF] bg-card font-heading shadow-sm shadow-[#E0E7FF]/40">
+            <div className="relative overflow-hidden bg-linear-to-br from-[#4169E1] via-[#7c6ff0] to-[#9b8cf5] px-4 py-3.5 sm:px-5 sm:py-4">
               <div
                 className="pointer-events-none absolute -top-8 -right-8 size-24 rounded-full bg-white/10"
                 aria-hidden
@@ -307,11 +307,11 @@ export function NoteView({
             </div>
 
             {/* Footer nav */}
-            <div className="flex items-center justify-between gap-3 border-t border-violet-100 bg-violet-50/40 px-4 py-4 sm:px-6">
+            <div className="flex items-center justify-between gap-3 border-t border-[#E0E7FF] bg-[#F0F4FF]/40 px-4 py-4 sm:px-6">
               {prev ? (
                 <Button
                   variant="outline"
-                  className="h-10 gap-1 rounded-xl border-violet-200 bg-white px-4 text-sm font-semibold text-[#6C5CE7] shadow-sm hover:bg-violet-50"
+                  className="h-10 gap-1 rounded-xl border-[#C7D7FF] bg-white px-4 text-sm font-semibold text-[#4169E1] shadow-sm hover:bg-[#F0F4FF]"
                   asChild
                 >
                   <Link href={noteHref(subjectSlug, chSlug, topic.id, prev.id)}>

@@ -125,7 +125,7 @@ export function ChatHistorySheet({
                         className={cn(
                           "flex items-stretch gap-0.5 rounded-lg transition-colors",
                           isActive
-                            ? "bg-[#6C5CE7]/10 ring-1 ring-[#6C5CE7]/25"
+                            ? "bg-[#4169E1]/10 ring-1 ring-[#4169E1]/25"
                             : "hover:bg-muted/60"
                         )}
                       >
@@ -142,7 +142,7 @@ export function ChatHistorySheet({
                               className={cn(
                                 "size-3.5 shrink-0",
                                 isActive
-                                  ? "text-[#6C5CE7]"
+                                  ? "text-[#4169E1]"
                                   : "text-muted-foreground"
                               )}
                               strokeWidth={2}
@@ -150,7 +150,7 @@ export function ChatHistorySheet({
                             <span
                               className={cn(
                                 "truncate text-sm font-medium",
-                                isActive ? "text-[#6C5CE7]" : "text-foreground"
+                                isActive ? "text-[#4169E1]" : "text-foreground"
                               )}
                             >
                               {session.title}

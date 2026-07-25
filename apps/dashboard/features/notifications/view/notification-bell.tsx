@@ -191,7 +191,7 @@ export function NotificationBell({ initialSummary }: NotificationBellProps) {
           <Link
             href="/performance"
             onClick={() => setOpen(false)}
-            className="text-xs font-medium text-[#6C5CE7] hover:underline"
+            className="text-xs font-medium text-[#4169E1] hover:underline"
           >
             View your performance
           </Link>
@@ -231,7 +231,7 @@ function NotificationGroup({
                 className={cn(
                   "flex w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50",
                   muted && "opacity-80",
-                  !item.read && "bg-[#6C5CE7]/[0.03]"
+                  !item.read && "bg-[#4169E1]/[0.03]"
                 )}
               >
                 <span
@@ -255,7 +255,7 @@ function NotificationGroup({
                       {item.title}
                     </span>
                     {!item.read ? (
-                      <span className="mt-1.5 size-2 shrink-0 rounded-full bg-[#6C5CE7]" />
+                      <span className="mt-1.5 size-2 shrink-0 rounded-full bg-[#4169E1]" />
                     ) : null}
                   </span>
                   <span className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
